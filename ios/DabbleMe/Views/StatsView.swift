@@ -13,6 +13,8 @@ struct StatsView: View {
     /// The year everything under the tiles is about; nil is this year. Here so the Streak tile can
     /// turn it to its year.
     @State private var year: Int?
+    /// The dots were tapped: this year's grid zooms in on the last five days (it sets this back).
+    @State private var focusLastDays = false
 
     fileprivate typealias Anchor = StatsAnchor
 
@@ -27,20 +29,31 @@ struct StatsView: View {
                         // The dots from Today's corner (and the widget), at the right as they were there,
                         // with what they say beside them: under the Rewind's card, over the tiles.
                         // (Not with none of the five written: Today doesn't show them then either.)
+                        // Tapped, they turn to this year and zoom its grid in on those five days.
                         if let days = model.lastFiveDays, days.contains(true) {
-                            HStack(spacing: 10) {
-                                Text(LastFiveDays.sentence(days))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                LastFiveDays(days: days, size: 9)
-                                    .accessibilityHidden(true)
+                            Button {
+                                year = nil
+                                focusLastDays = true
+                                withAnimation(.snappy(duration: 0.3)) { proxy.scrollTo(Anchor.year, anchor: .top) }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Text(LastFiveDays.sentence(days))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    LastFiveDays(days: days, size: 9)
+                                        .accessibilityHidden(true)
+                                }
+                                .padding(.vertical, 6) // a taller target than the dots alone
+                                .contentShape(.rect)
                             }
+                            .buttonStyle(.plain)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .padding(.trailing, 4)
                             // Close between the two: a caption, not a section.
-                            .padding(.top, -10)
-                            .padding(.bottom, -14)
-                            .accessibilityElement(children: .combine)
+                            .padding(.top, -16)
+                            .padding(.bottom, -20)
+                            .accessibilityHint("Shows them in this year's days")
+                            .accessibilityIdentifier("StatsLastFiveDays")
                         }
                         tiles(stats) { anchor in
                             withAnimation(.snappy(duration: 0.3)) { proxy.scrollTo(anchor, anchor: .top) }
@@ -49,6 +62,7 @@ struct StatsView: View {
                             StatsOverview(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
                         }
                         YearSection(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now), picked: $year,
+                                    focusLastDays: $focusLastDays,
                                     write: model.me?.canWrite == false ? nil : { model.composingDay = StatsDay(day: $0) })
                         if !showsOverview(stats) { footer(stats) } // the overview says these
                     }
@@ -207,6 +221,8 @@ private struct YearSection: View {
     let today: JournalDay
     /// The year shown; nil is this year.
     @Binding var picked: Int?
+    /// Set when the dots are tapped: this year's grid zooms in on the last five days.
+    @Binding var focusLastDays: Bool
     /// Writes an entry for a day that has none (nil for someone who can't write in the app).
     var write: ((JournalDay) -> Void)?
     @Environment(AppModel.self) private var model
@@ -251,7 +267,7 @@ private struct YearSection: View {
                 // A written day opens its entry in full, over Stats (Back comes back here).
                 WritingHeatmap(year: year, days: days ?? [], photos: loaded[year]?.photos ?? [:], today: today, onSelect: { day in
                     model.openDay(day, over: .stats)
-                }, onWrite: write)
+                }, onWrite: write, focusLastDays: year == thisYear ? $focusLastDays : .constant(false))
                 .id(year) // each year opens at its newest weeks
                 if failed == year {
                     Text("Couldn't load \(String(year)).")
@@ -447,9 +463,14 @@ private struct WritingHeatmap: View {
     let onSelect: (JournalDay) -> Void
     /// Writes an entry for a day held down that has none (nil: not offered).
     var onWrite: ((JournalDay) -> Void)?
+    /// Set from the dots in Stats: zoom all the way in with today's week at the right edge, so
+    /// the last five days are in view. Set back once done.
+    @Binding var focusLastDays: Bool
 
     @AppStorage("stats.heatmapCell") private var cellSize: Double = 13
     @State private var pinchStart: Double?
+    /// Zoomed in from the dots: today's week rests at the right edge (no weeks ahead) until a pinch.
+    @State private var focused = false
     @Environment(AppModel.self) private var model
     private static let sizes = 9.0...32.0
     private let labelRow: CGFloat = 16
@@ -563,6 +584,16 @@ private struct WritingHeatmap: View {
             .onAppear { proxy.scrollTo(restingColumn(in: weeks), anchor: .trailing) }
             // Resizing keeps the same weeks in view (otherwise it jumps to the year's start).
             .onChange(of: cellSize) { proxy.scrollTo(restingColumn(in: weeks), anchor: .trailing) }
+            // Initial too: a year picked away from this one comes back as a new grid with it set.
+            .onChange(of: focusLastDays, initial: true) {
+                guard focusLastDays else { return }
+                focusLastDays = false
+                focused = true
+                withAnimation(.snappy(duration: 0.3)) {
+                    cellSize = Self.sizes.upperBound
+                    proxy.scrollTo(restingColumn(in: weeks), anchor: .trailing)
+                }
+            }
             }
         }
         .simultaneousGesture(
@@ -570,6 +601,7 @@ private struct WritingHeatmap: View {
                 .onChanged { value in
                     let start = pinchStart ?? cellSize
                     pinchStart = start
+                    focused = false
                     cellSize = min(max(start * value.magnification, Self.sizes.lowerBound), Self.sizes.upperBound)
                 }
                 .onEnded { _ in pinchStart = nil }
@@ -583,7 +615,7 @@ private struct WritingHeatmap: View {
     /// weeks past today's, so the days written are in view with the start of what's left.
     private func restingColumn(in weeks: [[JournalDay?]]) -> Int {
         guard let current = weeks.firstIndex(where: { $0.contains { $0?.iso == today.iso } }) else { return weeks.count - 1 }
-        return min(current + Self.weeksAhead, weeks.count - 1)
+        return min(current + (focused ? 0 : Self.weeksAhead), weeks.count - 1)
     }
     private static let weeksAhead = 4
 
