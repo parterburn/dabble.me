@@ -266,6 +266,19 @@ class User < ActiveRecord::Base
     grants.update_all(revoked_at: now)
   end
 
+  # The first emailed-code sign-in to an unclaimed account (EmailSignIn.unclaimed?): whoever set
+  # its password, passkeys, 2FA or sign-ins may not own the address, so all of them go. Clearing
+  # the password changes the salt, which ends its web sessions and "Stay logged in" cookies.
+  def clear_credentials_for_email_claim!
+    transaction do
+      webauthn_credentials.destroy_all
+      disable_otp! if otp_enabled?
+      revoke_doorkeeper_access_tokens!
+      update_columns(encrypted_password: '', remember_created_at: nil, reset_password_token: nil,
+                     reset_password_sent_at: nil)
+    end
+  end
+
   def deletion_pending?
     deleted_at.present?
   end

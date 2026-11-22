@@ -15,7 +15,12 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
   let(:password) { "correct-horse-battery" }
   let!(:user) { create(:user, email: "writer@example.com", password: password) }
 
-  before { ActionMailer::Base.deliveries.clear }
+  # Accounts made in these specs count as older than the unclaimed-account cut-off, unless a
+  # spec says otherwise ("an unclaimed account made by password" below).
+  before do
+    ActionMailer::Base.deliveries.clear
+    stub_const("EmailSignIn::UNCLAIMED_FROM", 1.year.from_now)
+  end
 
   def json
     JSON.parse(response.body)
@@ -269,6 +274,75 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       verify_app_code(user.email, last_code)
       expect(json["deletion_cancelled"]).to be(true)
       expect(user.reload.deleted_at).to be_nil
+    end
+  end
+
+  describe "an unclaimed account made by password (someone may have taken the address first)" do
+    let(:mcp_app) do
+      Doorkeeper::Application.create!(name: "RSpec MCP", uid: "rspec-claim-mcp", redirect_uri: "http://127.0.0.1/cb",
+                                      scopes: "mcp:access", confidential: false)
+    end
+    let!(:squatter_token) do
+      Doorkeeper::AccessToken.create!(resource_owner_id: user.id, application_id: mcp_app.id, scopes: "mcp:access", expires_in: 2.hours)
+    end
+
+    before do
+      stub_const("EmailSignIn::UNCLAIMED_FROM", 1.day.ago)
+      user.webauthn_credentials.create!(external_id: SecureRandom.hex(16), public_key: SecureRandom.hex(32),
+                                        nickname: "Squatter's laptop", sign_count: 0)
+      user.generate_otp_secret
+      user.update!(otp_enabled: true, otp_enabled_on: Time.current, remember_created_at: Time.current)
+    end
+
+    it "wipes its password, passkeys, 2FA and sign-ins on the first code sign-in in the app" do
+      old_salt = user.authenticatable_salt
+      send_app_code(user.email)
+      verify_app_code(user.email, last_code)
+
+      expect(response).to have_http_status(:ok)
+      user.reload
+      expect(user.has_password?).to be(false)
+      expect(user.valid_password?(password)).to be(false)
+      expect(user.webauthn_credentials).to be_empty
+      expect(user.otp_enabled?).to be(false)
+      expect(user.remember_created_at).to be_nil
+      expect(user.authenticatable_salt).not_to eq(old_salt)
+      expect(user.email_verified_at).to be_present
+      expect(squatter_token.reload.revoked_at).to be_present
+      expect(Doorkeeper::AccessToken.where(resource_owner_id: user.id, revoked_at: nil).count).to eq(1)
+    end
+
+    it "wipes them on the web too, and signs the owner straight in" do
+      post email_codes_path, params: { user: { email: user.email, remember_me: "1" } }
+      post verify_email_code_path, params: { code: last_code }
+
+      expect(response).to redirect_to(root_path)
+      user.reload
+      expect(user.has_password?).to be(false)
+      expect(user.webauthn_credentials).to be_empty
+      expect(squatter_token.reload.revoked_at).to be_present
+    end
+
+    it "wipes nothing the second time, once the address is proven" do
+      send_app_code(user.email)
+      verify_app_code(user.email, last_code)
+      user.reload.update!(password: "a-new-password-1", password_confirmation: "a-new-password-1")
+
+      travel 1.minute do
+        send_app_code(user.email)
+        verify_app_code(user.email, last_code)
+      end
+      expect(user.reload.valid_password?("a-new-password-1")).to be(true)
+    end
+
+    it "leaves an account from before the cut-off alone" do
+      stub_const("EmailSignIn::UNCLAIMED_FROM", 1.year.from_now)
+      send_app_code(user.email)
+      verify_app_code(user.email, last_code, otp_code: ROTP::TOTP.new(user.reload.otp_auth_secret).now)
+
+      expect(user.reload.valid_password?(password)).to be(true)
+      expect(user.webauthn_credentials.count).to eq(1)
+      expect(squatter_token.reload.revoked_at).to be_nil
     end
   end
 

@@ -74,7 +74,7 @@ module Api
       # 2FA code counts as a wrong guess on the emailed code, so one emailed code buys at most
       # EmailCode::MAX_ATTEMPTS 2FA guesses whatever the IP (Rack::Attack limits only by IP here).
       def otp_failed?(user, email_code)
-        return false unless user.otp_enabled?
+        return false unless user.otp_enabled? && !EmailSignIn.unclaimed?(user)
 
         otp = params[:otp_code].to_s.gsub(/\s/, '')
         if otp.blank?

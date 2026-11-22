@@ -16,6 +16,11 @@ module EmailSignIn
 
   Completed = Struct.new(:user, :created, keyword_init: true)
 
+  # Accounts made from here on by password (the legacy sign-up forms, which don't check the
+  # address) count as unclaimed until an emailed code proves the inbox. Older accounts are left
+  # alone: they predate users.email_verified_at.
+  UNCLAIMED_FROM = Time.utc(2026, 11, 23)
+
   module_function
 
   def normalize(email)
@@ -45,6 +50,13 @@ module EmailSignIn
     User.find_for_authentication(email: normalize(email))
   end
 
+  # An account someone made with this address by password, before its owner ever proved they
+  # read the inbox. Whoever made it may not own the address, so the first code sign-in wipes its
+  # credentials (User#clear_credentials_for_email_claim!) and needs no 2FA code.
+  def unclaimed?(user)
+    user.email_verified_at.nil? && user.created_at >= UNCLAIMED_FROM
+  end
+
   # The live code this matches, or nil. Check 2FA (when the account has it) before #complete!.
   def match(email, code)
     EmailCode.match(normalize(email), code, purpose: PURPOSE)
@@ -67,6 +79,7 @@ module EmailSignIn
 
       created = true
     end
+    user.clear_credentials_for_email_claim! if !created && unclaimed?(user)
     user.update_column(:email_verified_at, Time.current)
     Completed.new(user: user, created: created)
   end
