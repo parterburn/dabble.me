@@ -1,4 +1,4 @@
-Build 127 colors the Export Entries icon in Settings olive, like the other row icons.
+This build colors the Export Entries icon in Settings olive, like the other row icons.
 
 SETTINGS
 - Open Settings. In the account section, the Export Entries icon is olive, matching Manage Hashtags above it. The words stay black (white in dark mode).

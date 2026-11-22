@@ -324,7 +324,7 @@ describe 'Pages' do
         expect(article).to be_present, "no Article schema on #{path}"
         expect(article['datePublished']).to match(/\A\d{4}-\d{2}-\d{2}\z/)
         expect(article['dateModified']).to match(/\A\d{4}-\d{2}-\d{2}\z/)
-        expect(article['image']).to end_with('/dabble_logo_ogimage.jpg')
+        expect(article['image']).to end_with('/og/dabble-og-3.jpg')
         expect(article.dig('publisher', 'name')).to eq 'Dabble Me'
         expect(article.dig('mainEntityOfPage', '@id')).to eq article['url']
       end

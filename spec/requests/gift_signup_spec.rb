@@ -34,7 +34,14 @@ RSpec.describe 'Gift links', type: :request do
 
       expect(response.body).to include(%(<meta content="You&#39;ve been given a year of Dabble Me PRO" property="og:title">))
       expect(response.body).to include('A free year of Dabble Me PRO, a $40 value. No card needed.')
-      expect(response.body).to include('property="og:image"')
+      expect(response.body).to include('/og/dabble-og-gift-3.jpg" property="og:image"')
+    end
+
+    it 'keeps the default link preview image on the regular sign-up' do
+      get new_user_registration_path
+
+      expect(response.body).to include('/og/dabble-og-3.jpg" property="og:image"')
+      expect(response.body).not_to include('dabble-og-gift')
     end
 
     it 'sends an unknown code to the regular sign-up, saying the code is no longer valid' do

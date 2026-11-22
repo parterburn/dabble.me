@@ -97,12 +97,6 @@ struct SettingsView: View {
                 intelligenceSection
 
                 Section("App") {
-                    // Which calendars the composer's lightbulb lists the day's events from.
-                    PaneLink {
-                        CalendarSettingsView()
-                    } label: {
-                        Label("Calendars", icon: "slab-calendar")
-                    }
                     // What an entry can start from: added from the composer's lightbulb or to every new one.
                     PaneLink {
                         EntryTemplateView()
@@ -120,6 +114,12 @@ struct SettingsView: View {
                                 Label("Dictation", icon: "slab-microphone")
                             }
                         }
+                    }
+                    // Which calendars the composer's lightbulb lists the day's events from.
+                    PaneLink {
+                        CalendarSettingsView()
+                    } label: {
+                        Label("Calendars", icon: "slab-calendar")
                     }
                     PaneLink {
                         AccessibilitySettingsView()

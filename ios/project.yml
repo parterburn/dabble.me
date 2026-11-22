@@ -10,7 +10,9 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.2"
-    CURRENT_PROJECT_VERSION: "127"
+    # Local builds only. Xcode Cloud replaces this with its own build number when it archives
+    # for TestFlight, so don't bump it per change (it never reaches TestFlight).
+    CURRENT_PROJECT_VERSION: "126"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic

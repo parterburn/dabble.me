@@ -204,6 +204,7 @@ RSpec.describe Newsletter do
 
     letters.each do |letter|
       expect(letter.text).to include('export your whole journal (https://test/entries/export)', 'once a year as a backup')
+      expect(letter.html).to include('<a href="https://test/security">Add a passkey</a>')
       # No jargon in the words people read; a link's URL can say mcp.
       expect(letter.text.gsub(%r{https?://\S+}, '')).not_to match(/\bbeta\b|MCP|end-to-end/i)
       # Encryption isn't pitched as a feature; most people already assume it.
