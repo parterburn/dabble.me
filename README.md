@@ -141,7 +141,7 @@ It's a Rails 8.1 app (Ruby 4.0, PostgreSQL, Redis, Sidekiq, Puma). [`AGENTS.md`]
 * [Cloudflare](https://cloudflare.com) managed DNS + free SSL support (free for basic service)
 * [Mailgun](https://www.mailgun.com) for sending and receiving email (free for 50k emails per month)
 * [Amazon S3](https://aws.amazon.com) for photo uploads and storage (free for 1 year)
-* [Google Analytics](https://google.com/analytics) for traffic stats (free for standard analytics)
+* Cloudflare traffic analytics (the zone dashboard) for traffic stats, measured at the edge with no script or cookies
 * [Turnstile](https://www.cloudflare.com/products/turnstile/) to prevent bot signups (free)
 * [Sentry](https://www.sentry.io/) to report errors (free)
 
@@ -170,7 +170,6 @@ SMTP_DOMAIN=post.yourdomain.com
 MAILGUN_API_KEY=api-key
 TURNSTILE_SITE_KEY=6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
 TURNSTILE_SECRET_KEY=6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
-GOOGLE_ANALYTICS_4_ID=UA-12345-67
 SENTRY_DSN=https://dsn.sentry.io/1234
 ANTHROPIC_API_KEY=sk-ant-1234
 REFLECTION_MODEL=claude-opus-5-5

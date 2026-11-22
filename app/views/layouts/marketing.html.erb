@@ -21,18 +21,6 @@
     <link rel="stylesheet" href="/marketing.css?v=<%= File.mtime(Rails.root.join('public', 'marketing.css')).to_i rescue Time.now.to_i %>" media="all">
 
     <%= yield :head %>
-
-    <% if Rails.env.production? %>
-      <%= javascript_include_tag "https://www.googletagmanager.com/gtag/js?id=#{ENV['GOOGLE_ANALYTICS_4_ID']}", async: true %>
-      <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', "<%= ENV['GOOGLE_ANALYTICS_4_ID'] %>", {
-          'anonymize_ip': true
-        });
-      </script>
-    <% end %>
   </head>
 
   <body class="bg-page min-h-screen antialiased">

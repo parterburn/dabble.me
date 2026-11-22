@@ -195,7 +195,7 @@ module ApplicationHelper
     [
       {
         q: "Are my entries really private?",
-        a: "Yes, by design. There’s no social feed, no ads, no data selling, and no search-engine indexing, and your entries are never used to train AI. The iPhone app supports Face ID, hides your journal in the app switcher, and strips location data from photos before upload. On-device Apple Intelligence never sends your journal anywhere, and the optional Claude and ChatGPT connections stay off unless you approve them. <a href='#{routes.privacy_path}' class='#{link}'>Read the privacy policy</a>."
+        a: "Yes, by design. There’s no social feed, no ads, no tracking, no data selling, and no search-engine indexing, and your entries are never used to train AI. The iPhone app supports Face ID, hides your journal in the app switcher, and strips location data from photos before upload. On-device Apple Intelligence never sends your journal anywhere, and the optional Claude and ChatGPT connections stay off unless you approve them. <a href='#{routes.privacy_path}' class='#{link}'>Read the privacy policy</a>."
       },
       {
         q: "How do I write entries?",
