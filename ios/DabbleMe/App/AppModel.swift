@@ -162,7 +162,7 @@ final class AppModel {
         let session = try await NativeAuth.signIn(email: email, password: password, code: code)
         // (session.deletionCancelled: the account was set to be deleted and this kept it, as
         // the welcome screen's notice promised.)
-        await didSignIn(with: session.tokens, passkeySetupToken: session.passkeySetupToken)
+        await didSignIn(with: session.tokens, passkeySetupToken: session.passkeySetupToken, asksForPasskey: true)
     }
 
     func signUp(email: String, password: String, firstName: String?) async throws {
@@ -182,12 +182,13 @@ final class AppModel {
         await didSignIn(with: session.tokens)
     }
 
-    private func didSignIn(with fresh: OAuthTokens, passkeySetupToken: String? = nil) async {
-        // A password sign-in: the passkey prompt comes up once the journal has loaded, and needs
-        // no password for the next few minutes (the server's PasskeysController::SETUP_WINDOW).
+    /// `asksForPasskey`: a password sign-in (not sign-up), after which the passkey prompt comes
+    /// up once the journal has loaded. Adding one needs no password for the next few minutes
+    /// (the server's PasskeysController::SETUP_WINDOW), from the prompt or Settings.
+    private func didSignIn(with fresh: OAuthTokens, passkeySetupToken: String? = nil, asksForPasskey: Bool = false) async {
         passkeySetup = passkeySetupToken.map { ($0, Date().addingTimeInterval(14 * 60)) }
         passkeyPromptChecked = false
-        justSignedIn = passkeySetupToken != nil
+        justSignedIn = asksForPasskey && passkeySetupToken != nil
         await tokens.signIn(with: fresh)
         signInError = nil
         signInNotice = nil
@@ -202,7 +203,7 @@ final class AppModel {
     /// is up. Settings' Add a Passkey opens the same sheet.
     var passkeyPromptPending = false
     var showsPasskeyPrompt = false
-    /// Checked once per launch, or once per sign-in.
+    /// Checked once per password sign-in.
     private var passkeyPromptChecked = false
     private var justSignedIn = false
     private var passkeySetup: (token: String, expires: Date)?

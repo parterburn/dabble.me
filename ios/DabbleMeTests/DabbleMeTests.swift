@@ -1361,22 +1361,23 @@ struct PasskeyPromptTests {
         return UserDefaults(suiteName: name)!
     }
 
-    @Test func asksOnlyAnAccountWithoutAPasskey() {
+    @Test func asksOnlyAfterASignInToAnAccountWithoutAPasskey() {
         let store = defaults()
-        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: false, defaults: store))
+        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, defaults: store))
+        // Not on launch, and not once there's a passkey.
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: false, defaults: store))
         #expect(!PasskeyPrompt.shouldAsk(hasPasskey: true, justSignedIn: true, defaults: store))
         // An older server doesn't say: don't ask.
         #expect(!PasskeyPrompt.shouldAsk(hasPasskey: nil, justSignedIn: true, defaults: store))
     }
 
-    @Test func notNowPutsItOffButASignInStillAsks() {
+    @Test func notNowPutsItOffForThirtyDays() {
         let store = defaults()
         let now = Date()
         PasskeyPrompt.dismiss(now: now, defaults: store)
-        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: false, now: now.addingTimeInterval(86_400), defaults: store))
-        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: now.addingTimeInterval(86_400), defaults: store))
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: now.addingTimeInterval(86_400), defaults: store))
         let later = now.addingTimeInterval(TimeInterval(PasskeyPrompt.snoozeDays + 1) * 86_400)
-        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: false, now: later, defaults: store))
+        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: later, defaults: store))
     }
 
     @Test func stopsAfterTheLastNotNow() {

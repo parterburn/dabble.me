@@ -1,9 +1,9 @@
 import Foundation
 
-/// When the app asks someone to add a passkey: right after a password sign-in or sign-up, and
-/// otherwise on opening the app, to an account without one. "Not Now" puts it off for
-/// `snoozeDays`; after `maxAsks` of those it stops for good (Settings still has Add a Passkey).
-/// Once the account has a passkey it never asks. The web asks the same way (`PasskeyNudge`).
+/// When the app asks someone to add a passkey: only right after a password sign-in (not
+/// sign-up, not on launch), to an account without one. "Not Now" puts it off for `snoozeDays`;
+/// after `maxAsks` of those it stops for good. Settings → Add a Passkey stays until the account
+/// has one. The web asks with a banner on Today (`PasskeyNudge`).
 enum PasskeyPrompt {
     static let snoozeDays = 30
     static let maxAsks = 3
@@ -14,12 +14,10 @@ enum PasskeyPrompt {
     static let dismissalsKey = "passkeyPrompt.dismissals"
     static let snoozedUntilKey = "passkeyPrompt.snoozedUntil"
 
-    /// Whether to ask now. A fresh sign-in asks even while put off (the password was just typed,
-    /// so adding one is a single tap). It still stops after `maxAsks`.
+    /// Whether to ask now: after a password sign-in, unless put off or asked `maxAsks` times.
     static func shouldAsk(hasPasskey: Bool?, justSignedIn: Bool, now: Date = Date(), defaults: UserDefaults = .standard) -> Bool {
-        guard hasPasskey == false, !isAutomated else { return false }
+        guard justSignedIn, hasPasskey == false, !isAutomated else { return false }
         if defaults.integer(forKey: dismissalsKey) >= maxAsks { return false }
-        if justSignedIn { return true }
         let until = defaults.double(forKey: snoozedUntilKey)
         return until == 0 || now.timeIntervalSince1970 >= until
     }

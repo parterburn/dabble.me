@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// "Add a passkey": one tap to the system's passkey sheet, which saves a passkey for dabble.me
-/// (iCloud Keychain, or the password manager picked). Shown after a password sign-in or sign-up,
-/// on opening the app now and then (`PasskeyPrompt`), and from Settings → Add a Passkey.
+/// (iCloud Keychain, or the password manager picked). Shown after a password sign-in
+/// (`PasskeyPrompt`), and from Settings → Add a Passkey.
 /// Within a few minutes of a password sign-in it needs nothing more; otherwise it asks for the
 /// password first, as the web does.
 struct PasskeyPromptSheet: View {
