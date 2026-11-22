@@ -1,9 +1,26 @@
-This build colors the Export Entries icon in Settings olive, like the other row icons.
+Moments from your iPhone now checks the day. If you pick a moment from another day than the entry's, it asks which day it goes on. And with no template, holding the lightbulb opens Moments.
 
-SETTINGS
-- Open Settings. In the account section, the Export Entries icon is olive, matching Manage Hashtags above it. The words stay black (white in dark mode).
-- Tap Export Entries. The Cancel/Export alert still comes first, and Export still emails the link.
+Use an iPhone. Moments isn't on iPad.
 
-CHECK
-- In dark mode, the icon is still olive and the words are white.
-- On the Delete Account page, Email Me an Export looks as it did.
+A MOMENT FROM ANOTHER DAY
+- Start a new entry for today, tap the lightbulb, then Moments from your iPhone.
+- Pick a moment from an earlier day (say last Tuesday).
+- It should ask "This moment is from Tue, Nov 18." with Add to Nov 18, Add Here and Cancel.
+- Add to Nov 18: the entry's date at the top changes to Nov 18 and the moment goes in.
+- Add Here: the date stays and the moment goes in.
+- Cancel: nothing is added.
+
+A MOMENT FROM THE SAME DAY
+- Pick a moment from the entry's own day. It should go straight in, with no question.
+
+A MOMENT OVER SEVERAL DAYS
+- A trip that ran from Nov 18 to Nov 20 shouldn't ask anything when the entry is on any of those days. On another day it offers Nov 18.
+
+EDITING AN OLDER ENTRY
+- Open last week's entry and pick a moment from today. Add to Nov 22 should move that entry to today, the same as changing its date by hand. If today already has an entry, Save asks before merging the two, as it always has.
+
+A moment from a year other than this one shows its year too (Nov 18, 2025).
+
+HOLD THE LIGHTBULB
+- With no Entry Template (Settings), touch and hold the lightbulb: Apple's moments sheet should open straight away.
+- With a template, holding it still adds the template, as before.

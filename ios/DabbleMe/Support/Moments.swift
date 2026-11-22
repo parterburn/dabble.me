@@ -26,6 +26,8 @@ struct Moment: Equatable, Sendable {
     var photos: [PreparedPhoto] = []
     /// How many photos the moment had, kept or not: a free account is told photos are PRO.
     var photoCount = 0
+    /// When it happened (a trip can run over several days). Some moments have none.
+    var when: DateInterval?
 
     struct Place: Equatable, Sendable {
         var place: String?
@@ -50,6 +52,17 @@ struct Moment: Equatable, Sendable {
         #else
         return false
         #endif
+    }
+
+    /// The day the moment is from, when it isn't `entryDay`'s: the composer then asks which
+    /// day it goes on. A moment over several days is any of them's (its first day is offered).
+    func day(otherThan entryDay: Date, calendar: Calendar = .current) -> Date? {
+        guard let when else { return nil }
+        let first = calendar.startOfDay(for: when.start)
+        // (The end is where the moment stops: one ending at midnight is the day before's.)
+        let last = calendar.startOfDay(for: when.duration > 0 ? when.end.addingTimeInterval(-1) : when.start)
+        let entry = calendar.startOfDay(for: entryDay)
+        return entry >= first && entry <= last ? nil : first
     }
 
     /// The moment's title, unless it says nothing the lines below it don't. A reflection's title
