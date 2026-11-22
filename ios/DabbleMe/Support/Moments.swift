@@ -52,8 +52,10 @@ struct Moment: Equatable, Sendable {
         #endif
     }
 
-    /// The moment's title, unless it says nothing the lines below it don't.
+    /// The moment's title, unless it says nothing the lines below it don't. A reflection's title
+    /// is only its kind ("Creativity Reflection"): its question goes in on its own.
     var heading: String? {
+        guard reflections.isEmpty else { return nil }
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         return title.isEmpty ? nil : title
     }

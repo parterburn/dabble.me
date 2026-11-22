@@ -28,6 +28,8 @@ struct ComposeView: View {
     @State private var askRowHeight: CGFloat = 0
     /// The row's heading, which stays put over what scrolls.
     @State private var askHeadingHeight: CGFloat = 30
+    /// "Moments from your iPhone", the row's foot, which stays put under what scrolls too.
+    @State private var momentsFootHeight: CGFloat = 0
     /// The most the row ever takes, whatever's in it (a long prompt with no events under it).
     private static let askRowMaxHeight: CGFloat = 212
     /// On a busy day: the prompt, two events and the top half of a third, which says there's more
@@ -931,6 +933,15 @@ struct ComposeView: View {
                 .accessibilityAddTraits(.isHeader)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { askHeadingHeight = $0 }
             askRowContent
+            // Apart from the prompt and the day's events, so it's seen: a line over it, and set
+            // like the heading. (No line when there's nothing over it to set it apart from.)
+            if Moment.isAvailable {
+                VStack(spacing: 0) {
+                    if askRowHeight > 1 { Divider().padding(.horizontal) }
+                    momentsLine
+                }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { momentsFootHeight = $0 }
+            }
         }
     }
 
@@ -938,7 +949,6 @@ struct ComposeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if canAsk { askLine } else if offersTemplate { templateLine }
-                if Moment.isAvailable { momentsLine }
                 CalendarRow(day: date, hidesWhenEmpty: canAsk || offersTemplate || Moment.isAvailable, space: Self.askRowSpace, changed: { hasEvents in
                     hasAgenda = hasEvents
                     if !hasEvents { firstEvent = nil }
@@ -962,7 +972,7 @@ struct ComposeView: View {
     /// prompt growing makes the row taller, so the events stay where they are), and never past
     /// `askRowMaxHeight`.
     private var askRowScrollHeight: CGFloat {
-        var most = max(Self.askRowMaxHeight - askHeadingHeight, 44)
+        var most = max(Self.askRowMaxHeight - askHeadingHeight - (Moment.isAvailable ? momentsFootHeight : 0), 44)
         if let firstEvent { most = min(most, firstEvent.minY + firstEvent.height * Self.visibleEvents) }
         return min(max(askRowHeight, 1), most)
     }
@@ -983,18 +993,17 @@ struct ComposeView: View {
         } label: {
             HStack(spacing: 8) {
                 Text("Moments from your iPhone")
+                    .textCase(.uppercase)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
             }
-            .font(.subheadline)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.tint)
+            .padding(.horizontal)
+            .padding(.vertical, 12)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .padding(.horizontal)
-        .padding(.top, 2)
-        .padding(.bottom, 10)
         .accessibilityHint("Opens your iPhone's suggestions: photos, places, workouts and music to write about")
     }
 
