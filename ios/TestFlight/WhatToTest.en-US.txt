@@ -1,9 +1,7 @@
-Settings cleanup: your account details now live on one Account page.
+Dictation: Custom Vocabulary now shows your hashtags.
 
-- Settings starts with an Account row showing your email. Tap it: the Account page has Name (tap to change it), your Email, Add a Passkey (only while the account has none), Account Security (opens dabble.me), and Export Entries.
-- Add a Passkey has an olive icon like the other rows, with black words.
-- Add a Passkey from the Account page: the sheet still ends on "Passkey added", and the row goes away once you tap Done.
-- Export Entries from the Account page still asks Cancel/Export first, then emails the link.
-- Change your name from Account → Name and go Back: it saves, and the Account row's page shows the new name.
-- The "On dabble.me" heading is gone. The Claude/ChatGPT Connector row now sits right above Help & Support.
-- Plan and Manage Hashtags stay on the main Settings page, under the Account row.
+- Settings → Dictation: under Custom Vocabulary, a new "From Your Hashtags" list shows the hashtags dictation listens for, as #Tag in gray. They can't be edited or deleted there.
+- Your own words stay at the top, in Custom Vocabulary, newest first, and still swipe to delete.
+- Add a word that's also one of your hashtags (say "Leo" when you use #Leo): it moves up into Custom Vocabulary and leaves the hashtag list.
+- With no connection, the hashtag list doesn't show. Everything else on the page works.
+- Dictate an entry that names a Custom Vocabulary word and a hashtag: both come out spelled your way, same as before. Your own words are always sent first, so a long hashtag list never crowds them out.

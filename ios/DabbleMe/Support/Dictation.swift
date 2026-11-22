@@ -189,6 +189,20 @@ final class Dictation {
         return hints
     }
 
+    /// The words to expect, in the order they're kept under `maxHints`: the writer's Custom
+    /// Vocabulary first, so no number of hashtags can push one out, then the recent hashtags,
+    /// then the rest (most used first).
+    nonisolated static func expected(words: [String], recentTags: [String], allTags: [String]) -> [String] {
+        hints(from: words + recentTags + allTags)
+    }
+
+    /// The hashtags that make it into `expected`, without the writer's own words: what
+    /// Settings → Dictation lists under Custom Vocabulary.
+    nonisolated static func hashtagTerms(words: [String], recentTags: [String], allTags: [String]) -> [String] {
+        let own = Set(hints(from: words).map { $0.lowercased() })
+        return expected(words: words, recentTags: recentTags, allTags: allTags).filter { !own.contains($0.lowercased()) }
+    }
+
     /// What dictation holds to the writer's spelling (`VocabularySpelling`): every Custom
     /// Vocabulary word, and the hashtags that read as names ("Leo", "NYC"): one word with a
     /// capital that the dictionary doesn't know in lowercase. Not "#Work", which would capitalize

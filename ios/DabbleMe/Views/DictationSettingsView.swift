@@ -2,8 +2,10 @@ import Speech
 import SwiftUI
 
 /// Settings → Dictation: the composer's microphone on or off, how what's said is written down
-/// (Polished or Verbatim), and Custom Vocabulary: names and terms spelled the writer's way, beside their hashtags.
+/// (Polished or Verbatim), and Custom Vocabulary: names and terms spelled the writer's way, then
+/// the hashtags that go with them (listed, not editable here).
 struct DictationSettingsView: View {
+    @Environment(AppModel.self) private var model
     @AppStorage(DictationSettings.enabledKey) private var isEnabled = true
     @AppStorage(DictationSettings.styleKey) private var style = DictationStyle.polished
     @AppStorage(DictationSettings.wordsKey) private var storedWords = ""
@@ -13,8 +15,15 @@ struct DictationSettingsView: View {
     @State private var languages: [(id: String, name: String)] = []
     @State private var newWord = ""
     @FocusState private var addingWord: Bool
+    /// The writer's hashtags, as the composer fetches them, for the list under Custom Vocabulary.
+    @State private var recentTags: [String] = []
+    @State private var allTags: [String] = []
 
     private var words: [String] { DictationSettings.words(from: storedWords) }
+    /// The hashtags dictation expects beside `words`, as it orders and caps them.
+    private var hashtagTerms: [String] {
+        Dictation.hashtagTerms(words: words, recentTags: recentTags, allTags: allTags)
+    }
     private var cleansUp: Bool { DictationSettings.cleansUp(language.isEmpty ? .current : Locale(identifier: language)) }
 
     var body: some View {
@@ -106,7 +115,20 @@ struct DictationSettingsView: View {
                 } header: {
                     Text("Custom Vocabulary")
                 } footer: {
-                    Text("Spell names and terms your way. Your hashtags are included.")
+                    Text("Spell names and terms your way.")
+                }
+
+                if !hashtagTerms.isEmpty {
+                    Section {
+                        ForEach(hashtagTerms, id: \.self) { tag in
+                            Text("#" + tag)
+                                .foregroundStyle(.secondary)
+                        }
+                    } header: {
+                        Text("From Your Hashtags")
+                    } footer: {
+                        Text("Added automatically. Your words above come first.")
+                    }
                 }
             }
         }
@@ -115,6 +137,13 @@ struct DictationSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: style)
         .task { await loadLanguages() }
+        .task { await loadHashtags() }
+    }
+
+    private func loadHashtags() async {
+        // Offline, the list just isn't shown; dictation fetches them again when it starts.
+        recentTags = (try? await model.recentHashtags()) ?? []
+        allTags = ((try? await model.allHashtags()) ?? []).map(\.tag)
     }
 
     private func loadLanguages() async {

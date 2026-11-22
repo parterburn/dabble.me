@@ -734,7 +734,8 @@ struct ComposeView: View {
                 if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
                 if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
                 // Settings → Dictation's own words first, then the hashtags.
-                dictation.start(style: DictationSettings.style, hints: { DictationSettings.words + recentTags + allTags },
+                dictation.start(style: DictationSettings.style,
+                                hints: { Dictation.expected(words: DictationSettings.words, recentTags: recentTags, allTags: allTags) },
                                 canListen: { editor.isFocused }) { editor.insertDictated($0) }
             }
         } label: {
