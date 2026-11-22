@@ -12,6 +12,9 @@ module SentrySensitiveScrubber
     password_confirmation
     otp_attempt
     otp_code
+    setup_token
+    passkey_setup_token
+    challenge_token
     signed_transaction
     signedpayload
     signedtransactioninfo

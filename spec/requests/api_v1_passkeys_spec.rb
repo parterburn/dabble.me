@@ -64,7 +64,7 @@ RSpec.describe "iOS app: adding a passkey (/api/v1/passkeys)", type: :request do
   end
 
   it "adds the passkey with the sign-in's setup token, emails about it, and the passkey signs in" do
-    setup = Api::V1::PasskeysController.setup_token_for(user)
+    setup = Api::V1::PasskeysController.setup_token_for(user, token)
 
     expect { add(start, setup_token: setup, nickname: "iPhone") }
       .to change { user.webauthn_credentials.count }.by(1)
@@ -95,7 +95,7 @@ RSpec.describe "iOS app: adding a passkey (/api/v1/passkeys)", type: :request do
   end
 
   it "refuses an expired setup token" do
-    setup = Api::V1::PasskeysController.setup_token_for(user)
+    setup = Api::V1::PasskeysController.setup_token_for(user, token)
     travel Api::V1::PasskeysController::SETUP_WINDOW + 1.minute do
       # (A fresh challenge, so only the setup token is stale.)
       expect { add(start, setup_token: setup) }.not_to change(WebauthnCredential, :count)
@@ -105,8 +105,14 @@ RSpec.describe "iOS app: adding a passkey (/api/v1/passkeys)", type: :request do
 
   it "refuses another account's setup token" do
     other = create(:user)
-    expect { add(start, setup_token: Api::V1::PasskeysController.setup_token_for(other)) }
+    expect { add(start, setup_token: Api::V1::PasskeysController.setup_token_for(other, MobileApp.issue_token!(other))) }
       .not_to change(WebauthnCredential, :count)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "refuses a setup token handed out with another access token" do
+    setup = Api::V1::PasskeysController.setup_token_for(user, MobileApp.issue_token!(user))
+    expect { add(start, setup_token: setup) }.not_to change(WebauthnCredential, :count)
     expect(response).to have_http_status(:forbidden)
   end
 

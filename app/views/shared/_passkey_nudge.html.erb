@@ -16,9 +16,9 @@
       nudge.hidden = false;
       document.getElementById("passkey-nudge-dismiss").addEventListener("click", function (e) {
         e.preventDefault();
-        var asks = <%= PasskeyNudge.dismissals(cookies) %> + 1;
+        var asks = <%= PasskeyNudge.dismissals(current_user, cookies) %> + 1;
         var until = Math.floor(Date.now() / 1000) + <%= PasskeyNudge::SNOOZE_DAYS %> * 86400;
-        document.cookie = "<%= PasskeyNudge::COOKIE %>=" + asks + ":" + until +
+        document.cookie = "<%= PasskeyNudge.cookie_name(current_user) %>=" + asks + ":" + until +
           "; max-age=" + 5 * 365 * 86400 + "; path=/; SameSite=Lax<%= '; Secure' if request.ssl? %>";
         nudge.hidden = true;
       });

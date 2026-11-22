@@ -64,9 +64,10 @@ module Api
         failed
       end
 
-      # A short-lived proof that this account just signed in with its password in the app.
-      def self.setup_token_for(user)
-        setup_verifier.generate(user.id, expires_in: SETUP_WINDOW)
+      # A short-lived proof that this account just signed in with its password in the app, good
+      # only alongside the access token that sign-in issued.
+      def self.setup_token_for(user, access_token)
+        setup_verifier.generate([user.id, access_token.id], expires_in: SETUP_WINDOW)
       end
 
       def self.challenge_verifier
@@ -81,7 +82,7 @@ module Api
 
       def setup_token_valid?
         token = params[:setup_token].to_s
-        token.present? && self.class.setup_verifier.verified(token) == current_user.id
+        token.present? && self.class.setup_verifier.verified(token) == [current_user.id, doorkeeper_token.id]
       end
 
       def spend_challenge(challenge)

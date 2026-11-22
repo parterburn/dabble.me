@@ -25,17 +25,23 @@ RSpec.describe "Asking for a passkey on the web (PasskeyNudge)", type: :request 
   end
 
   it "stays quiet while put off, and asks again after" do
-    cookies[PasskeyNudge::COOKIE] = "1:#{1.day.from_now.to_i}"
+    cookies[PasskeyNudge.cookie_name(user)] = "1:#{1.day.from_now.to_i}"
     get today_path
     expect(response.body).not_to include('id="passkey-nudge"')
 
-    cookies[PasskeyNudge::COOKIE] = "1:#{1.day.ago.to_i}"
+    cookies[PasskeyNudge.cookie_name(user)] = "1:#{1.day.ago.to_i}"
+    get today_path
+    expect(response.body).to include('id="passkey-nudge"')
+  end
+
+  it "keeps one account's Not now to that account" do
+    cookies[PasskeyNudge.cookie_name(create(:user))] = "1:#{1.day.from_now.to_i}"
     get today_path
     expect(response.body).to include('id="passkey-nudge"')
   end
 
   it "stops after the last Not now" do
-    cookies[PasskeyNudge::COOKIE] = "#{PasskeyNudge::MAX_ASKS}:#{1.day.ago.to_i}"
+    cookies[PasskeyNudge.cookie_name(user)] = "#{PasskeyNudge::MAX_ASKS}:#{1.day.ago.to_i}"
     get today_path
     expect(response.body).not_to include('id="passkey-nudge"')
   end
