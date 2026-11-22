@@ -22,6 +22,12 @@ class EmailCodesController < ApplicationController
   def create
     email = EmailSignIn.normalize(params.dig(:user, :email).presence || params[:email])
     intent = params[:intent] == 'sign_up' ? 'sign_up' : 'sign_in'
+    # The web form carries Turnstile (devise/shared/_email_code_form); the app's API doesn't.
+    unless valid_captcha?
+      redirect_to back_to_form(intent, email, params[:gift_code]),
+                  alert: "Couldn't verify that you're a human. Please complete the captcha and try again."
+      return
+    end
     status = EmailSignIn.send_code(email)
 
     if status == :invalid_email

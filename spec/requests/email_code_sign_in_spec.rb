@@ -339,6 +339,14 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       expect(response.body).to include("Use password instead")
     end
 
+    it "sends no code when the captcha fails" do
+      allow_any_instance_of(EmailCodesController).to receive(:valid_captcha?).and_return(false)
+      send_web_code(user.email)
+      expect(response).to redirect_to(new_user_session_path(email: user.email))
+      expect(flash[:alert]).to include("captcha")
+      expect(code_emails).to be_empty
+    end
+
     it "signs an existing account in with the code" do
       send_web_code(user.email)
       post verify_email_code_path, params: { code: last_code }
