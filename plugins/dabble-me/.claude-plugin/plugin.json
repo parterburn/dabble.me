@@ -5,6 +5,7 @@
   "author": {
     "name": "Dabble Me"
   },
+  "license": "AGPL-3.0-only",
   "homepage": "https://dabble.me",
   "repository": "https://github.com/parterburn/dabble.me",
   "keywords": [
@@ -17,6 +18,7 @@
     "writing",
     "self-reflection",
     "personal",
+    "private",
     "productivity"
   ],
   "icon": "./assets/logo.png",
