@@ -1016,6 +1016,8 @@ struct EntryTemplateTests {
         let win = preview.runs.first { String(preview[$0.range].characters) == "One Win" }
         #expect(win?.inlinePresentationIntent == .stronglyEmphasized)
         #expect(EntryTemplate.preview([DocumentRun("\n• \n\n")]).characters.isEmpty)
+        // Figures of the writer's own are words, not a list's marker.
+        #expect(String(EntryTemplate.preview([DocumentRun("Mood 1-10\n2025\n12. \n")]).characters) == "Mood 1-10\n2025")
     }
 
     /// A draft is kept as typed too: a link in it keeps where it goes.

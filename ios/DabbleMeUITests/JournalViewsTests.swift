@@ -408,6 +408,7 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Start Over"].waitForExistence(timeout: 2) { app.buttons["Start Over"].tap() }
         XCTAssertEqual(editor.value as? String, "What went well today?")
         app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
         app.terminate()
 
         let off = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])

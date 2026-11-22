@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI // (AttributedString's underline, in the preview)
 
 /// The writer's template (Settings → Entry Template): headings or questions an entry can start
 /// from. Kept on this device and on the account (`AccountSettings`), formatted as an entry is. It
@@ -63,10 +64,7 @@ enum EntryTemplate {
             }
         }
         // A line with no words of its own (blank, or a bare "•" or "1.") is room to write.
-        let markers = CharacterSet.whitespaces.union(CharacterSet(charactersIn: "•-*.)0123456789"))
-        let kept = lines.filter { line in
-            !line.map(\.text).joined().trimmingCharacters(in: markers).isEmpty
-        }
+        let kept = lines.filter { !isRoomToWrite($0.map(\.text).joined()) }
         var preview = AttributedString()
         for (index, line) in kept.enumerated() {
             if index > 0 { preview.append(AttributedString("\n")) }
@@ -81,6 +79,16 @@ enum EntryTemplate {
             }
         }
         return preview
+    }
+
+    /// A line with nothing of its own: blank, or only a list's marker ("•", "-", "*", "1.", "2)").
+    /// A line of other figures or symbols ("1-10", "2025") is words.
+    private static func isRoomToWrite(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty || ["•", "-", "*"].contains(trimmed) { return true }
+        guard let last = trimmed.last, last == "." || last == ")" else { return false }
+        let number = trimmed.dropLast()
+        return !number.isEmpty && number.allSatisfy(\.isASCII) && number.allSatisfy(\.isNumber)
     }
 
     /// Signing out: the next account doesn't inherit it (this one's comes back from the account).
