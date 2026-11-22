@@ -1,23 +1,9 @@
-Moments from your iPhone (Apple's Journaling Suggestions) is easier to find, a reflection no longer adds its category to the entry, and Calendars moved above Theme in Settings.
+This build colors the Export Entries icon in Settings olive, like the other row icons.
 
-Use an iPhone. Moments isn't on iPad.
+SETTINGS
+- Open Settings. In the account section, the Export Entries icon is olive, matching Manage Hashtags above it. The words stay black (white in dark mode).
+- Tap Export Entries. The Cancel/Export alert still comes first, and Export still emails the link.
 
-FINDING IT
-- Start a new entry and tap the lightbulb.
-- Under the prompt and the day's events there should be a line, then MOMENTS FROM YOUR IPHONE in small olive capitals with an arrow, like the WRITING IDEAS heading.
-- It should stay at the bottom of the panel while a busy calendar day scrolls above it.
-- Edit an entry with no prompt, no template and nothing on the calendar: Moments should show without a line over it.
-- Tap it: Apple's sheet opens.
-
-ADDING A REFLECTION
-- In Apple's sheet, pick a reflection (for example a Creativity Reflection).
-- Its question should go in bold, the way a prompt does, with no "Creativity Reflection" line above it.
-
-ADDING ANY OTHER MOMENT
-- Pick a place, workout, photo or song moment. Its title should still go in bold, with a line for each thing under it, as before.
-
-If Apple's sheet is empty, turn on Settings, Privacy & Security, Journaling Suggestions and its categories.
-
-SETTINGS ORDER
-- Open Settings. The App section should read: Entry Template, Dictation, Calendars, Theme, Shake for Random Entry, Require Face ID (or Touch ID or Passcode).
-- Tap Calendars: it should still open the list of your phone's calendars, each with a switch.
+CHECK
+- In dark mode, the icon is still olive and the words are white.
+- On the Delete Account page, Email Me an Export looks as it did.
