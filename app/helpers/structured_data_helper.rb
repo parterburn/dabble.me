@@ -103,7 +103,7 @@ module StructuredDataHelper
       description: content_for(:description),
       url: url,
       mainEntityOfPage: { "@type": "WebPage", "@id": url },
-      image: "#{base_url}/og/dabble-og.jpg",
+      image: "#{base_url}/og/dabble-og-2.jpg",
       datePublished: published,
       dateModified: modified,
       inLanguage: "en",
