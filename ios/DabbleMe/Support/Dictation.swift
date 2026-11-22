@@ -119,11 +119,19 @@ final class Dictation {
                 } else {
                     throw Problem.unavailable
                 }
-                var cleaned = heard
+                // The writer's own spellings ("dabble me" → "Dabble Me"), in either style.
+                let expected = Self.hints(from: hints())
+                let spellings = Self.spellings(from: expected, vocabulary: DictationSettings.words)
+                var cleaned = VocabularySpelling.apply(spellings, to: heard)
                 if style == .polished, cleansUp {
-                    cleaned = await CleanupTagger.shared.clean(heard, within: Self.cleanupBudget, protectedTerms: Self.hints(from: hints()))
+                    cleaned = await CleanupTagger.shared.clean(cleaned, within: Self.cleanupBudget, protectedTerms: expected)
                     // Settings → Dictation → Fix Misheard Words (Apple Intelligence), when it's on.
                     cleaned = await AppleIntelligenceCleanup.clean(cleaned)
+                    // "comma", "exclamation point", "hashtag leo": the marks, then the writer's own
+                    // tags and spellings again (a capital after a new "." can undo "iPhone").
+                    cleaned = SpokenPunctuation.format(cleaned, language: "en")
+                    cleaned = Self.knownHashtags(in: cleaned, tags: expected)
+                    cleaned = VocabularySpelling.apply(spellings, to: cleaned)
                 }
                 try Task.checkCancellation()
                 insert(cleaned)
@@ -179,6 +187,67 @@ final class Dictation {
             if hints.count == maxHints { break }
         }
         return hints
+    }
+
+    /// What dictation holds to the writer's spelling (`VocabularySpelling`): every Custom
+    /// Vocabulary word, and the hashtags that read as names ("Leo", "NYC"): one word with a
+    /// capital that the dictionary doesn't know in lowercase. Not "#Work", which would capitalize
+    /// every "work", and not a joined-up "#LeoBirthday", which would swallow "Leo's birthday".
+    static func spellings(from expected: [String], vocabulary: [String]) -> [String] {
+        let own = Set(vocabulary.map { $0.lowercased() })
+        return expected.filter { own.contains($0.lowercased()) || isNameLike($0) }
+    }
+
+    private static func isNameLike(_ tag: String) -> Bool {
+        guard tag.contains(where: \.isUppercase), tag.allSatisfy(\.isLetter),
+              !VocabularySpelling.looksCompound(tag), let language = checkerLanguage else { return false }
+        return !knowsInLowercase(tag, language: language)
+    }
+
+    /// A hashtag said aloud (`SpokenPunctuation`: "hashtag leo birthday" → "#leo birthday") takes
+    /// the spelling of one the writer already uses, across up to four words, the longest first:
+    /// "#LeoBirthday". One they don't use stays as said.
+    nonisolated static func knownHashtags(in text: String, tags: [String]) -> String {
+        let key = { (word: String) in word.lowercased().filter { $0.isLetter || $0.isNumber } }
+        var known: [String: String] = [:]
+        for tag in tags {
+            let tagKey = key(tag)
+            if !tagKey.isEmpty, known[tagKey] == nil { known[tagKey] = tag }
+        }
+        guard !known.isEmpty, text.contains("#") else { return text }
+        let words = text.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
+        var out: [String] = []
+        var index = 0
+        while index < words.count {
+            let word = words[index]
+            guard word.hasPrefix("#"), word.count > 1 else {
+                out.append(word)
+                index += 1
+                continue
+            }
+            var matched = false
+            for count in stride(from: min(4, words.count - index), through: 1, by: -1) {
+                var cores = Array(words[index..<(index + count)])
+                cores[0].removeFirst()
+                // Only the last word may carry punctuation after it ("#leo birthday.").
+                let last = cores[count - 1]
+                let core = String(last.prefix { $0.isLetter || $0.isNumber })
+                let trailing = String(last.dropFirst(core.count))
+                cores[count - 1] = core
+                guard !trailing.contains(where: { $0.isLetter || $0.isNumber }),
+                      cores.allSatisfy({ !$0.isEmpty && $0.allSatisfy { $0.isLetter || $0.isNumber } }),
+                      let tag = known[key(cores.joined())] else { continue }
+                out.append("#" + tag + trailing)
+                index += count
+                matched = true
+                break
+            }
+            if !matched {
+                out.append(word)
+                index += 1
+            }
+        }
+        return out.joined(separator: " ")
     }
 
     // MARK: Recording, then transcribing
@@ -362,7 +431,12 @@ final class Dictation {
         guard !letters.dropFirst().contains(where: \.isUppercase) else { return false }
         // No dictionary for the language: left as said.
         guard let language = checkerLanguage else { return false }
-        let lower = letters.lowercased()
+        return knowsInLowercase(letters, language: language)
+    }
+
+    /// The dictionary spells `word` in lowercase too ("work", not "leo").
+    private static func knowsInLowercase(_ word: String, language: String) -> Bool {
+        let lower = word.lowercased()
         let range = NSRange(location: 0, length: (lower as NSString).length)
         return UITextChecker().rangeOfMisspelledWord(in: lower, range: range, startingAt: 0, wrap: false, language: language).location == NSNotFound
     }
