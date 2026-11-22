@@ -193,10 +193,24 @@ final class AppModel {
 
     // MARK: - Name
 
+    /// Set when a name save fails; Settings shows it, so a save made on going Back isn't lost silently.
+    var nameSaveError: String?
+    /// The last name save queued, so saves reach the server in the order they were made.
+    private var nameSave: Task<Void, Never>?
+
     /// Saves your name to the account (as the web settings do); the server hands back the account.
-    func saveName(_ update: NameUpdate) async throws {
-        let me: Me = try await api.patch("api/v1/me", update)
-        self.me = me
+    /// Saves run one at a time, so a quick Done then Back can't land out of order.
+    func saveName(_ update: NameUpdate) {
+        let previous = nameSave
+        nameSave = Task {
+            await previous?.value
+            do {
+                let me: Me = try await api.patch("api/v1/me", update)
+                self.me = me
+            } catch {
+                nameSaveError = error.localizedDescription
+            }
+        }
     }
 
     // MARK: - Export

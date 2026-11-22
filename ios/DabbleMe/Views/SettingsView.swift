@@ -195,6 +195,16 @@ struct SettingsView: View {
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
         }
+        // A name save that failed, from the Name page (on Done or on going Back). On the stack,
+        // so it shows over the Name page too.
+        .alert("Couldn't save your name", isPresented: Binding(
+            get: { model.nameSaveError != nil },
+            set: { if !$0 { model.nameSaveError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.nameSaveError ?? "")
+        }
     }
 }
 

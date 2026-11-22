@@ -10,7 +10,10 @@ struct NameSettingsView: View {
     /// Set when the page opens, so the last name stays while it's being cleared.
     @State private var showsLastName = false
     @State private var loaded = false
-    @State private var error: String?
+    /// The names as last saved (or as the page opened with), so each save sends only what's new
+    /// since the one before, even while that one is still on its way.
+    @State private var savedFirst = ""
+    @State private var savedLast = ""
     @FocusState private var focused: Field?
 
     private enum Field { case first, last }
@@ -47,32 +50,26 @@ struct NameSettingsView: View {
             firstName = me.firstName ?? ""
             lastName = me.lastName ?? ""
             showsLastName = me.lastName != nil
+            savedFirst = firstName
+            savedLast = lastName
             // Straight to typing when there's no name yet.
             if me.firstName == nil { focused = .first }
         }
         .onDisappear(perform: save)
-        .alert("Couldn't save your name", isPresented: .present($error)) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(error ?? "")
-        }
     }
 
     /// Sends only what changed; nothing when nothing did.
     private func save() {
-        guard loaded, let me = model.me else { return }
+        guard loaded else { return }
         let first = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         let last = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
         var update = NameUpdate()
-        if first != (me.firstName ?? "") { update.firstName = first }
-        if showsLastName, last != (me.lastName ?? "") { update.lastName = last }
+        if first != savedFirst { update.firstName = first }
+        if showsLastName, last != savedLast { update.lastName = last }
         guard update.firstName != nil || update.lastName != nil else { return }
-        Task {
-            do {
-                try await model.saveName(update)
-            } catch {
-                self.error = error.localizedDescription
-            }
-        }
+        savedFirst = first
+        savedLast = last
+        // Queued in order; a failure shows on Settings (this page may be gone by then).
+        model.saveName(update)
     }
 }
