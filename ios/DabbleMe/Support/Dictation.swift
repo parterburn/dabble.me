@@ -212,6 +212,8 @@ final class Dictation {
         var known: [String: String] = [:]
         for tag in tags {
             let tagKey = key(tag)
+            // Only a real tag: a Custom Vocabulary term with a space ("Dabble Me") isn't one.
+            guard tag.allSatisfy({ $0.isLetter || $0.isNumber }) else { continue }
             if !tagKey.isEmpty, known[tagKey] == nil { known[tagKey] = tag }
         }
         guard !known.isEmpty, text.contains("#") else { return text }

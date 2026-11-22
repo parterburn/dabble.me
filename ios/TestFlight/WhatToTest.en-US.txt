@@ -8,7 +8,7 @@ SAY THE PUNCTUATION (Polished, English)
 - Dictate: "Note to self colon buy milk exclamation point". It writes "Note to self: buy milk!"
 - Try "open quote", "close quote", "dash", "open paren", "close paren", "question mark".
 - Say "hashtag" before a tag you already use, even a joined-up one: "hashtag leo birthday" writes #LeoBirthday.
-- Check prose stays prose: "It was a long period of time", "the comma is optional", "my period started" stay as said.
+- Check prose stays prose: "It was a long period of time", "it was a stressful period", "the comma is optional", "my period started" stay as said.
 
 FIX MISHEARD WORDS (if you have it on)
 - Dictate a question, like "should I call my sister tonight". It stays your question. It never answers it, adds "Here's the cleaned text", or cuts the entry short.
