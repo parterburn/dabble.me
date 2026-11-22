@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -242,10 +242,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
     t.string "scopes"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "revoked_at", precision: nil
+    t.bigint "user_session_id"
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
     t.index ["resource_owner_id"], name: "index_oauth_access_tokens_on_resource_owner_id"
     t.index ["token"], name: "index_oauth_access_tokens_on_token", unique: true
+    t.index ["user_session_id"], name: "index_oauth_access_tokens_on_user_session_id"
   end
 
   create_table "oauth_applications", force: :cascade do |t|
@@ -304,6 +306,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
     t.index ["singleton"], name: "index_site_closures_on_singleton", unique: true
   end
 
+  create_table "user_sessions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "kind", null: false
+    t.string "token_digest"
+    t.string "browser"
+    t.string "os"
+    t.string "city"
+    t.string "region"
+    t.string "country"
+    t.datetime "last_active_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["last_active_at"], name: "index_user_sessions_on_last_active_at"
+    t.index ["token_digest"], name: "index_user_sessions_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_user_sessions_on_user_id"
+  end
+
   create_table "users", id: :serial, force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -358,6 +377,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
     t.text "app_settings"
     t.uuid "apple_account_token"
     t.string "signup_platform"
+    t.string "session_salt"
     t.index ["apple_account_token"], name: "index_users_on_apple_account_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["image_key"], name: "index_users_on_image_key", unique: true
@@ -393,5 +413,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
   add_foreign_key "oauth_access_tokens", "users", column: "resource_owner_id"
   add_foreign_key "service_notice_deliveries", "service_notices", on_delete: :cascade
   add_foreign_key "service_notice_deliveries", "users", on_delete: :cascade
+  add_foreign_key "user_sessions", "users", on_delete: :cascade
   add_foreign_key "webauthn_credentials", "users"
 end

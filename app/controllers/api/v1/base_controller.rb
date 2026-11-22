@@ -19,6 +19,20 @@ module Api
       # Sign-in and sign-up skip this: they're how the app gets a token.
       def authorize_app_token!
         doorkeeper_authorize! MobileApp::SCOPE
+        track_app_session! unless performed?
+      end
+
+      # The device's row in the Sessions list (AppSessions). A token whose device was signed out
+      # on dabble.me (or by Sign out of all devices) stops here.
+      def track_app_session!
+        return unless AppSessions.app_token?(doorkeeper_token)
+
+        if (session = AppSessions.for_token(doorkeeper_token, current_user, request))
+          Current.user_session = session
+        else
+          doorkeeper_token.revoke
+          render json: { error: 'unauthorized', message: 'Sign in again to continue.' }, status: :unauthorized
+        end
       end
 
       def current_user

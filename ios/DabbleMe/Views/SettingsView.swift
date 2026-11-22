@@ -140,6 +140,10 @@ struct SettingsView: View {
                     Button("Sign Out", role: .destructive) { confirmingSignOut = true }
                         .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                             Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
+                            // Every browser and app on the account, this one included.
+                            Button("Sign Out of All Devices", role: .destructive) { Task { await model.signOutEverywhere() } }
+                        } message: {
+                            Text("Sign Out signs out this device only. Sign Out of All Devices signs out every browser and app signed in to your account.")
                         }
                     // Deleting happens here: the password, then one last confirmation, in a sheet.
                     Button("Delete Account…", role: .destructive) { deletingAccount = true }
@@ -173,6 +177,14 @@ struct SettingsView: View {
         }
         // A name save that failed, from the Name page (on Done or on going Back). On the stack,
         // so it shows over the Name page too.
+        .alert("Couldn't sign out of all devices", isPresented: Binding(
+            get: { model.signOutEverywhereError != nil },
+            set: { if !$0 { model.signOutEverywhereError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.signOutEverywhereError ?? "")
+        }
         .alert("Couldn't save your name", isPresented: Binding(
             get: { model.nameSaveError != nil },
             set: { if !$0 { model.nameSaveError = nil } }

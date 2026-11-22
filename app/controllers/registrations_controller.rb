@@ -126,7 +126,9 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def security
-    @oauth_applications = Doorkeeper::Application.authorized_for(current_user)
+    # The iOS app is listed under Sessions, one row per device, rather than as a connected app.
+    @oauth_applications = Doorkeeper::Application.authorized_for(current_user).where.not(uid: MobileApp::CLIENT_ID)
+    @user_sessions = current_user.user_sessions.listable.most_recent_first
     render 'devise/registrations/security'
   end
 

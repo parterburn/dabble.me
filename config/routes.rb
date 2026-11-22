@@ -54,6 +54,9 @@ Rails.application.routes.draw do
       # Adding a passkey from the app (offered after a password sign-in, and in Settings).
       resources :passkeys, only: :create
       post 'passkeys/options', to: 'passkeys#options'
+      # The devices signed in to the account, and Sign out of all devices.
+      resources :device_sessions, only: %i[index destroy]
+      delete 'device_sessions', to: 'device_sessions#destroy_all'
       resources :exports, only: :create
       get 'me', to: 'me#show'
       patch 'me', to: 'me#update'
@@ -113,6 +116,10 @@ Rails.application.routes.draw do
       mount AdminPasskeyGate.new(Sidekiq::Web) => "/sidekiq"
     end
   end
+
+  # Account Security's Sessions list (SignedInDevicesController).
+  delete 'security/sessions'     => 'signed_in_devices#destroy_all', as: 'signed_in_devices'
+  delete 'security/sessions/:id' => 'signed_in_devices#destroy', as: 'signed_in_device'
 
   devise_for :users, controllers: { registrations: 'registrations', sessions: 'sessions', passwords: 'passwords' }
   get '/users/:id', to: redirect('/security'), as: 'user'

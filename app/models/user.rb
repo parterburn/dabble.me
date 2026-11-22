@@ -10,6 +10,7 @@ class User < ActiveRecord::Base
   # :confirmable, :timeoutable and :omniauthable, :lockable
   devise :otp_authenticatable, :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
+  include SignedInDevices
 
   # user_key is the posting address (<user_key>@post.dabble.me) and appears in
   # every email we send. image_key names the user's S3 photo folder and never

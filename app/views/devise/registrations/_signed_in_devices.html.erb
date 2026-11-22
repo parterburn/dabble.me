@@ -1,0 +1,40 @@
+<section class="card p-6 sm:p-8" id="sessions">
+  <h2 class="flex items-center gap-2 font-serif text-2xl text-primary">
+    <span class="slab-icon slab-icon--lock text-xl" aria-hidden="true"></span>
+    Sessions
+  </h2>
+  <p class="mt-1 text-sm text-muted">
+    Browsers and apps signed in to your account. Places are approximate, from the network each one last used.
+  </p>
+
+  <ul class="mt-5 divide-y divide-cream-300 rounded-lg border border-subtle">
+    <% @user_sessions.each do |device| %>
+      <% this_device = device.id == Current.user_session&.id %>
+      <li class="flex items-center justify-between gap-4 px-4 py-3" data-session-id="<%= device.id %>">
+        <div class="min-w-0">
+          <p class="truncate font-medium text-primary">
+            <%= device.device_label %>
+            <% if this_device %>
+              <span class="ml-1 rounded-full bg-cream-200 px-2 py-0.5 text-xs font-medium text-muted">This device</span>
+            <% end %>
+          </p>
+          <p class="text-sm text-muted">
+            <%= [device.location_label,
+                 (this_device || device.last_active_at > UserSession::ACTIVITY_INTERVAL.ago) ? "Active now" : "Active #{time_ago_in_words(device.last_active_at)} ago"].compact.join(" · ") %>
+          </p>
+        </div>
+        <% if this_device %>
+          <%= link_to "Sign out", signed_in_device_path(device), method: :delete, class: "shrink-0 text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+        <% else %>
+          <%= link_to "Sign out", signed_in_device_path(device), method: :delete, data: { confirm: "Sign out #{device.device_label}?" }, class: "shrink-0 text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <% if @user_sessions.size > 1 %>
+    <%= link_to "Sign out of all other devices", signed_in_devices_path, method: :delete,
+          data: { confirm: "Sign out every other browser and the Dabble Me app? Connected apps like Claude keep their access." },
+          class: "button-secondary mt-5" %>
+  <% end %>
+</section>

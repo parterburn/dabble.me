@@ -1,9 +1,9 @@
-Settings cleanup: your account details now live on one Account page.
+Sign Out of All Devices, and the new Sessions list on dabble.me.
 
-- Settings starts with an Account row showing your email. Tap it: the Account page has Name (tap to change it), your Email, Add a Passkey (only while the account has none), Account Security (opens dabble.me), and Export Entries.
-- Add a Passkey has an olive icon like the other rows, with black words.
-- Add a Passkey from the Account page: the sheet still ends on "Passkey added", and the row goes away once you tap Done.
-- Export Entries from the Account page still asks Cancel/Export first, then emails the link.
-- Change your name from Account → Name and go Back: it saves, and the Account row's page shows the new name.
-- The "On dabble.me" heading is gone. The Claude/ChatGPT Connector row now sits right above Help & Support.
-- Plan and Manage Hashtags stay on the main Settings page, under the Account row.
+- Settings → Sign Out now asks: Sign Out (this device only, as before) or Sign Out of All Devices.
+- Sign Out of All Devices signs out this app, every other copy of the app, and every browser signed in to dabble.me. Claude/ChatGPT connectors stay connected.
+- Try it with the app on two devices, or the app plus a browser: the other one should land on the sign-in page within a request or two.
+- With no connection, Sign Out of All Devices shows "Couldn't sign out of all devices" and leaves you signed in.
+- On dabble.me, Account Security now has a Sessions section above Connected apps. The app shows up there as "Dabble Me app on iPhone" (or iPad) with a rough location and when it was last used.
+- Sign the app out from that list on the web: the app should drop to the sign-in page on its next refresh.
+- Plain Sign Out still leaves your other devices signed in.
