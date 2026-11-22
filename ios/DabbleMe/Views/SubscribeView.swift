@@ -37,10 +37,16 @@ struct SubscribeOptions: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
                 }
-                Button("Restore Purchases") {
-                    Task { await store.restore() }
+                VStack(spacing: 2) {
+                    Button("Restore Purchases") {
+                        Task { await store.restore() }
+                    }
+                    .font(.subheadline)
+                    // The password prompt is Apple's own (AppStore.sync), not Dabble Me's.
+                    Text("Apple may ask you to sign in to your Apple Account.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
-                .font(.subheadline)
                 Text(store.freeTrials.isEmpty
                      ? "PRO renews automatically until you cancel it. Cancel at least 24 hours before it renews in Settings → your name → Subscriptions."
                      : "After a free trial, you're charged unless you cancel at least 24 hours before it ends. PRO then renews automatically until you cancel it in Settings → your name → Subscriptions.")

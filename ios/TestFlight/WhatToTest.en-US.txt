@@ -1,12 +1,19 @@
-Build 118 makes the five dots in Stats tappable.
+Build 120 makes Restore Purchases clearer: it says what happened, and asks for your Apple Account password only when it has to.
 
-STATS
-- Open Journal → Stats. Under the Rewind card, at the right, are the five dots with their sentence (for example "4 of the last 5 days").
-- Tap the dots (or the sentence beside them). Stats scrolls down to this year's grid of days, the squares grow to their biggest, and the grid slides so today's week sits at its right edge, with the last five days in view.
-- If another year was picked in the year menu, tapping the dots turns it back to this year first.
-- The bigger squares are kept, like a pinch. Pinch the grid to make them smaller again; after a pinch, the grid goes back to resting a few weeks past today.
+Use a Free account. TestFlight purchases use Apple's sandbox: nothing is charged.
 
-CHECK
-- The other tiles (Entries, Photos, Streak, Words) still go where they did.
-- Holding a day in the grid still previews it, and tapping a written day still opens it.
-- In the first days of January, the last five days can reach back into last year: only this year's part of them is in the grid.
+RESTORE WITH A SUBSCRIPTION ON THIS DEVICE
+- Buy PRO (Settings, Plan), then on another Free account, or after deleting and reinstalling the app, sign in to the account that bought it.
+- Settings, Plan, Restore Purchases. It should turn PRO without asking for a password, and the Plan page should then show PRO.
+
+RESTORE WITH NOTHING TO RESTORE
+- On an Apple Account that has never bought Dabble Me PRO, tap Restore Purchases.
+- Apple may ask for your Apple Account password. That prompt is Apple's own; the line under the button says so.
+- After you sign in, it should say "No active Dabble Me PRO subscription was found for this Apple Account."
+- Cancel the password prompt instead: nothing should be shown, and you can tap Restore Purchases again.
+
+ANOTHER ACCOUNT
+- With a subscription bought for a different Dabble Me account, Restore Purchases should say this Apple Account already pays for PRO on another account.
+
+OFFLINE
+- With Airplane Mode on, Restore Purchases should say the App Store couldn't be reached, or that Dabble Me couldn't be reached.
