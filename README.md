@@ -84,8 +84,7 @@ That's the whole habit. No streaks to protect and no app you have to remember to
     </td>
     <td width="33%" valign="top">
       <h3>📱 iPhone &amp; iPad</h3>
-      Today's prompt, On This Day, photos, a widget and a Face ID lock. The app is in public beta on TestFlight.<br><br>
-      <a href="https://testflight.apple.com/join/mYj4vrFZ"><strong>Join the beta →</strong></a><br>
+      Today's prompt, On This Day, photos, a widget and a Face ID lock. Coming soon to the App Store.<br><br>
       <a href="https://dabble.me/journal-app?utm_source=github&utm_medium=readme&utm_campaign=cta_cards">See the app tour</a>
     </td>
     <td width="33%" valign="top">
