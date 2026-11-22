@@ -56,7 +56,7 @@ faq_items = [
   },
   {
     question: "Is it in the App Store?",
-    answer: "Not yet, but it's coming soon. Until then, Dabble Me PRO members can try the beta: sign in on the website and use the iOS App link at the bottom of the page."
+    answer: "Not yet, but it's coming soon. Until then, Dabble Me PRO members can try the beta: sign in, and a Get the iOS app button appears at the top of this page."
   },
   {
     question: "Do I have to use the app to keep a Dabble Me journal?",
@@ -118,9 +118,18 @@ structured_data = [
           rewind to any of it later. The app is the quickest way to do all three.
         </p>
         <div class="mt-8 flex flex-col sm:flex-row justify-center lg:justify-start gap-3">
-          <a href="<%= new_user_registration_path %>" class="btn btn-primary">Create a free account</a>
+          <%# The TestFlight beta is for PRO members only: a purchase made in it is free. %>
+          <% if current_user&.is_pro? %>
+            <a href="<%= ApplicationHelper.ios_testflight_url %>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Get the iOS app (beta)</a>
+          <% else %>
+            <a href="<%= new_user_registration_path %>" class="btn btn-primary">Create a free account</a>
+          <% end %>
         </div>
-        <p class="mt-4 text-sm text-subtle">Coming soon to the App Store. Start your journal by email today, and it'll be waiting in the app.</p>
+        <% if current_user&.is_pro? %>
+          <p class="mt-4 text-sm text-subtle">Coming soon to the App Store. As a PRO member, you can use the beta now; it installs through Apple's TestFlight.</p>
+        <% else %>
+          <p class="mt-4 text-sm text-subtle">Coming soon to the App Store. Start your journal by email today, and it'll be waiting in the app.</p>
+        <% end %>
       </div>
       <%# The page's main picture: loaded first, with its size given so nothing shifts. %>
       <div class="flex justify-center">

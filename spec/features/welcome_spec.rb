@@ -202,6 +202,17 @@ describe 'Pages' do
     expect(page.html).to include('"@type":"MobileApplication"', '"@type":"FAQPage"')
   end
 
+
+  it 'gives a signed-in PRO member the iOS beta at the top of the app page, and nobody else' do
+    sign_in FactoryBot.create(:user, plan: 'PRO Monthly PayHere')
+    visit journal_app_path
+    expect(page).to have_link('Get the iOS app (beta)', href: ApplicationHelper.ios_testflight_url)
+
+    sign_in FactoryBot.create(:user, plan: 'Free')
+    visit journal_app_path
+    expect(page).not_to have_link(href: ApplicationHelper.ios_testflight_url)
+    expect(page).to have_link('Create a free account')
+  end
   it 'publishes a guide to starting a journal, with the prompts its title promises' do
     visit how_to_start_journaling_path
 
