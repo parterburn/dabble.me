@@ -182,13 +182,26 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
     end
   end
 
-  it "leaves the iOS app out of Connected apps (it's under Sessions)" do
+  it "leaves the iOS app out of Connected apps once its sign-ins are under Sessions" do
     sign_in_with_password
-    app_token(user)
+    token = app_token(user)
+
+    get security_path
+    connected = response.body[response.body.index("Connected apps")..]
+    expect(connected).to include(MobileApp::NAME) # not seen since Sessions started: still revocable here
+
+    get "/api/v1/me", headers: { "Authorization" => "Bearer #{token.plaintext_token}" }
+    expect(token.reload.user_session_id).to be_present
 
     get security_path
     connected = response.body[response.body.index("Connected apps")..]
     expect(connected).not_to include(MobileApp::NAME)
+  end
+
+  it "offers Sign out of all other devices even when this is the only one listed" do
+    sign_in_with_password
+    get security_path
+    expect(response.body).to include("Sign out of all other devices")
   end
 
   it "drops other browsers and the app when the password changes" do

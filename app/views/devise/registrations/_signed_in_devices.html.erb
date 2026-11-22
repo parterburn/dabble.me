@@ -32,9 +32,9 @@
     <% end %>
   </ul>
 
-  <% if @user_sessions.size > 1 %>
-    <%= link_to "Sign out of all other devices", signed_in_devices_path, method: :delete,
-          data: { confirm: "Sign out every other browser and the Dabble Me app? Connected apps like Claude keep their access." },
-          class: "button-secondary mt-5" %>
-  <% end %>
+  <%# Always offered: a device that hasn't been back since this list started isn't in it yet,
+      but this still signs it out. %>
+  <%= link_to "Sign out of all other devices", signed_in_devices_path, method: :delete,
+        data: { confirm: "Sign out every other browser and the Dabble Me app? Connected apps like Claude keep their access." },
+        class: "button-secondary mt-5" %>
 </section>

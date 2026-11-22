@@ -137,8 +137,12 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def security
-    # The iOS app is listed under Sessions, one row per device, rather than as a connected app.
-    @oauth_applications = Doorkeeper::Application.authorized_for(current_user).where.not(uid: MobileApp::CLIENT_ID)
+    # The iOS app is listed under Sessions, one row per device, rather than as a connected app,
+    # once every sign-in it holds has a row there. Until then (an app sign-in from before Sessions
+    # that hasn't been back since) it stays under Connected apps too, so a lost device can still
+    # be cut off.
+    @oauth_applications = Doorkeeper::Application.authorized_for(current_user)
+    @oauth_applications = @oauth_applications.where.not(uid: MobileApp::CLIENT_ID) unless unlisted_app_sign_ins?
     @user_sessions = current_user.user_sessions.listable.most_recent_first
     render 'devise/registrations/security'
   end
@@ -202,6 +206,13 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   private
+
+  # Live iOS app tokens not yet tied to a Sessions row (AppSessions links them on first use).
+  def unlisted_app_sign_ins?
+    app_id = MobileApp.application_id
+    app_id.present? && Doorkeeper::AccessToken.where(resource_owner_id: current_user.id, application_id: app_id,
+                                                     revoked_at: nil, user_session_id: nil).exists?
+  end
 
   # A gift sign-up holds the welcome email until the gift is on the account (see create).
   def build_resource(hash = {})
