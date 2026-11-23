@@ -208,63 +208,8 @@ struct ComposeView: View {
                 if restoredDraft != nil { draftBanner }
                 if isSimplified { simplifiedBanner }
                 Divider()
-                // The bar's icons are olive, not black: there are a lot of them, next to the writing.
-                RichTextEditor(model: editor,
-                               leading: isFormattingSelection ? linkButtons.map { AnyView($0.foregroundStyle(.tint)) }
-                                   : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
-                               trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
-                               trailingEnd: isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil,
-                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
-                               row: openRow)
-                    // Low in the page, over the bar: clear of the entry's first lines.
-                    .overlay(alignment: .bottom) {
-                        if let autoTagNotice {
-                            Text(autoTagNotice)
-                                .font(.subheadline.weight(.medium))
-                                .lineLimit(2)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(.regularMaterial, in: .capsule)
-                                .padding(.bottom, editor.barCover + Self.noticeGap)
-                                .padding(.horizontal, 24)
-                                .transition(.opacity)
-                                .allowsHitTesting(false)
-                                .accessibilityAddTraits(.updatesFrequently)
-                        }
-                    }
-                    // Why dictation couldn't listen: a toast over the bar, not in the row.
-                    .overlay(alignment: .bottom) {
-                        if let problem = dictation.problem {
-                            DictationProblemToast(problem: problem) { dictation.clearProblem() }
-                                .padding(.bottom, editor.barCover + Self.noticeGap)
-                                .padding(.horizontal, 24)
-                                .transition(.opacity)
-                        }
-                    }
-                    .animation(.easeOut(duration: 0.2), value: dictation.problem)
-                    .animation(.easeOut(duration: 0.2), value: editor.barCover)
-                    .overlay(alignment: .topLeading) {
-                        if editor.isEmpty {
-                            Group {
-                                // With a template, the empty page is the template itself, under a
-                                // line that says how to use it. Without, a question about the day
-                                // being written: today, yesterday, or another by name.
-                                if !template.isEmpty {
-                                    templatePlaceholder
-                                } else {
-                                    Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
-                                        .font(Font(RichText.Style.journal.baseFont))
-                                        .foregroundStyle(.tertiary)
-                                        .allowsHitTesting(false)
-                                        .accessibilityHidden(true)
-                                }
-                            }
-                            .padding(.top, 16)
-                            .padding(.leading, 17)
-                            .padding(.trailing, 17)
-                        }
-                    }
+                // (Its own property: in one expression with the rest, it was too much for the compiler to type-check.)
+                editorPage
             }
             .overlay {
                 if isSaving { savingOverlay }
@@ -423,6 +368,90 @@ struct ComposeView: View {
             }
         }
     }
+
+    /// The editor and what floats over it: notices low over the bar, and the empty page's
+    /// question or template.
+    private var editorPage: some View {
+        // The bar's icons are olive, not black: there are a lot of them, next to the writing.
+        RichTextEditor(model: editor, leading: barLeading, trailing: barTrailing, trailingEnd: barTrailingEnd,
+                       barKey: barKey,
+                       row: openRow)
+            // Low in the page, over the bar: clear of the entry's first lines.
+            .overlay(alignment: .bottom) {
+                if let autoTagNotice {
+                    Text(autoTagNotice)
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(.regularMaterial, in: .capsule)
+                        .padding(.bottom, noticeBottom)
+                        .padding(.horizontal, 24)
+                        .transition(.opacity)
+                        .allowsHitTesting(false)
+                        .accessibilityAddTraits(.updatesFrequently)
+                }
+            }
+            // Why dictation couldn't listen: a toast over the bar, not in the row.
+            .overlay(alignment: .bottom) {
+                if let problem = dictation.problem {
+                    DictationProblemToast(problem: problem) { dictation.clearProblem() }
+                        .padding(.bottom, noticeBottom)
+                        .padding(.horizontal, 24)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: dictation.problem)
+            .animation(.easeOut(duration: 0.2), value: editor.barCover)
+            .overlay(alignment: .topLeading) {
+                if editor.isEmpty {
+                    Group {
+                        // With a template, the empty page is the template itself, under a
+                        // line that says how to use it. Without, a question about the day
+                        // being written: today, yesterday, or another by name.
+                        if !template.isEmpty {
+                            templatePlaceholder
+                        } else {
+                            Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
+                                .font(Font(RichText.Style.journal.baseFont))
+                                .foregroundStyle(.tertiary)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .padding(.top, 16)
+                    .padding(.leading, 17)
+                    .padding(.trailing, 17)
+                }
+            }
+    }
+
+    /// The bar's left end: a selection's link buttons, or photos.
+    private var barLeading: AnyView? {
+        if isFormattingSelection { return linkButtons.map { AnyView($0.foregroundStyle(.tint)) } }
+        let photos = model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)
+        return AnyView(photos.foregroundStyle(.tint))
+    }
+
+    /// The bar's right side: a selection's format buttons, or tags and links.
+    private var barTrailing: AnyView {
+        let buttons = isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)
+        return AnyView(buttons.foregroundStyle(.tint))
+    }
+
+    /// With a selection, the button that closes its formats.
+    private var barTrailingEnd: AnyView? {
+        isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil
+    }
+
+    /// What the bar shows depends on: when it changes, the bar's rebuilt.
+    private var barKey: String {
+        "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)"
+    }
+
+    /// How far up a notice floats: just over the bar's buttons.
+    private var noticeBottom: CGFloat { editor.barCover + Self.noticeGap }
 
     /// The rows over the keyboard taking turns, and dictation's hooks into the composer: what
     /// ends a recording, its haptics, and how long a problem shows.
