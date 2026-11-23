@@ -146,6 +146,21 @@ RSpec.describe "Staying signed in (remember me)", type: :request do
     expect(signed_in?).to be(true)
   end
 
+  it "remembers a browser signed in before sessions were tracked on its first visit back" do
+    # Signed in under the old code: no session row, no device cookie, no remember cookie.
+    allow(WebSessions).to receive(:signed_in)
+    sign_in_with_password
+    allow(WebSessions).to receive(:signed_in).and_call_original
+    cookies.delete("remember_user_token")
+
+    get entries_path
+    expect(remember_cookie_set?).to be(true)
+    expect(device_cookie_set?).to be(true)
+
+    cookies.delete("_dabbleme_session")
+    expect(signed_in?).to be(true)
+  end
+
   it "turns away a copied remember cookie replayed without its device cookie" do
     sign_in_with_password # uses the real WebSessions::TRACKING_STARTED_AT, which is already past
     cookies.delete("_dabbleme_session")

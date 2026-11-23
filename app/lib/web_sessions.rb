@@ -72,6 +72,7 @@ module WebSessions
       # only test helpers do): handled like a browser from before sessions were tracked.
       session, token = UserSession.start!(user, kind: 'web', request: request)
       store(warden, options[:scope], request, session, token)
+      keep_remembered(user, warden, request, token)
     else
       warden.logout(options[:scope])
     end
