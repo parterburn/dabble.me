@@ -36,8 +36,6 @@ class Passkeys::SessionsController < ApplicationController
 
     credential.update!(sign_count: webauthn_credential.sign_count)
     user = credential.user
-    # Remembered only when the sign-in page's "Stay logged in" box is ticked.
-    user.remember_me = ActiveModel::Type::Boolean.new.cast(params[:remember_me])
     sign_in(user)
     # Signing in with a passkey is itself the check admin sessions need.
     AdminAccess.record_passkey!(session, user)

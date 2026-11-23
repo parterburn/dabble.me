@@ -314,7 +314,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
     end
 
     it "wipes them on the web too, and signs the owner straight in" do
-      post email_codes_path, params: { user: { email: user.email, remember_me: "1" } }
+      post email_codes_path, params: { user: { email: user.email } }
       post verify_email_code_path, params: { code: last_code }
 
       # Its passkeys were wiped, so the passkey offer comes first (PasskeyOffer).
@@ -429,7 +429,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
 
   describe "the web" do
     def send_web_code(email, **extra)
-      post email_codes_path, params: { user: { email: email, remember_me: "1" } }.merge(extra)
+      post email_codes_path, params: { user: { email: email } }.merge(extra)
     end
 
     it "asks only for an email on Log in and Sign up" do

@@ -29,6 +29,17 @@ RSpec.describe 'Rack::Attack', type: :request do
     expect(statuses).to all(be < 429)
   end
 
+  it 'holds one refresh token to a few tries a minute, whatever the IP' do
+    statuses = Array.new(11) do |i|
+      post '/oauth/token', params: { grant_type: 'refresh_token', refresh_token: 'stale-refresh-token', client_id: 'x' },
+                           env: { 'REMOTE_ADDR' => "203.0.113.#{50 + i}" }
+      response.status
+    end
+
+    expect(statuses.first(10)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
   it 'throttles resending email-change codes from one IP' do
     user = create(:user, password: 'correct-horse-battery')
     sign_in user

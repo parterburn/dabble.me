@@ -9,8 +9,21 @@ module Oauth
     prepend_before_action :mark_oauth_consent_page
     # Prepended so a malformed request is refused before the sign-in redirect, not after it.
     prepend_before_action :enforce_mcp_oauth_rules, only: %i[new create destroy]
+    prepend_before_action :refuse_mobile_app_client, only: %i[new create destroy]
 
     private
+
+    # The iOS app signs in natively (Api::V1::SessionsController and friends). Its old web
+    # sign-in through here skipped the consent screen and sent the code to a custom URL scheme
+    # that any app on the phone could claim, so the client can't start a web sign-in at all.
+    # Never redirect: the error page is the whole answer.
+    def refuse_mobile_app_client
+      return unless params[:client_id].to_s == MobileApp::CLIENT_ID
+
+      render :error,
+             locals: { error_response: Doorkeeper::OAuth::ErrorResponse.new(name: :unauthorized_client) },
+             status: :bad_request
+    end
 
     # What the MCP authorization spec asks of the server beyond Doorkeeper's own checks
     # (see Mcp::OauthRules). An unknown client or a missing redirect_uri falls through to
@@ -65,7 +78,6 @@ module Oauth
     # token for this app means it was already in Connected apps.
     def notify_new_connection
       application = pre_auth.client.application
-      return if MobileApp.client?(application)
       return if Doorkeeper::AccessToken.where(
         resource_owner_id: current_resource_owner.id,
         application_id: application.id,

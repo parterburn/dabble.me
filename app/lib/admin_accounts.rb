@@ -37,7 +37,7 @@ module AdminAccounts
 
   # Clears an admin's password. Their sign-in is then a passkey, or an emailed code (plus their
   # 2FA code, if they have 2FA). Without the password hash the account's salt changes
-  # (User#authenticatable_salt), so other browsers and "Stay logged in" cookies are signed
+  # (User#authenticatable_salt), so other browsers and remember cookies are signed
   # out. The app's sign-ins (OAuth tokens) stay.
   def remove_password!(user)
     raise Refused, "#{user.email} isn't an admin." unless protected?(user)

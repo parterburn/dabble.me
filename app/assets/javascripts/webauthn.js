@@ -111,7 +111,6 @@
     //
     // opts.mediation  "conditional" or undefined
     // opts.signal     AbortSignal, to cancel a waiting conditional request
-    // opts.rememberMe function returning the "Stay logged in" choice
     // opts.onChallengeRequest  called with the challenge fetch's promise
     //
     // Resolves true once the browser is sent to the signed-in page, false if
@@ -147,8 +146,7 @@
               clientDataJSON: webauthn.bufferEncode(assertion.response.clientDataJSON),
               signature: webauthn.bufferEncode(assertion.response.signature),
               userHandle: assertion.response.userHandle ? webauthn.bufferEncode(assertion.response.userHandle) : null
-            },
-            remember_me: opts.rememberMe ? opts.rememberMe() : false
+            }
           });
         })
         .then(function(response) {
@@ -198,7 +196,7 @@
 
     // Wires up passkey sign-in on a page: email-field autofill where the
     // browser supports it, plus a button that opens the passkey dialog.
-    // config.buttonId, config.rememberMe (function), config.autofill (boolean)
+    // config.buttonId, config.autofill (boolean)
     setupSignIn: function(config) {
       var button = config.buttonId && document.getElementById(config.buttonId);
       if (!webauthn.supported()) {
@@ -240,7 +238,6 @@
           webauthn.signIn({
             mediation: "conditional",
             signal: controller.signal,
-            rememberMe: config.rememberMe,
             onChallengeRequest: function(request) {
               var settled = function() { if (autofillChallenge === request) { autofillChallenge = null; } };
               autofillChallenge = request;
@@ -271,7 +268,7 @@
 
           var ready = autofillChallenge ? autofillChallenge.catch(function() {}) : Promise.resolve();
           ready
-            .then(function() { return webauthn.signIn({ rememberMe: config.rememberMe }); })
+            .then(function() { return webauthn.signIn(); })
             .then(function(signedIn) {
               if (signedIn) { return; }
               buttonBusy = false;

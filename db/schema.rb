@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -257,7 +257,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_180000) do
     t.datetime "created_at", precision: nil, null: false
     t.datetime "revoked_at", precision: nil
     t.bigint "user_session_id"
+    t.bigint "refresh_chain_id"
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
+    t.index ["refresh_chain_id"], name: "index_oauth_access_tokens_on_refresh_chain_id"
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
     t.index ["resource_owner_id"], name: "index_oauth_access_tokens_on_resource_owner_id"
     t.index ["token"], name: "index_oauth_access_tokens_on_token", unique: true

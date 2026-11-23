@@ -45,7 +45,7 @@ module Mcp
     # a "processing" placeholder right away.
     #
     # Optional image (only one):
-    # - image_url: https URL to an image (fetched server-side; blocks loopback/private hosts).
+    # - image_url: https URL to an image on an AI app's file host (Mcp::ImageUrlHosts), fetched server-side.
     # - uploaded_image_key: key returned by get_image_upload_url after the client uploads directly.
     # - image_base64: raw base64 or a data URL (data:image/png;base64,...). Callers should
     #   resize to fit within 800x800 before encoding; the server enforces that limit too.
@@ -162,7 +162,8 @@ module Mcp
       downloaded = SafeRemoteFetch.fetch(
         url_string,
         https_only: Rails.env.production?,
-        max_bytes: MAX_IMAGE_BYTES
+        max_bytes: MAX_IMAGE_BYTES,
+        allowed_host: ->(host) { Mcp::ImageUrlHosts.allowed?(host, hosts: allowed_hosts) }
       )
       unless downloaded.ok?
         return { success: false, errors: [image_url_error(downloaded.error)] }
@@ -184,8 +185,15 @@ module Mcp
       { success: false, errors: ["Could not download image from URL"] }
     end
 
+    def allowed_hosts
+      @allowed_hosts ||= Mcp::ImageUrlHosts.allowed
+    end
+
     def image_url_error(error)
       case error
+      when :host_not_allowed
+        "image_url host is not allowed: Dabble Me only fetches images hosted by an AI app's own file service (#{allowed_hosts.join(', ')}). " \
+          'For any other image, call get_image_upload_url, PUT the bytes there, and pass uploaded_image_key.'
       when :https_required
         "image_url must use https in production"
       when :credentials

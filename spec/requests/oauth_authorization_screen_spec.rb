@@ -52,7 +52,7 @@ RSpec.describe "OAuth authorization screen", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).not_to include(ActionController::Base.helpers.image_path(logo[:asset]))
       expect(response.body).to include("attacker.example")
-      expect(response.body).to include("(unverified app)")
+      expect(response.body).to include("isn’t from #{logo[:alt]}")
     end
   end
 
@@ -68,8 +68,8 @@ RSpec.describe "OAuth authorization screen", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("mi")
-    expect(response.body).to include("example.com")
-    expect(response.body).to include("(unverified app)")
+    expect(response.body).to include("you go to <strong>example.com</strong>")
+    expect(response.body).to include("Dabble Me hasn’t checked who runs this app")
   end
 
   describe "approving the consent screen" do
@@ -108,8 +108,10 @@ RSpec.describe "OAuth authorization screen", type: :request do
 
       expect { approve(app) }.to have_enqueued_mail(UserMailer, :oauth_app_connected)
     end
+  end
 
-    it "does not email the user when the iOS app signs in" do
+  describe "the iOS app's old web sign-in" do
+    it "is refused with an error page, never a redirect to the app's URL scheme" do
       app = MobileApp.ensure_application!
 
       expect {
@@ -121,8 +123,102 @@ RSpec.describe "OAuth authorization screen", type: :request do
           code_challenge: code_challenge,
           code_challenge_method: "S256"
         )
-      }.not_to have_enqueued_mail(UserMailer, :oauth_app_connected)
-      expect(response).to redirect_to(a_string_starting_with("#{MobileApp::REDIRECT_URI}?code="))
+      }.not_to change(Doorkeeper::AccessGrant, :count)
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response.location).to be_nil
+      expect(response.body).not_to include(MobileApp::REDIRECT_URI)
+    end
+
+    it "is refused before the sign-in page for a signed-out visitor" do
+      sign_out user
+      get oauth_authorization_path(response_type: "code", client_id: MobileApp::CLIENT_ID,
+                                   redirect_uri: MobileApp::REDIRECT_URI, code_challenge: code_challenge,
+                                   code_challenge_method: "S256")
+
+      expect(response).to have_http_status(:bad_request)
+      expect(session["user_return_to"]).to be_nil
+    end
+
+    it "can't approve by posting the consent form directly" do
+      MobileApp.ensure_application!
+      post oauth_authorization_path, params: {
+        response_type: "code", client_id: MobileApp::CLIENT_ID, redirect_uri: MobileApp::REDIRECT_URI,
+        scope: MobileApp::SCOPE, code_challenge: code_challenge, code_challenge_method: "S256"
+      }
+
+      expect(response).to have_http_status(:bad_request)
+      expect(Doorkeeper::AccessGrant.count).to eq(0)
+    end
+  end
+
+  describe "apps that copy a known name" do
+    it "warns on the consent screen when an app calls itself Claude but signs in elsewhere" do
+      get_consent_screen(create_application("Claude", redirect_uri: "https://attacker.example/callback"))
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("isn’t from Claude", "attacker.example")
+    end
+
+    it "leads with the site for an unverified app" do
+      get_consent_screen(create_application("Journal Helper", redirect_uri: "https://helper.example/callback"))
+
+      expect(response.body).to include("you go to <strong>helper.example</strong>")
+      expect(response.body).not_to include("isn’t from")
+    end
+
+    it "shows no warning for Claude on claude.ai" do
+      get_consent_screen(create_application("Claude", redirect_uri: "https://claude.ai/api/mcp/auth_callback"))
+
+      expect(response.body).not_to include("oauth-consent__warning")
+    end
+
+    def register(name, uris)
+      post "/oauth/registrations", params: { client_name: name, redirect_uris: uris }, as: :json
+      response.parsed_body
+    end
+
+    it "refuses to register a lookalike name for a site that isn't the brand's" do
+      ["Claude", "ChatGPT", "Notion", "ClaudeAI", "Claude_", "OpenAI Helper", "Codex Runner",
+       "Ｃｌａｕｄｅ", "Cl\u0430ude", "CIaude", "C l a u d e", "Claude for Notion", "ChatGPT for Claude"].each do |name|
+        body = register(name, ["https://attacker.example/cb"])
+        expect(response).to have_http_status(:bad_request), name
+        expect(body["error"]).to eq("invalid_client_metadata")
+      end
+    end
+
+    it "registers names that only mention a brand, and the consent screen warns about them" do
+      ["Acme for Claude", "Dabble Me for iOS", "dabble-me"].each do |name|
+        register(name, ["https://attacker.example/cb"])
+        expect(response).to have_http_status(:created), name
+      end
+
+      get_consent_screen(Doorkeeper::Application.find_by!(name: "Dabble Me for iOS"))
+      expect(response.body).to include("isn’t from Dabble Me")
+    end
+
+    it "registers the real clients and local tools" do
+      register("Claude", ["https://claude.ai/api/mcp/auth_callback"])
+      expect(response).to have_http_status(:created)
+      register("ChatGPT for Dabble Me", ["https://chatgpt.com/connector_platform_oauth_redirect"])
+      expect(response).to have_http_status(:created)
+      register("Claude Code (dabble-me)", ["http://localhost:53111/callback"])
+      expect(response).to have_http_status(:created)
+    end
+
+    it "trims names and drops invisible characters" do
+      body = register("My\u202e Tool\u0000 #{'x' * 100}", ["https://tool.example/cb"])
+
+      expect(response).to have_http_status(:created)
+      expect(body["client_name"]).to start_with("My Tool x")
+      expect(body["client_name"].length).to eq(OauthClientNames::MAX_LENGTH)
+      expect(body["client_name"]).not_to match(/[\u202e\u0000]/)
+    end
+
+    it "blocks a name that hides a brand behind invisible characters" do
+      register("Cl\u200baude", ["https://attacker.example/cb"])
+
+      expect(response).to have_http_status(:bad_request)
     end
   end
 

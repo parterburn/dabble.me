@@ -15,22 +15,22 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
   end
   let(:place) { { "CF-IPCity" => "Denver", "CF-Region" => "Colorado", "CF-IPCountry" => "US" } }
 
-  # Tracking started yesterday, so a "Stay logged in" cookie written now isn't a legacy one.
+  # Tracking started yesterday, so a remember cookie written now isn't a legacy one.
   # (Time isn't frozen: Devise takes a remember cookie only if written after remember_created_at.)
   before { stub_const("WebSessions::TRACKING_STARTED_AT", 1.day.ago) }
 
   before { https! }
 
-  def sign_in_with_password(remember: "1", headers: {})
-    post user_session_path, params: { user: { email: user.email, password: password, remember_me: remember } },
+  def sign_in_with_password(headers: {})
+    post user_session_path, params: { user: { email: user.email, password: password } },
                             headers: { "User-Agent" => mac_safari }.merge(headers)
   end
 
   # A second browser, with its own cookies.
-  def other_browser(remember: "1")
+  def other_browser
     open_session do |browser|
       browser.https!
-      browser.post user_session_path, params: { user: { email: user.email, password: password, remember_me: remember } },
+      browser.post user_session_path, params: { user: { email: user.email, password: password } },
                                       headers: { "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131.0 Safari/537.36" }
     end
   end
@@ -62,7 +62,7 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
     expect(UserSession.column_names.grep(/ip/)).to be_empty
   end
 
-  it "signs another browser out, along with its Stay logged in cookie" do
+  it "signs another browser out, along with its remember cookie" do
     browser = other_browser
     sign_in_with_password
     windows = user.user_sessions.find_by!(browser: "Chrome")
@@ -97,7 +97,7 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
     expect(row.reload.last_active_at).to be_within(1.second).of(Time.current)
   end
 
-  it "accepts a Stay logged in cookie from before sessions were tracked" do
+  it "accepts a remember cookie from before sessions were tracked" do
     sign_in_with_password
     stub_const("WebSessions::TRACKING_STARTED_AT", 1.hour.from_now)
     user.user_sessions.delete_all
@@ -116,7 +116,7 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
     expect(signed_in?).to be(false)
     expect(user.user_sessions.pluck(:browser)).to eq(["Chrome"])
     browser.cookies.delete("_dabbleme_session")
-    expect(signed_in?(browser)).to be(true) # its Stay logged in cookie still works
+    expect(signed_in?(browser)).to be(true) # its remember cookie still works
   end
 
   it "signs this browser out when its own row is signed out" do
@@ -136,7 +136,7 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
   end
 
   describe "Sign out of all other devices" do
-    it "ends every other browser and the app, keeps this browser and connected apps" do
+    it "ends every other browser, the app and connected apps, and keeps this browser" do
       browser = other_browser
       sign_in_with_password
       app = app_token(user)
@@ -146,14 +146,15 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
       mcp = app_token(user, application: claude, scopes: "mcp:access")
 
       get security_path
-      expect(response.body).to include("Sign out of all other devices", "Dabble Me app on iPhone")
+      expect(response.body).to include("Sign out of all other devices", "Dabble Me app on iPhone", "disconnect connected apps like Claude")
       delete signed_in_devices_path
 
       expect(response).to redirect_to(security_path(anchor: "sessions"))
       expect(signed_in?).to be(true)
       expect(user.user_sessions.pluck(:browser)).to eq(["Safari"])
       expect(app.reload).to be_revoked
-      expect(mcp.reload).not_to be_revoked
+      expect(mcp.reload).to be_revoked
+      expect(flash[:notice]).to include("disconnected your connected apps")
       expect(signed_in?(browser)).to be(false)
     end
 
@@ -169,7 +170,7 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
       sign_in_with_password
       legacy = open_session do |browser|
         browser.https!
-        browser.post user_session_path, params: { user: { email: user.email, password: password, remember_me: "1" } }
+        browser.post user_session_path, params: { user: { email: user.email, password: password } }
         browser.cookies.delete(WebSessions::DEVICE_COOKIE.to_s)
       end
       stub_const("WebSessions::TRACKING_STARTED_AT", 1.hour.from_now) # so its cookie is a legacy one

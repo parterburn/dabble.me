@@ -1,10 +1,19 @@
-No changes inside the app in this build. On the website, signing in now offers a passkey once per browser, so the app's own passkey prompt is worth a quick check that nothing moved.
+Sign Out of All Devices now disconnects connected apps (Claude, ChatGPT and other AI connectors) too, and Settings says so. On the website, signing in now offers a passkey once per browser; the app's own passkey prompt is unchanged.
+
+Settings
+- Open Settings and find Sign Out of All Devices. The note under it should say it also disconnects connected apps like Claude.
+
+Sign Out of All Devices
+- With Claude (or another AI connector) connected to your Dabble Me account, tap Sign Out of All Devices. The app signs out, as before.
+- Sign back in. In Claude, ask it to read your journal: it should ask you to connect Dabble Me again.
+- On dabble.me, Account Security → Connected apps should no longer list Claude until you reconnect it.
 
 Passkey prompt (unchanged)
-- On an account with no passkey, sign out and sign back in with your password or an emailed code: the "Add a passkey" sheet should still appear once signed in.
-- Not Now puts it away; it shouldn't come back on the next launch.
-- Settings → Add a Passkey is still there until the account has one.
+- On an account with no passkey, sign in with your password or an emailed code: the "Add a passkey" sheet should still appear. Not Now puts it away.
 
-Website (optional, on a Mac or iPhone browser)
-- Sign in at dabble.me with an account that has no passkey: a page offers "Sign in with Touch ID next time" (Face ID on iPhone). Add a passkey makes one in a tap; Not now goes on to the journal.
-- Sign out and in again on the same browser: it doesn't ask a second time.
+Website (optional)
+- Sign in at dabble.me in a browser with an account that has no passkey: a page offers "Sign in with Touch ID next time" (Face ID on iPhone). Add a passkey makes one in a tap; Not now goes on to the journal. Signing in again on the same browser doesn't ask twice.
+
+Still the same
+- Plain Sign Out signs out this device only, and connected apps keep working.
+- Signing in with email and password, a passkey or an emailed code works as before, and you stay signed in after closing the app.

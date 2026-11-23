@@ -13,6 +13,14 @@ class User < ActiveRecord::Base
          :recoverable, :rememberable, :trackable, :validatable
   include SignedInDevices
 
+  # Every web sign-in is remembered: there's no "Stay logged in" box. Devise's hook writes the
+  # remember cookie on each sign-in (password, passkey, emailed code, two-factor, sign-up), and
+  # WebSessions.fetched keeps it running 30 days past the last visit. Sign Out, and the Sessions
+  # list on Account Security, end a browser's sign-in.
+  def remember_me
+    true
+  end
+
   # user_key is the posting address (<user_key>@post.dabble.me) and appears in
   # every email we send. image_key names the user's S3 photo folder and never
   # changes once set. Existing users have image_key == user_key; new users get
@@ -298,7 +306,7 @@ class User < ActiveRecord::Base
 
   # The first emailed-code sign-in to an unclaimed account (EmailSignIn.unclaimed?): whoever set
   # its password, passkeys, 2FA or sign-ins may not own the address, so all of them go. Clearing
-  # the password changes the salt, which ends its web sessions and "Stay logged in" cookies.
+  # the password changes the salt, which ends its web sessions and remember cookies.
   def clear_credentials_for_email_claim!
     # EmailSignIn.unclaimed? never holds for an admin, whose passkeys only the console removes.
     raise AdminAccounts::Refused, 'Admin accounts keep their credentials' if AdminAccounts.protected?(self)
@@ -394,7 +402,7 @@ class User < ActiveRecord::Base
     false
   end
 
-  # Devise ties sessions and "Stay logged in" cookies to the password hash's salt, so changing
+  # Devise ties sessions and remember cookies to the password hash's salt, so changing
   # the password signs other browsers out. An account with no password has no hash: it gets a
   # stand-in, which changes (signing those browsers out) once a password is set.
   def authenticatable_salt

@@ -282,6 +282,19 @@
     padding: 10px 14px;
   }
 
+  // An unverified app's site, or a name that copies a known brand: shown before the account
+  // and the Allow button, so it can't be missed.
+  &__warning {
+    background: #fdf1e7;
+    border: 1px solid #e3a46f;
+    border-radius: 8px;
+    color: #6b3410;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 18px;
+    padding: 12px 16px;
+  }
+
   &__permissions {
     background: rgba($cream-400, 0.25);
     border: 1px solid rgba($olive-400, 0.35);

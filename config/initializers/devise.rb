@@ -128,7 +128,7 @@ Devise.setup do |config|
   config.remember_for = 30.days
 
   # Invalidates all the remember me tokens when the user signs out.
-  # Off: Sign Out ends this browser only. Its "Stay logged in" cookie is deleted, and copies of it
+  # Off: Sign Out ends this browser only. Its remember cookie is deleted, and copies of it
   # stop working because its UserSession row goes (WebSessions). Sign out of all devices on
   # Account Security ends every browser (User#sign_out_everywhere!).
   config.expire_all_remember_me_on_sign_out = false
