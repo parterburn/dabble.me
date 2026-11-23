@@ -433,6 +433,8 @@ struct ComposeView: View {
                 }
             }
             .task {
+                // The speech model loads now, so the mic records at its tap.
+                dictation.prewarm()
                 // Give the sheet a moment to settle so the keyboard animates in with it.
                 try? await Task.sleep(for: .milliseconds(350))
                 editor.focus()
@@ -2004,7 +2006,7 @@ private struct DictationRow: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 12) {
                 if dictation.state == .listening {
-                    closeButton("Cancel Recording") { dictation.cancel() }
+                    closeButton("Cancel Recording") { dictation.discard() }
                         .accessibilityHint("Drops what you said")
                     DictationWaveform(levels: dictation.levels)
                         .frame(maxWidth: .infinity)

@@ -40,6 +40,29 @@ enum AppleIntelligenceCleanup {
         only the cleaned text, with no quotes or commentary.
         """
 
+    /// The session for the next `clean`, its model already loading (a LanguageModelSession on
+    /// iOS 26): made as the recording starts, so the model is up by the time it's asked.
+    private static var ready: AnyObject?
+
+    /// Loads the model while the writer speaks, when the fix is on.
+    static func prepare() {
+        guard isEnabled else { return }
+        #if canImport(FoundationModels)
+        guard #available(iOS 26.0, *) else { return }
+        let session = makeSession()
+        session.prewarm()
+        ready = session
+        #endif
+    }
+
+    #if canImport(FoundationModels)
+    @available(iOS 26.0, *)
+    private static func makeSession() -> LanguageModelSession {
+        // Journal entries are often hard ones; the default guardrails refuse those.
+        LanguageModelSession(model: SystemLanguageModel(guardrails: .permissiveContentTransformations), instructions: instructions)
+    }
+    #endif
+
     /// `text` with misheard words fixed, or `text` itself.
     static func clean(_ text: String) async -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -50,13 +73,12 @@ enum AppleIntelligenceCleanup {
         // A couple of seconds, and more for a longer entry.
         let budget = Duration.seconds(2 + Double(wordCount) / 25)
         let tokens = max(256, wordCount * 3)
-        let instructions = Self.instructions
+        // Each session answers once, so the next one starts clean.
+        let session = (ready as? LanguageModelSession) ?? makeSession()
+        ready = nil
         let answer = await withTaskGroup(of: String?.self) { group in
-            group.addTask {
-                // Journal entries are often hard ones; the default guardrails refuse those.
-                let session = LanguageModelSession(model: SystemLanguageModel(guardrails: .permissiveContentTransformations),
-                                                   instructions: instructions)
-                return try? await session.respond(to: trimmed, options: GenerationOptions(temperature: 0.2, maximumResponseTokens: tokens)).content
+            group.addTask { @MainActor in
+                try? await session.respond(to: trimmed, options: GenerationOptions(temperature: 0.2, maximumResponseTokens: tokens)).content
             }
             group.addTask {
                 try? await Task.sleep(for: budget)

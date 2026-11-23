@@ -1,17 +1,19 @@
-Dictation: hold the mic to talk, no title on the row, toasts clear of the buttons.
+Dictation: quicker to start and quicker to write your words in.
 
-Hold to talk
-- In the composer, press and hold the mic. Recording starts after a moment (the waveform shows). Talk, then lift your finger: it writes what you said into the entry.
-- A quick tap still works as before: tap to start, then Done (or the mic again) to write it in, X to drop it.
-- A slightly slow tap should still count as a tap, not a hold that stops the moment you let go.
-- Tap to start, then press and hold the mic to stop: it stops, the same as a tap.
-- The very first time (or with the microphone prompt up), letting go while it's still getting ready leaves it recording: stop it with Done.
-- Hold and say nothing for 10 seconds: it stops with "Didn't hear anything".
+Starting
+- Open the composer, wait a second, then tap the mic. The waveform should show almost at once, with only a blink of the dots first.
+- Tap the mic straight away as the composer opens: it should still start promptly.
+- After one dictation, start another in the same entry: it should be just as quick.
 
-Dictation row
-- The row has no "Dictation" title anymore: just the dots while it gets ready or writes, and the X, waveform, timer and Done while recording.
-- With VoiceOver on, the dots and the waveform read as "Dictation" plus the current step.
+Finishing
+- Say a sentence or two and tap Done. The words should go in noticeably sooner than before.
+- Try a longer one (a minute or so): it takes a little longer, but should not sit on the dots for long.
+- With Settings → Dictation → Fix Misheard Words on, it's still slower than without it (the on-device model has to rewrite the text), but should be a bit quicker than before.
 
-Toasts above the buttons
-- Tap the mic and stay quiet for 10 seconds. "Didn't hear anything. Try again." should sit fully above the bar's buttons, with a small gap.
-- The same goes for the microphone-off toast (with its Settings button) and the notice that hashtags were added.
+Still the same
+- X drops the recording, and the next tap still starts quickly.
+- Changing Settings → Dictation → Language, then dictating, uses the new language.
+- The very first time on a phone (or after iOS clears the model), it still downloads the speech model first, with its percentage.
+
+Timings
+- With the iPhone connected to a Mac, Console shows each dictation's timings: search for "Dictation".

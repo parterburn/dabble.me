@@ -1,4 +1,5 @@
 import AVFoundation
+import os
 import Speech
 import SwiftUI
 
@@ -15,6 +16,10 @@ import SwiftUI
 /// the cleanup never drops one outside a correction. What's said never leaves the phone: the
 /// recording is a temporary file, deleted once it's been transcribed or dropped. The first use
 /// downloads the language's model, which iOS keeps (it isn't part of the app).
+///
+/// Quick to start and to finish, as Hex is: the model is loaded when the composer opens
+/// (`prewarm`), not after Done, so a tap records at once and the words come back right after it.
+/// How long each step took goes to the log (Console, "Dictation").
 @MainActor
 @Observable
 final class Dictation {
@@ -71,6 +76,17 @@ final class Dictation {
     static let levelCount = 48
 
     @ObservationIgnored private var run: Task<Void, Never>?
+    /// The transcriber with its model loaded, for the next recording (`prewarm`): a
+    /// `WarmSpeech` on iOS 26. Each one hears one recording.
+    @ObservationIgnored private var warm: AnyObject?
+    @ObservationIgnored private var warming: Task<Void, Never>?
+    /// The composer has closed (`cancel`): nothing more is loaded for it.
+    @ObservationIgnored private var isClosed = false
+    /// Where this dictation's time went, for the log.
+    @ObservationIgnored private var timings: [String] = []
+    @ObservationIgnored private var tappedAt = ContinuousClock.now
+    @ObservationIgnored private var stoppedAt = ContinuousClock.now
+    static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "me.dabble.ios", category: "Dictation")
     /// Ends the recording; what was said is still transcribed and handed over.
     @ObservationIgnored private var endInput: (() -> Void)?
     /// Drops everything now.
@@ -105,10 +121,16 @@ final class Dictation {
         guard state == .idle else { return }
         problem = nil
         levels = []
+        timings = []
+        tappedAt = .now
+        isClosed = false
         state = .preparing
         // Loaded while it's said, so it's ready when the transcript is. English only.
         let cleansUp = DictationSettings.cleansUp(DictationSettings.language ?? .current)
-        if style == .polished, cleansUp { CleanupTagger.shared.prepare() }
+        if style == .polished, cleansUp {
+            CleanupTagger.shared.prepare()
+            AppleIntelligenceCleanup.prepare()
+        }
         run = Task {
             do {
                 let heard: String
@@ -120,21 +142,31 @@ final class Dictation {
                     throw Problem.unavailable
                 }
                 // The writer's own spellings ("dabble me" → "Dabble Me"), in either style.
+                var lap = ContinuousClock.now
                 let expected = Self.hints(from: hints())
                 let spellings = Self.spellings(from: expected, vocabulary: DictationSettings.words)
                 var cleaned = Self.ownSpellings(spellings, in: heard)
+                lap = time("spellings", since: lap)
                 if style == .polished, cleansUp {
                     cleaned = await CleanupTagger.shared.clean(cleaned, within: Self.cleanupBudget, protectedTerms: expected)
+                    lap = time("cleanup", since: lap)
                     // Settings → Dictation → Fix Misheard Words (Apple Intelligence), when it's on.
-                    cleaned = await AppleIntelligenceCleanup.clean(cleaned)
+                    if AppleIntelligenceCleanup.isEnabled {
+                        cleaned = await AppleIntelligenceCleanup.clean(cleaned)
+                        lap = time("apple intelligence", since: lap)
+                    }
                     // "comma", "exclamation point", "hashtag leo": the marks, then the writer's own
                     // tags and spellings again (a capital after a new "." can undo "iPhone").
                     cleaned = SpokenPunctuation.format(cleaned, language: "en")
                     cleaned = Self.knownHashtags(in: cleaned, tags: expected)
                     cleaned = Self.ownSpellings(spellings, in: cleaned)
+                    time("punctuation", since: lap)
                 }
                 try Task.checkCancellation()
                 insert(cleaned)
+                time("done to words", since: stoppedAt)
+                let finished = timings.joined(separator: ", ")
+                Self.log.notice("Dictation finished: \(finished, privacy: .public)")
             } catch is CancellationError {
             } catch let problem as Problem {
                 self.problem = problem
@@ -148,15 +180,54 @@ final class Dictation {
             levels = []
             state = .idle
             UIApplication.shared.isIdleTimerDisabled = false
+            // The next one's model, loaded now rather than after its Done.
+            prewarm()
         }
+    }
+
+    /// Loads the transcriber's model, so the next tap records at once and its words come back
+    /// right after Done (the composer opening, and after each dictation). Only once the model's
+    /// on the phone: the first download waits for a tap, where its progress shows.
+    func prewarm() {
+        guard !Self.isDebugFake, !isClosed, warm == nil, warming == nil, state == .idle,
+              Self.isSupported, DictationSettings.isEnabled else { return }
+        guard #available(iOS 26.0, *) else { return }
+        let requested = DictationSettings.language ?? .current
+        warming = Task { [weak self] in
+            let began = ContinuousClock.now
+            let speech = await WarmSpeech.make(for: requested)
+            guard let self else { return }
+            self.warming = nil
+            guard let speech, !self.isClosed else { return }
+            // Kept while its model still loads: a tap now records at once, and waits for the
+            // model only after Done.
+            self.warm = speech
+            Task {
+                await speech.loading.value
+                let loaded = Self.milliseconds(since: began)
+                Self.log.notice("Dictation model loaded in \(loaded, privacy: .public) ms")
+            }
+        }
+    }
+
+    /// Notes how long `stage` took since `since`, for the log, and returns now for the next.
+    @discardableResult
+    private func time(_ stage: String, since: ContinuousClock.Instant) -> ContinuousClock.Instant {
+        timings.append("\(stage) \(Self.milliseconds(since: since)) ms")
+        return .now
+    }
+
+    private static func milliseconds(since: ContinuousClock.Instant) -> Int {
+        Int(((ContinuousClock.now - since) / .milliseconds(1)).rounded())
     }
 
     /// Stops recording; what was said is transcribed and put in the entry.
     func stop() {
         switch state {
         case .idle, .writing: break
-        case .preparing: cancel()
+        case .preparing: drop()
         case .listening:
+            stoppedAt = .now
             state = .writing
             endInput?()
         }
@@ -170,6 +241,16 @@ final class Dictation {
 
     /// Stops and drops what was said (the composer closing).
     func cancel() {
+        drop()
+        isClosed = true
+        warming?.cancel()
+        warm = nil
+    }
+
+    /// The X: drops what was said, and gets ready for the next one.
+    func discard() { drop() }
+
+    private func drop() {
         abandon?()
         run?.cancel()
     }
@@ -271,11 +352,9 @@ final class Dictation {
     @available(iOS 26.0, *)
     private func listen(hints: @MainActor () -> [String], canListen: @MainActor () -> Bool) async throws -> String {
         guard await AVAudioApplication.requestRecordPermission() else { throw Problem.microphoneDenied }
-        // Settings → Dictation's language, else the phone's.
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: DictationSettings.language ?? .current) else { throw Problem.language }
-        // `.transcription`: finished text only, no words-so-far, over the whole recording.
-        let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
-        try await install(transcriber)
+        var lap = time("permission", since: tappedAt)
+        let speech = try await readySpeech()
+        lap = time(speech.wasWarm ? "model (ready)" : "model", since: lap)
         try Task.checkCancellation()
         guard canListen() else { throw CancellationError() }
 
@@ -325,6 +404,10 @@ final class Dictation {
         state = .listening
         listeningSince = .now
         UIApplication.shared.isIdleTimerDisabled = true
+        time("microphone", since: lap)
+        time("tap to recording", since: tappedAt)
+        let startedIn = timings.joined(separator: ", ")
+        Self.log.notice("Dictation started: \(startedIn, privacy: .public)")
         var ending = Ending.drop
         for await end in stopped.stream { ending = end; break }
         recorder.stop()
@@ -335,7 +418,11 @@ final class Dictation {
         case .silent: throw Problem.nothingHeard
         }
 
-        let analyzer = SpeechAnalyzer(modules: [transcriber])
+        timings.append(String(format: "recorded %.1f s", Date.now.timeIntervalSince(started)))
+        lap = stoppedAt
+        // Loaded while it was said, when it wasn't ready at the tap.
+        await speech.loading.value
+        let analyzer = speech.analyzer
         // Each analyzer hears one recording and is let go, so the hints can't carry over.
         let expected = Self.hints(from: hints())
         if !expected.isEmpty {
@@ -346,12 +433,30 @@ final class Dictation {
         let file = try AVAudioFile(forReading: url)
         try await analyzer.start(inputAudioFile: file, finishAfterFile: true)
         var transcript = AttributedString()
-        for try await result in transcriber.results where result.isFinal {
+        for try await result in speech.transcriber.results where result.isFinal {
             transcript += result.text
         }
+        time("transcribe", since: lap)
         let text = String(transcript.characters).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { throw Problem.nothingHeard }
         return text
+    }
+
+    /// The transcriber for this recording: the one `prewarm` loaded, else a new one (its model
+    /// downloaded first if it isn't on the phone), loading while the recording runs.
+    @available(iOS 26.0, *)
+    private func readySpeech() async throws -> WarmSpeech {
+        // Settings → Dictation's language, else the phone's.
+        let requested = DictationSettings.language ?? .current
+        // One being set up now (a quick check that the model's there) is further along.
+        if let warming { await warming.value }
+        defer { warm = nil }
+        if let speech = warm as? WarmSpeech, speech.requested == requested.identifier { return speech }
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: requested) else { throw Problem.language }
+        // `.transcription`: finished text only, no words-so-far, over the whole recording.
+        let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
+        try await install(transcriber)
+        return WarmSpeech(requested: requested.identifier, transcriber: transcriber, wasWarm: false)
     }
 
     /// How a recording ended: Done (transcribe it), dropped, or nothing heard in time.
@@ -470,16 +575,56 @@ final class Dictation {
     private static func knowsInLowercase(_ word: String, language: String) -> Bool {
         let lower = word.lowercased()
         let range = NSRange(location: 0, length: (lower as NSString).length)
-        return UITextChecker().rangeOfMisspelledWord(in: lower, range: range, startingAt: 0, wrap: false, language: language).location == NSNotFound
+        return checker.rangeOfMisspelledWord(in: lower, range: range, startingAt: 0, wrap: false, language: language).location == NSNotFound
     }
 
-    /// The phone's language as `UITextChecker` names it ("en_US"), or one of its kind ("en_GB").
-    private static var checkerLanguage: String? {
+    /// One for every lookup: a dictation asks about each of its hundred hints and more.
+    private static let checker = UITextChecker()
+
+    /// The phone's language as `UITextChecker` names it ("en_US"), or one of its kind ("en_GB"),
+    /// looked up once.
+    private static let checkerLanguage: String? = {
         let available = UITextChecker.availableLanguages
         let identifier = Locale.current.identifier
         if available.contains(identifier) { return identifier }
         guard let code = Locale.current.language.languageCode?.identifier else { return nil }
         return available.first { $0 == code || $0.hasPrefix(code + "_") || $0.hasPrefix(code + "-") }
+    }()
+}
+
+/// A transcriber and the analyzer that will hear one recording, its model loading from the start
+/// (`prepareToAnalyze`), as Hex keeps one ready: loaded after Done, the model was most of the
+/// wait for the words. `.lingering` keeps the model in memory a while after, for the next one.
+@available(iOS 26.0, *)
+@MainActor
+private final class WarmSpeech {
+    /// The language it was asked for (`Locale.identifier`), to tell whether Settings changed.
+    let requested: String
+    let transcriber: SpeechTranscriber
+    let analyzer: SpeechAnalyzer
+    /// The model loading; done once it's ready to hear.
+    let loading: Task<Void, Never>
+    /// Ready at the tap (`Dictation.prewarm`), for the log.
+    let wasWarm: Bool
+
+    init(requested: String, transcriber: SpeechTranscriber, wasWarm: Bool) {
+        self.requested = requested
+        self.transcriber = transcriber
+        self.wasWarm = wasWarm
+        let analyzer = SpeechAnalyzer(modules: [transcriber],
+                                      options: SpeechAnalyzer.Options(priority: .userInitiated, modelRetention: .lingering))
+        self.analyzer = analyzer
+        // A failure here shows when it's used.
+        loading = Task { try? await analyzer.prepareToAnalyze(in: nil) }
+    }
+
+    /// One for `requested`, its model loading, or nil when the language isn't there or its model
+    /// isn't on the phone yet (the tap downloads it).
+    static func make(for requested: Locale) async -> WarmSpeech? {
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: requested) else { return nil }
+        let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
+        guard await AssetInventory.status(forModules: [transcriber]) == .installed, !Task.isCancelled else { return nil }
+        return WarmSpeech(requested: requested.identifier, transcriber: transcriber, wasWarm: true)
     }
 }
 
