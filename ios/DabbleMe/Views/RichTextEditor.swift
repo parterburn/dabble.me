@@ -63,6 +63,9 @@ final class RichTextEditorModel {
     @ObservationIgnored fileprivate weak var textView: UITextView?
     /// The text has the keyboard.
     fileprivate(set) var isFocused = false
+    /// How much of the text's foot the bar (and any row open in it) covers, in points: 0 with
+    /// no keyboard. Something floating over the text's bottom sits this far up to stay clear.
+    fileprivate(set) var barCover: CGFloat = 0
     /// Links are PRO: without them, a pasted address stays plain text.
     @ObservationIgnored var allowsLinks = true
     /// A swipe to the right across the empty page (the composer's template). Only while there's
@@ -828,6 +831,7 @@ struct RichTextEditor: UIViewRepresentable {
                 let textBottom = (textView.superview ?? window).convert(textView.frame, to: space).maxY
                 covered = max(0, textBottom - barTop)
             }
+            if abs(model.barCover - covered) > 0.5 { model.barCover = covered }
             guard abs(textView.contentInset.bottom - covered) > 0.5 else { return }
             let grew = covered > textView.contentInset.bottom
             textView.contentInset.bottom = covered

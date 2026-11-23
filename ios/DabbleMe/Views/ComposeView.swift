@@ -52,6 +52,8 @@ struct ComposeView: View {
     @State private var showsFormatBar = false
     @State private var boldHeldAt: Date?
     @State private var autoTagNotice: String?
+    /// Space between a notice floating over the text and the bar's buttons under it.
+    private static let noticeGap: CGFloat = 12
     @State private var photoItems: [PhotosPickerItem] = []
     /// Prepared photos keyed by picker item, so re-selecting doesn't redo the work.
     @State private var prepared: [PhotosPickerItem: PreparedPhoto] = [:]
@@ -224,7 +226,7 @@ struct ComposeView: View {
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
                                 .background(.regularMaterial, in: .capsule)
-                                .padding(.bottom, 68)
+                                .padding(.bottom, editor.barCover + Self.noticeGap)
                                 .padding(.horizontal, 24)
                                 .transition(.opacity)
                                 .allowsHitTesting(false)
@@ -235,7 +237,7 @@ struct ComposeView: View {
                     .overlay(alignment: .bottom) {
                         if let problem = dictation.problem {
                             DictationProblemToast(problem: problem) { dictation.clearProblem() }
-                                .padding(.bottom, 68)
+                                .padding(.bottom, editor.barCover + Self.noticeGap)
                                 .padding(.horizontal, 24)
                                 .transition(.opacity)
                         }
