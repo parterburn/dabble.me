@@ -72,6 +72,11 @@ Doorkeeper.configure do
 
   realm 'OAuth'
 
+  # Tokens only in the Authorization header. Doorkeeper also reads ?access_token= and
+  # ?bearer_token=, and the MCP spec forbids tokens in the query string (they end up in logs
+  # and Referer headers). The iOS app and MCP clients all send the header.
+  access_token_methods :from_bearer_authorization
+
   # A refreshed iOS app token stays on its device's row in the Sessions list (AppSessions).
   after_successful_strategy_response do |request, _response|
     if request.is_a?(Doorkeeper::OAuth::RefreshTokenRequest)

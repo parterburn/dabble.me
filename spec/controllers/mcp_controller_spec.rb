@@ -77,6 +77,49 @@ RSpec.describe McpController, type: :controller do
       end
     end
 
+    context "authorization rules from the MCP spec" do
+      let(:list_call) { { jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "list_entries", arguments: {} } } }
+
+      it "sends a bare challenge, with no error code, when no token was sent (RFC 6750 3.1)" do
+        post :invoke, params: list_call, as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.headers["WWW-Authenticate"]).to start_with('Bearer realm="OAuth", resource_metadata=')
+        expect(response.headers["WWW-Authenticate"]).not_to include("error=")
+      end
+
+      it "ignores a token in the query string" do
+        token = doorkeeper_plain_token_for(paid_user)
+        post :invoke, params: list_call.merge(access_token: token), as: :json
+        expect(response).to have_http_status(:unauthorized)
+
+        post :invoke, params: list_call.merge(bearer_token: token), as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "refuses a request from another site's page, even with a valid token" do
+        request.env["HTTP_AUTHORIZATION"] = "Bearer #{doorkeeper_plain_token_for(paid_user)}"
+        request.headers["Origin"] = "https://evil.example"
+
+        expect {
+          post :invoke, params: list_call, as: :json
+        }.not_to change(McpToolInvocation, :count)
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "refuses a cross-origin discovery request and a null origin" do
+        request.headers["Origin"] = "null"
+        post :invoke, params: { jsonrpc: "2.0", id: 1, method: "ping" }, as: :json
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "accepts its own origin and requests with no Origin header" do
+        request.headers["Origin"] = "http://test.host"
+        post :invoke, params: { jsonrpc: "2.0", id: 1, method: "ping" }, as: :json
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
     context "with an expired or revoked token" do
       it "returns 401 even for initialize, so the client refreshes or signs in again" do
         request.env["HTTP_AUTHORIZATION"] = "Bearer not-a-real-token"

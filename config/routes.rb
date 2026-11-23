@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   use_doorkeeper do
     controllers(
       authorizations: "oauth/authorizations",
+      tokens: "oauth/tokens",
       authorized_applications: "oauth/authorized_applications"
     )
     # Doorkeeper's own client admin screens (/oauth/applications) are off;
