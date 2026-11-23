@@ -22,7 +22,9 @@ module Api
       # phone, so a wrong password can't leave one there that the server never keeps.
       def options
         # An emailed code works once, so it buys a setup token here for the create call after.
-        if params[:email_code].present?
+        # Only an account with no password: a password account confirms with that password,
+        # as the web does. A code plus an existing app token must not register a passkey.
+        if params[:email_code].present? && !current_user.has_password?
           unless EmailCode.confirm(current_user, params[:email_code])
             return render_error(:forbidden, 'invalid_code', "That code didn't work. Check the newest email, or send a new code.")
           end

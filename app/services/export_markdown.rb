@@ -17,9 +17,13 @@ module ExportMarkdown
   end
 
   # image is the photo's path inside a ZIP, when there is one to point to.
+  # Body <img> tags are removed first: ReverseMarkdown would turn a remote one
+  # into ![](url), and a Markdown preview would load it. The entry's own photo
+  # is `image`, added below.
   def entry(entry, image: nil)
     text = +"## #{entry.date.strftime('%Y-%m-%d')} (#{entry.date.strftime('%A')})\n\n"
-    body = entry.body.present? ? ReverseMarkdown.convert(entry.formatted_body, unknown_tags: :bypass).to_s.strip : ""
+    html = entry.formatted_body.to_s.gsub(/<img\b[^>]*>/i, "")
+    body = entry.body.present? ? ReverseMarkdown.convert(html, unknown_tags: :bypass).to_s.strip : ""
     text << "#{body}\n\n" if body.present?
     text << "![Photo](#{image})\n\n" if image
     text

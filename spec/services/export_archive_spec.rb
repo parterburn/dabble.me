@@ -75,6 +75,8 @@ RSpec.describe ExportArchive do
     expect(article.css('img')).to be_empty
     expect(article.to_html).not_to include('tracker.example.com')
     expect(article.text).to include('Hello')
+    expect(unzip['journal.md']).to include('Hello')
+    expect(unzip['journal.md']).not_to include('tracker.example.com')
   end
 
   it 'reads entries across batches' do

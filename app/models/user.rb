@@ -621,13 +621,26 @@ class User < ActiveRecord::Base
   end
 
   def restrict_free_frequency
-    if self.is_free? && self.frequency.present?
-      self.update_columns(frequency: ["Sun"], previous_frequency: frequency)
-    end
+    return unless is_free? && frequency.present?
+    # A still-paid App Store subscription is about to take this plan back (resume_apple_subscription).
+    # Collapsing the email days here would stick if that handoff skipped the upgrade email.
+    return if AppStore::Entitlement.active_subscription(self)
+
+    update_columns(frequency: ["Sun"], previous_frequency: frequency)
   end
 
   def resume_apple_subscription
-    AppStore::Entitlement.sync!(self) if apple_subscriptions.any?(&:entitles_pro?)
+    active = AppStore::Entitlement.active_subscription(self)
+    return unless active
+
+    # The plan was already PRO and only touched Free so this subscription could take over
+    # (UserDowngradeExpiredWorker, a failed Stripe renewal). That is not a new upgrade:
+    # sync! would revoke nothing further but would send "Thanks for subscribing".
+    if plan_before_last_save.to_s.match?(/pro/i)
+      AppStore::Entitlement.set_plan(self, active.plan_name)
+    else
+      AppStore::Entitlement.sync!(self)
+    end
   end
 
   # Devise's validatable asks for a password on every new account; a passwordless sign-up has
@@ -666,6 +679,9 @@ class User < ActiveRecord::Base
     current_plan = plan.to_s
     return unless previous_plan.match?(/pro/i)
     return if current_plan.match?(/pro/i)
+    # A still-paid App Store subscription puts the plan back in the same save's after_commit.
+    # Revoking here would disconnect MCP for an account that stays PRO.
+    return if AppStore::Entitlement.active_subscription(self)
 
     revoke_doorkeeper_access_tokens!(keep_mobile_app: true)
   end

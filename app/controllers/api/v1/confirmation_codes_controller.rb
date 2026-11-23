@@ -8,6 +8,10 @@ module Api
     class ConfirmationCodesController < BaseController
       # POST /api/v1/confirmation_code
       def create
+        if current_user.has_password?
+          return render_error(:forbidden, 'password_required', 'Enter your password.')
+        end
+
         case EmailCode.send_confirmation(current_user)
         when :ok
           render json: { email: current_user.email, expires_in: EmailCode::LIFETIME.to_i,
