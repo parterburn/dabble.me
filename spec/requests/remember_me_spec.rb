@@ -7,6 +7,7 @@ require "rails_helper"
 # (WebSessions.keep_remembered renews the cookies while it's used).
 RSpec.describe "Staying signed in (remember me)", type: :request do
   include ActiveSupport::Testing::TimeHelpers
+  include ActiveJob::TestHelper
 
   let(:password) { "correct-horse-battery" }
   let(:user) { create(:user, password: password) }
@@ -119,6 +120,48 @@ RSpec.describe "Staying signed in (remember me)", type: :request do
     expect(signed_in?).to be(true)
   end
 
+  it "sets remember_created_at in SQL, not with a full save, for an account that never had one" do
+    sign_in_with_password
+    cookies.delete("remember_user_token")
+    user.update_columns(remember_created_at: nil, updated_at: 1.day.ago)
+
+    expect { get entries_path }.not_to(change { user.reload.updated_at })
+    expect(user.remember_created_at).to be_present
+    expect(remember_cookie_set?).to be(true)
+
+    cookies.delete("_dabbleme_session")
+    expect(signed_in?).to be(true)
+  end
+
+  it "stays signed in after a password change and a browser restart" do
+    sign_in_with_password
+    put user_registration_path, params: { user: { email: user.email, password: "new-password-123",
+                                                  password_confirmation: "new-password-123", current_password: password } }
+    expect(user.reload.valid_password?("new-password-123")).to be(true)
+
+    get entries_path # the old cookie has the old salt, so it's rewritten now, not tomorrow
+    expect(remember_cookie_set?).to be(true)
+
+    cookies.delete("_dabbleme_session")
+    expect(signed_in?).to be(true)
+  end
+
+  it "turns away a copied remember cookie replayed without its device cookie" do
+    sign_in_with_password # uses the real WebSessions::TRACKING_STARTED_AT, which is already past
+    cookies.delete("_dabbleme_session")
+    cookies.delete(WebSessions::DEVICE_COOKIE.to_s)
+
+    expect(signed_in?).to be(false)
+  end
+
+  it "doesn't renew on JSON requests" do
+    sign_in_with_password
+    cookies.delete("remember_user_token")
+
+    get new_passkeys_session_path, as: :json
+    expect(remember_cookie_set?).to be(false)
+  end
+
   it "signs a browser out after 30 days without a visit" do
     sign_in_with_password
 
@@ -137,6 +180,23 @@ RSpec.describe "Staying signed in (remember me)", type: :request do
 
     it "remembers once the code is in" do
       sign_in_with_password
+      put user_otp_credential_path, params: {
+        challenge: user.reload.otp_session_challenge, recovery: "false",
+        token: ROTP::TOTP.new(user.otp_auth_secret).now
+      }
+
+      expect(response).to redirect_to(root_path)
+      expect(remember_cookie_set?).to be(true)
+    end
+
+    it "remembers an emailed-code sign-in once the code is in" do
+      ActionMailer::Base.deliveries.clear
+      stub_const("EmailSignIn::UNCLAIMED_FROM", 1.year.from_now)
+      perform_enqueued_jobs(only: ActionMailer::MailDeliveryJob) { post email_codes_path, params: { user: { email: user.email } } }
+      code = ActionMailer::Base.deliveries.last.subject[/\A\d{6}/]
+      post verify_email_code_path, params: { code: code }
+      expect(response.location).to include(user_otp_credential_path)
+
       put user_otp_credential_path, params: {
         challenge: user.reload.otp_session_challenge, recovery: "false",
         token: ROTP::TOTP.new(user.otp_auth_secret).now

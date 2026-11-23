@@ -17,9 +17,14 @@
 module WebSessions
   SESSION_KEY = 'user_session_token'
   DEVICE_COOKIE = :_dabbleme_device
-  TRACKING_STARTED_AT = Time.utc(2026, 11, 24)
-  # Browsers keep session cookies for as long as they stay open, so this is generous.
-  LEGACY_SESSION_GRACE = 30.days
+  # Tracking went live 2026-11-22 23:21 UTC (PR 369's deploy). Every remember cookie written since
+  # came with a device cookie, so one arriving without it is a copy being replayed, not an old
+  # browser. (This was 2026-11-24, which let a copied cookie from before then revive a session
+  # that had been signed out.)
+  TRACKING_STARTED_AT = Time.utc(2026, 11, 23)
+  # Browsers keep session cookies for as long as they stay open, so this is generous. Ends
+  # 2026-12-24, as it did before TRACKING_STARTED_AT moved back a day.
+  LEGACY_SESSION_GRACE = 31.days
   # How often a browser in use gets its remember and device cookies rewritten.
   RENEW_COOKIES_EVERY = 1.day
 
@@ -104,12 +109,30 @@ module WebSessions
   # Devise renews its remember cookie only when the cookie signs a browser back in, so a browser
   # that keeps its session cookie would see the cookie run out 30 days after sign-in however often
   # it's used. Rewriting both cookies (at most daily) makes the 30 days count from the last visit.
+  # Only on page loads: JSON and other public, cacheable responses never carry these cookies.
   def keep_remembered(user, warden, request, token)
-    _id, _salt, generated_at = request.cookie_jar.signed[remember_cookie_key(user)]
-    return if generated_at && Time.at(generated_at.to_f) > RENEW_COOKIES_EVERY.ago
+    return unless request.get? && request.format.html?
 
+    # A cookie that no longer passes (a password change moved the salt) is rewritten right away.
+    id, salt, generated_at = request.cookie_jar.signed[remember_cookie_key(user)]
+    valid = Array(id) == user.to_key && user.remember_me?(salt, generated_at)
+    return if valid && Time.at(generated_at.to_f) > RENEW_COOKIES_EVERY.ago
+
+    ensure_remember_created_at(user)
     Devise::Hooks::Proxy.new(warden).remember_me(user)
     write_device_cookie(request, token)
+  end
+
+  # Devise's remember_me! fills in remember_created_at with a full save (every User callback) and
+  # only accepts cookies written after it. Two tabs both seeing it unset could each save their own
+  # time, leaving the earlier tab's new cookie dead. Set it once, in SQL, and use whichever won.
+  def ensure_remember_created_at(user)
+    return if user.remember_created_at
+
+    User.where(id: user.id, remember_created_at: nil).update_all(remember_created_at: Time.current)
+    # write_attribute + clear: the in-memory user matches the row, so remember_me! has nothing to save.
+    user.remember_created_at = User.where(id: user.id).pick(:remember_created_at)
+    user.clear_attribute_changes([:remember_created_at])
   end
 
   def remember_cookie_key(user)
