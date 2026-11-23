@@ -50,4 +50,8 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: 'localhost' }
   config.action_controller.asset_host = 'http://127.0.0.1:64515'
   config.active_job.queue_adapter = :inline
+
+  # Controller specs sign in without a WebSessions token, as browsers from before it did; keep
+  # accepting those here. spec/requests/signed_in_devices_spec.rb covers the cut-off.
+  config.x.legacy_web_sessions_until = Time.utc(2100, 1, 1)
 end

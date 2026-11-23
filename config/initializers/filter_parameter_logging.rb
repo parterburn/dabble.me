@@ -10,6 +10,8 @@ Rails.application.config.filter_parameters += [
   :authorization,
   :otp_attempt,
   :otp_code,
+  # Emailed sign-in and confirm codes (EmailCode).
+  /\A(code|email_code)\z/,
   # Passkey setup from the app: setup_token stands in for the password for a few minutes.
   :setup_token,
   :passkey_setup_token,

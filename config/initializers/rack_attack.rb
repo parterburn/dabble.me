@@ -150,6 +150,36 @@ class Rack::Attack
     Digest::SHA256.hexdigest(token) if token
   end
 
+  # Emailed sign-in codes (EmailSignIn), web and app. EmailCode also caps codes per address
+  # (SENDS_PER_HOUR) and guesses per code and per day, whatever the IP; these keep one address
+  # from mailing many inboxes, or guessing at many.
+  EMAIL_CODE_SEND_PATHS = ['/users/sign_in/code', '/users/sign_in/code/resend', '/api/v1/session/code'].freeze
+  EMAIL_CODE_VERIFY_PATHS = ['/users/sign_in/code/verify', '/api/v1/session/code/verify'].freeze
+  CONFIRMATION_CODE_PATHS = ['/users/confirmation_code', '/api/v1/confirmation_code'].freeze
+
+  throttle('email_codes/send/ip', limit: 10, period: 1.hour) do |req|
+    req.ip if req.post? && EMAIL_CODE_SEND_PATHS.include?(auth_path(req))
+  end
+
+  throttle('email_codes/send/ip/minute', limit: 3, period: 1.minute) do |req|
+    req.ip if req.post? && EMAIL_CODE_SEND_PATHS.include?(auth_path(req))
+  end
+
+  # The app's endpoint reads only a top-level email; the web's reads user[email] first.
+  throttle('email_codes/send/email', limit: 5, period: 1.hour) do |req|
+    next unless req.post? && EMAIL_CODE_SEND_PATHS.include?(auth_path(req))
+
+    auth_path(req).start_with?('/api/') ? submitted_app_email(req) : submitted_email(req)
+  end
+
+  throttle('email_codes/verify/ip', limit: 20, period: 10.minutes) do |req|
+    req.ip if req.post? && EMAIL_CODE_VERIFY_PATHS.include?(auth_path(req))
+  end
+
+  throttle('email_codes/confirm/ip', limit: 10, period: 1.hour) do |req|
+    req.ip if !req.get? && CONFIRMATION_CODE_PATHS.include?(auth_path(req))
+  end
+
   throttle('checkout/ip', limit: 10, period: 10.minutes) do |req|
     req.ip if auth_path(req) == '/checkout' && req.post?
   end

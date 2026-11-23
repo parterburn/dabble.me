@@ -56,7 +56,7 @@
       return !!(window.PublicKeyCredential && navigator.credentials && window.fetch);
     },
 
-    register: function(nickname, currentPassword) {
+    register: function(nickname, currentPassword, emailCode) {
       getJSON("/passkeys/registrations/new")
         .then(function(options) {
           options.challenge = webauthn.bufferDecode(options.challenge);
@@ -76,7 +76,8 @@
               clientDataJSON: webauthn.bufferEncode(credential.response.clientDataJSON)
             },
             nickname: nickname,
-            current_password: currentPassword
+            current_password: currentPassword,
+            email_code: emailCode
           });
         })
         .then(function() {

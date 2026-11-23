@@ -31,6 +31,10 @@ struct Me: Decodable, Sendable, Equatable {
     let securityUrl: URL
     /// Whether the account has a passkey (nil from an older server: then the app doesn't ask).
     var hasPasskey: Bool? = nil
+    /// False for an account made by email code that never set a password: Delete Account and
+    /// adding a passkey confirm with an emailed code instead. Nil from an older server (then the
+    /// app asks for the password, as before).
+    var hasPassword: Bool? = nil
     let aiConnectors: AIConnectors?
     /// The UUID to buy PRO in the app with (StoreKit's appAccountToken): Apple puts it in the
     /// signed transaction, which is how the server knows which account bought it. Nil from an
@@ -311,8 +315,16 @@ struct NameUpdate: Encodable, Sendable {
     }
 }
 
+/// Delete Account's confirmation: the password, or an emailed code on an account with none.
 struct AccountDeletionRequest: Encodable, Sendable {
-    let password: String
+    var password: String? = nil
+    var emailCode: String? = nil
+}
+
+/// POST /api/v1/confirmation_code's answer: the code went to `email`.
+struct ConfirmationCodeSent: Decodable, Sendable {
+    let email: String
+    let resendAfter: Int?
 }
 
 struct APIErrorBody: Decodable, Sendable {

@@ -1,0 +1,19 @@
+<p>Hey <%= @user.first_name_or_fallback %>,</p>
+
+<p>Here's the code to confirm a change to your Dabble Me account (<%= @user.email %>):</p>
+
+<p style="font-size: 28px; font-weight: bold; letter-spacing: 6px; font-family: Menlo, Consolas, monospace;"><%= @code %></p>
+
+<p>It works once, for the next <%= EmailCode::LIFETIME.in_minutes.to_i %> minutes.</p>
+
+<p>
+  If you didn't ask for this, someone else may be signed in to your account.
+  Reply to this email and we'll help.
+</p>
+
+<p>
+  <br>
+  Thanks,
+  <br>
+  Dabble Me
+</p>
