@@ -76,18 +76,18 @@ enum AppleIntelligenceCleanup {
         // Each session answers once, so the next one starts clean.
         let session = (ready as? LanguageModelSession) ?? makeSession()
         ready = nil
-        let answer = await withTaskGroup(of: String?.self) { group in
-            group.addTask { @MainActor in
-                try? await session.respond(to: trimmed, options: GenerationOptions(temperature: 0.2, maximumResponseTokens: tokens)).content
-            }
-            group.addTask {
-                try? await Task.sleep(for: budget)
-                return nil
-            }
-            let first = await group.next() ?? nil
-            group.cancelAll()
-            return first
+        // On the main actor, as the session is: a task group handing it to a child task trips
+        // the compiler's region-based isolation checker. Past the budget, it's cancelled.
+        let respond = Task { @MainActor in
+            try? await session.respond(to: trimmed, options: GenerationOptions(temperature: 0.2, maximumResponseTokens: tokens)).content
         }
+        let timeout = Task {
+            try? await Task.sleep(for: budget)
+            if !Task.isCancelled { respond.cancel() }
+        }
+        // The dictation itself cancelled: so is the answer.
+        let answer = await withTaskCancellationHandler { await respond.value } onCancel: { respond.cancel() }
+        timeout.cancel()
         guard let cleaned = answer?.trimmingCharacters(in: .whitespacesAndNewlines),
               TranscriptCleanupGuard.isAcceptable(original: trimmed, cleaned: cleaned) else { return text }
         return cleaned
