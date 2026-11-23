@@ -4,6 +4,8 @@ Hold to talk
 - In the composer, press and hold the mic. Recording starts after a moment (the waveform shows). Talk, then lift your finger: it writes what you said into the entry.
 - A quick tap still works as before: tap to start, then Done (or the mic again) to write it in, X to drop it.
 - A slightly slow tap should still count as a tap, not a hold that stops the moment you let go.
+- Tap to start, then press and hold the mic to stop: it stops, the same as a tap.
+- The very first time (or with the microphone prompt up), letting go while it's still getting ready leaves it recording: stop it with Done.
 - Hold and say nothing for 10 seconds: it stops with "Didn't hear anything".
 
 Dictation row

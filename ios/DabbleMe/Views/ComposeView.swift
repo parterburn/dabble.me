@@ -52,9 +52,6 @@ struct ComposeView: View {
     @State private var showsFormatBar = false
     @State private var boldHeldAt: Date?
     @State private var autoTagNotice: String?
-    /// The mic held down this long records until it's let go.
-    private static let holdToTalk: TimeInterval = 0.3
-    @State private var holdingToTalk = false
     /// Space between a notice floating over the text and the bar's buttons under it.
     private static let noticeGap: CGFloat = 12
     @State private var photoItems: [PhotosPickerItem] = []
@@ -217,7 +214,7 @@ struct ComposeView: View {
                                    : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
                                trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
                                trailingEnd: isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil,
-                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(dictation.state)|\(dictation.problem != nil)|\(editor.isEditingLink)",
+                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -246,6 +243,7 @@ struct ComposeView: View {
                         }
                     }
                     .animation(.easeOut(duration: 0.2), value: dictation.problem)
+                    .animation(.easeOut(duration: 0.2), value: editor.barCover)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Group {
@@ -746,34 +744,10 @@ struct ComposeView: View {
     }
 
     /// Speak the entry: starts the recording, and stops it to have it written in. Selected while on.
+    /// Its own view, watching the dictation itself: the bar isn't rebuilt when it starts, which
+    /// would take the button out from under a finger holding it.
     private var dictationButton: some View {
-        appIcon("slab-microphone")
-            .frame(width: 40, height: 36)
-            .background(dictation.isActive ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
-            .contentShape(.capsule)
-            // Tapped: starts, or stops and writes it in.
-            .onTapGesture { tapDictation() }
-            // Held: records until the finger lifts, then writes it in. A tap that's only a little
-            // slow isn't a hold: it has to last `holdToTalk` first.
-            .onLongPressGesture(minimumDuration: Self.holdToTalk) {
-                guard !dictation.isActive else { return }
-                holdingToTalk = true
-                startDictation()
-            } onPressingChanged: { pressing in
-                guard !pressing, holdingToTalk else { return }
-                holdingToTalk = false
-                dictation.stop()
-            }
-            .accessibilityElement()
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
-            .accessibilityHint("Records what you say, then writes it into the entry, on your phone. Or hold it while you talk.")
-            .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
-            .accessibilityAction { tapDictation() }
-    }
-
-    private func tapDictation() {
-        if dictation.isActive { dictation.stop() } else { startDictation() }
+        DictationMicButton(dictation: dictation, start: startDictation)
     }
 
     private func startDictation() {
@@ -2097,6 +2071,62 @@ private struct DictationRow: View {
         }
     }
 
+}
+
+/// The bar's mic. Tapped: starts, or stops and writes it in. Held: records until the finger
+/// lifts, then writes it in. A press counts as a hold once it's lasted `holdToTalk`; anything
+/// shorter is a tap.
+private struct DictationMicButton: View {
+    let dictation: Dictation
+    let start: () -> Void
+    static let holdToTalk: Duration = .milliseconds(300)
+
+    @State private var pressed = false
+    @State private var holding = false
+    @State private var holdTimer: Task<Void, Never>?
+
+    var body: some View {
+        appIcon("slab-microphone")
+            .frame(width: 40, height: 36)
+            .background(dictation.isActive || pressed ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
+            .contentShape(.capsule)
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    guard !pressed else { return }
+                    pressed = true
+                    // Already recording: this press stops it, however long it lasts.
+                    guard !dictation.isActive else { return }
+                    holdTimer = Task {
+                        try? await Task.sleep(for: Self.holdToTalk)
+                        guard !Task.isCancelled, pressed, !dictation.isActive else { return }
+                        holding = true
+                        start()
+                    }
+                }
+                .onEnded { _ in
+                    pressed = false
+                    holdTimer?.cancel()
+                    holdTimer = nil
+                    if holding {
+                        holding = false
+                        // Still getting ready (the first download, the microphone prompt): it
+                        // carries on as a tapped recording, stopped with Done.
+                        if dictation.state == .listening { dictation.stop() }
+                    } else {
+                        tap()
+                    }
+                })
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
+            .accessibilityHint("Records what you say, then writes it into the entry, on your phone")
+            .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
+            .accessibilityAction { tap() }
+    }
+
+    private func tap() {
+        if dictation.isActive { dictation.stop() } else { start() }
+    }
 }
 
 /// Why dictation couldn't listen, as a toast over the bar. Tap to close; it also closes itself.
