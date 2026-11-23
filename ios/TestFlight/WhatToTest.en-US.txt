@@ -25,5 +25,6 @@ Welcome screen cards
 
 Dictation: names spelled your way
 - If you tag a name with its own spelling (say #Katelyn), dictate "I had lunch with Katelyn." It should come out as Katelyn, not Caitlin or Kaitlyn, in Polished and Verbatim.
+- A different name that only shares its consonants stays as said: with #Michael, "Michelle" stays Michelle.
 - Ordinary words that sound close (Cattle, Kate, Catalina) stay as said, and so does a hashtag you say aloud.
 - If you use two names that sound alike (#Caitlin and #Katelyn), dictation leaves whichever it hears alone.
