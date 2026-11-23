@@ -25,6 +25,7 @@ class McpController < ApplicationController
   PUBLIC_MAX_BODY_BYTES = 16.kilobytes
 
   before_action :ensure_mcp_post_only
+  before_action :refuse_cross_origin_request
   before_action -> { doorkeeper_authorize! 'mcp:access' }, unless: :public_discovery_request?
 
   # Streamable HTTP MCP endpoint (request/response JSON only; no SSE).
@@ -84,8 +85,29 @@ class McpController < ApplicationController
     false
   end
 
+  # MCP Streamable HTTP: servers MUST validate Origin (DNS rebinding). Claude, ChatGPT and other
+  # MCP clients call from their servers and send no Origin; a browser always does, and a page on
+  # another site has no business calling /mcp. The endpoint sends no CORS headers either, so a
+  # foreign page couldn't read the answer anyway; this stops the request before it runs.
+  def refuse_cross_origin_request
+    origin = request.headers['Origin']
+    return if origin.blank? || origin == request.base_url
+
+    render json: {
+      jsonrpc: '2.0',
+      id: nil,
+      error: { code: -32_003, message: 'Forbidden: cross-origin requests to /mcp are not allowed' }
+    }, status: :forbidden
+  end
+
+  # RFC 6750 §3.1: a request that sent no token gets a bare challenge with no error code, so
+  # clients read it as "sign in" rather than "your token is bad".
   def www_authenticate_challenge(error)
-    challenge = error.headers['WWW-Authenticate'].presence || 'Bearer'
+    challenge = if bearer_token_sent?
+      error.headers['WWW-Authenticate'].presence || 'Bearer'
+    else
+      %(Bearer realm="#{Doorkeeper.config.realm}")
+    end
     "#{challenge}, resource_metadata=\"#{request.base_url}/.well-known/oauth-protected-resource/mcp\", " \
       'scope="mcp:access"'
   end

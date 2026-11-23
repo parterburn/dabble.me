@@ -112,6 +112,7 @@ en:
           request_not_authorized: 'Request need to be authorized. Required parameter for authorizing request is missing or invalid.'
           invalid_code_challenge: 'Code challenge is required.'
         invalid_redirect_uri: "The requested redirect uri is malformed or doesn't match client redirect URI."
+        invalid_target: 'The requested resource is not served by this authorization server.'
         unauthorized_client: 'The client is not authorized to perform this request using this method.'
         access_denied: 'The resource owner or authorization server denied the request.'
         invalid_scope: 'The requested scope is invalid, unknown, or malformed.'
