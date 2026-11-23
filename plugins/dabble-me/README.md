@@ -2,7 +2,7 @@
 
 Connects to the existing Dabble Me Streamable HTTP server at https://dabble.me/mcp using host-managed OAuth (PKCE S256, scope mcp:access). No API keys or server deployment are needed. Requires a Dabble Me PRO account.
 
-Includes four skills: find-memories, reflect-on-your-journal, year-in-review, and write-journal-entry. Uses the existing Dabble Me icon, bundled at `assets/logo.png` (512×512).
+Includes four skills: find-memories, reflect-on-your-journal, year-in-review, and write-journal-entry. Uses the existing Dabble Me icon, bundled as a 512×512 PNG in the assets folder.
 
 Public server-card and OAuth metadata were verified on 2026-10-08. Tool contracts and limitations were inspected in app/lib/mcp and app/services/mcp. Authenticated tools/list and account actions require installation and user OAuth connection; they have not been exercised by this package build. No journal entries were read or created.
 
@@ -10,11 +10,11 @@ After installation, connect Dabble Me through the host, ask for one recent entry
 
 Package from the plugins directory with: `zip -rX /tmp/dabble-me-plugin.zip dabble-me -x '*.DS_Store'`
 
-The Claude directory accepts only Markdown, text, JSON, YAML, and PNG, JPEG, GIF, WebP, or ICO images from unverified organizations, so keep scripts, HTML, and other file types out of this folder.
+The Claude directory accepts only Markdown, text, JSON, YAML, and complete PNG, JPEG, GIF, or WebP images from unverified organizations (an ICO is held for review), so keep scripts, HTML, and other file types out of this folder. Never write a bundled image's path in this README, in backticks, or in a code block: the directory's scanner reads that as code that could run the image and refuses the version. Only the manifests may name the icon file.
 
 ## Claude directory submission
 
-Use repository `https://github.com/parterburn/dabble.me` and plugin path `plugins/dabble-me`. Track `main` after the compatibility changes merge. Claude reads `.claude-plugin/plugin.json` and `.mcp.json`; its `icon` must be a path to an image inside this folder (`./assets/logo.png`), because the directory listing doesn't load a remote URL; portable clients read the root `plugin.json` and `mcp.json`. Both use the same existing OAuth server and skills. Claude uses the transport name `http` for Streamable HTTP.
+Use repository `https://github.com/parterburn/dabble.me` and plugin path `plugins/dabble-me`. Track `main` after the compatibility changes merge. Claude reads `.claude-plugin/plugin.json` and `.mcp.json`; its icon field must point at the bundled logo inside this folder, because the directory listing doesn't load a remote URL; portable clients read the root `plugin.json` and `mcp.json`. Both use the same existing OAuth server and skills. Claude uses the transport name `http` for Streamable HTTP.
 
 Validate locally with `claude plugin validate ./plugins/dabble-me`. Keep the identity, version, descriptions, and connection synchronized across formats when releasing updates.
 

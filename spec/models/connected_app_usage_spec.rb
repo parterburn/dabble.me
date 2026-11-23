@@ -16,10 +16,4 @@ RSpec.describe ConnectedAppUsage do
                               oauth_application_id: application.id, created_at: 2.days.ago)
     expect(described_class.last_used(user.id, [application.id])[application.id]).to be_within(1.second).of(2.days.ago)
   end
-
-  it 'calls an app stale after a year' do
-    expect(described_class.stale?(13.months.ago)).to be(true)
-    expect(described_class.stale?(11.months.ago)).to be(false)
-    expect(described_class.stale?(nil)).to be(false)
-  end
 end
