@@ -426,6 +426,26 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
     end
   end
 
+  describe "an account with a password, in the app" do
+    let(:token) { MobileApp.issue_token!(user).plaintext_token }
+
+    it "won't email a confirmation code or accept one in place of the password" do
+      post "/api/v1/confirmation_code", headers: bearer(token), as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(json["error"]).to eq("password_required")
+
+      code = EmailCode.issue!(user.email, purpose: "confirm", user: user)
+      post "/api/v1/account_deletion", params: { email_code: code }, headers: bearer(token), as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(json["error"]).to eq("incorrect_password")
+      expect(user.reload.deleted_at).to be_nil
+
+      post "/api/v1/passkeys/options", params: { email_code: code }, headers: bearer(token), as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(json["error"]).to eq("incorrect_password")
+    end
+  end
+
   describe "the web" do
     def send_web_code(email, **extra)
       post email_codes_path, params: { user: { email: email, remember_me: "1" } }.merge(extra)
@@ -510,6 +530,33 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       expect(response.location).to include(user_otp_credential_path)
       get edit_user_registration_path
       expect(response).not_to have_http_status(:ok)
+    end
+
+    it "cancels a pending deletion when the emailed code signs the account back in" do
+      user.update_column(:deleted_at, Time.current)
+      send_web_code(user.email)
+      post verify_email_code_path, params: { code: last_code }
+
+      expect(response).to redirect_to(root_path)
+      expect(flash[:notice]).to eq(I18n.t("devise.sessions.deletion_cancelled"))
+      expect(user.reload.deleted_at).to be_nil
+    end
+
+    it "cancels a pending deletion once the authenticator code after an emailed code is accepted" do
+      user.generate_otp_secret
+      user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+      user.update_column(:deleted_at, Time.current)
+      send_web_code(user.email)
+      post verify_email_code_path, params: { code: last_code }
+      expect(user.reload.deleted_at).to be_present
+
+      put user_otp_credential_path, params: {
+        challenge: user.otp_session_challenge,
+        token: ROTP::TOTP.new(user.otp_auth_secret).now
+      }
+
+      expect(response).to redirect_to(root_path)
+      expect(user.reload.deleted_at).to be_nil
     end
 
     it "puts a gift on an account made from a gift link" do

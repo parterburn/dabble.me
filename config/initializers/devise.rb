@@ -302,7 +302,12 @@ Devise.setup do |config|
 
 end
 
-Warden::Manager.after_authentication do |user, auth, _opts|
+# Password sign-in goes through a Warden strategy, which sets event :authentication.
+# Email-code sign-in, passkey sign-in, and the authenticator page after either one call
+# sign_in directly, and that sets event :set_user. after_authentication never runs for
+# those, so a pending deletion (DeleteUserJob) would still destroy the account.
+# :fetch is a request loading the session, not a sign-in.
+Warden::Manager.after_set_user except: :fetch do |user, auth, _opts|
   next unless user.is_a?(User) && user.cancel_pending_deletion!
 
   auth.request.flash[:notice] = I18n.t('devise.sessions.deletion_cancelled')

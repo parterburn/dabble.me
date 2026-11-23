@@ -34,8 +34,10 @@ module Api
           unless passkey_user == current_user
             return render_error(:forbidden, 'passkey_failed', "That passkey didn't confirm it. Try again, or use your password.")
           end
-        elsif params[:email_code].present?
+        elsif params[:email_code].present? && !current_user.has_password?
           # An account with no password (made by email code) confirms with an emailed code.
+          # One that has a password confirms with that, as the web does: a code plus an
+          # existing app token must not stand in for it.
           unless EmailCode.confirm(current_user, params[:email_code])
             return render_error(:forbidden, 'invalid_code', "That code didn't work. Check the newest email, or send a new code.")
           end
