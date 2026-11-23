@@ -29,8 +29,12 @@ class User
       now = Time.current
       transaction do
         update_columns(session_salt: SecureRandom.hex(16), remember_created_at: nil, updated_at: now)
-        Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
+        # Grants first, then tokens twice. A refresh or code exchange already holding its old
+        # row's lock makes the first token pass wait, then skip that row, without seeing the token
+        # it inserts. The second statement takes a new snapshot and catches it. Any later refresh
+        # locks a row that is already revoked and fails.
         Doorkeeper::AccessGrant.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
+        2.times { Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now) }
         sessions = user_sessions
         sessions = sessions.where.not(id: keep.id) if keep
         sessions.delete_all

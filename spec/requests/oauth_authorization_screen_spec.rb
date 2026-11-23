@@ -180,7 +180,7 @@ RSpec.describe "OAuth authorization screen", type: :request do
 
     it "refuses to register a lookalike name for a site that isn't the brand's" do
       ["Claude", "ChatGPT", "Notion", "ClaudeAI", "Claude_", "OpenAI Helper", "Codex Runner",
-       "Ｃｌａｕｄｅ", "Cl\u0430ude", "CIaude", "C l a u d e"].each do |name|
+       "Ｃｌａｕｄｅ", "Cl\u0430ude", "CIaude", "C l a u d e", "Claude for Notion", "ChatGPT for Claude"].each do |name|
         body = register(name, ["https://attacker.example/cb"])
         expect(response).to have_http_status(:bad_request), name
         expect(body["error"]).to eq("invalid_client_metadata")

@@ -73,11 +73,14 @@ module OauthClientNames
   end
 
   def refuse_registration?(name, redirect_uris)
-    brand = impersonated_brand(name, redirect_uris)
-    return false if brand.nil? || brand == 'Dabble Me'
+    return false if impersonated_brand(name, redirect_uris).nil?
 
+    # No claimed brand is backed, so a name that leads with any of them is refused, not only the
+    # first one matched: "Claude for Notion" from another site is refused for leading with Claude.
     folded = fold(name)
-    BRANDS.find { |b| b[:alt] == brand }[:words].any? { |word| folded.start_with?(fold(word)) }
+    claimed_brands(name).any? do |brand|
+      brand[:alt] != 'Dabble Me' && brand[:words].any? { |word| folded.start_with?(fold(word)) }
+    end
   end
 
   def domains_for(brand)
