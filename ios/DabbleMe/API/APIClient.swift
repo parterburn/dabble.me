@@ -76,6 +76,7 @@ struct APIClient: Sendable {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(try await tokens.accessToken())", forHTTPHeaderField: "Authorization")
+        request.setValue(AppConfig.deviceFamily, forHTTPHeaderField: "X-Dabble-Device")
         if let body {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")

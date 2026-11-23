@@ -49,11 +49,21 @@ Rails.application.routes.draw do
       resource :session, only: :create
       get 'session/passkey', to: 'passkey_sessions#new'
       post 'session/passkey', to: 'passkey_sessions#create'
+      # Passwordless: email a code (to any address, with or without an account), then enter it
+      # to sign in, or to make the account (EmailSignIn).
+      post 'session/code', to: 'email_codes#create'
+      post 'session/code/verify', to: 'email_codes#verify'
       resource :registration, only: :create
+      # A code to the signed-in account's address, for an account with no password to confirm
+      # Delete Account or adding a passkey.
+      resource :confirmation_code, only: :create
       resource :account_deletion, only: %i[show create]
       # Adding a passkey from the app (offered after a password sign-in, and in Settings).
       resources :passkeys, only: :create
       post 'passkeys/options', to: 'passkeys#options'
+      # The devices signed in to the account, and Sign out of all devices.
+      resources :device_sessions, only: %i[index destroy]
+      delete 'device_sessions', to: 'device_sessions#destroy_all'
       resources :exports, only: :create
       get 'me', to: 'me#show'
       patch 'me', to: 'me#update'
@@ -114,12 +124,25 @@ Rails.application.routes.draw do
     end
   end
 
+  # Account Security's Sessions list (SignedInDevicesController).
+  delete 'security/sessions'     => 'signed_in_devices#destroy_all', as: 'signed_in_devices'
+  delete 'security/sessions/:id' => 'signed_in_devices#destroy', as: 'signed_in_device'
+
   devise_for :users, controllers: { registrations: 'registrations', sessions: 'sessions', passwords: 'passwords' }
   get '/users/:id', to: redirect('/security'), as: 'user'
 
   devise_scope :user do
     post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"
   end
+
+  # Passwordless sign-in and sign-up: the emailed code (EmailCodesController, EmailSignIn).
+  post 'users/sign_in/code', to: 'email_codes#create', as: 'email_codes'
+  get 'users/sign_in/code', to: 'email_codes#show', as: 'email_code'
+  post 'users/sign_in/code/verify', to: 'email_codes#verify', as: 'verify_email_code'
+  post 'users/sign_in/code/resend', to: 'email_codes#resend', as: 'resend_email_code'
+  # An emailed code for a signed-in account with no password, to confirm a change.
+  # "Email me a code" submits the form it sits in (PUT on Account Security, DELETE on the delete page).
+  match 'users/confirmation_code', to: 'confirmation_codes#create', as: 'confirmation_code', via: %i[post put patch delete]
 
   namespace :passkeys do
     resources :registrations, only: [:new, :create, :destroy]

@@ -464,11 +464,10 @@ RSpec.describe RegistrationsController, type: :controller do
   end
 
   describe 'creating a user' do
-    it 'should see create user form' do
+    it 'should see the email-first create user form, with no password' do
       get :new
       expect(response.body).to have_field('user_email')
-      expect(response.body).to have_field('user_password')
-      expect(response.body).to have_field('user_password_confirmation')
+      expect(response.body).not_to have_field('user_password')
       expect(response.status).to eq 200
     end
 

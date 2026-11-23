@@ -108,6 +108,23 @@ class ApplicationController < ActionController::Base
   # From the day a closing is announced, turns away new accounts and new
   # payments. Used as a before_action where either starts. The /pay redirects
   # in config/routes.rb make the same check.
+  # Adding a passkey on the web needs the password, or an emailed code on an account with
+  # none, unless this session signed in with an emailed code in the last few minutes.
+  def passkey_proof_needed?
+    signed_in_at = session[EmailCodesController::SIGNED_IN_SESSION]
+    !(signed_in_at.is_a?(Integer) && Time.at(signed_in_at) > EmailCodesController::FRESH_FOR.ago)
+  end
+  helper_method :passkey_proof_needed?
+
+  # The password, or for an account with no password, a "confirm" code emailed to it.
+  def current_password_or_code_valid?(password, email_code)
+    if current_user.has_password?
+      current_user.valid_password?(password.to_s)
+    else
+      EmailCode.confirm(current_user, email_code)
+    end
+  end
+
   def refuse_when_closing
     redirect_to goodbye_path if site_closure
   end
