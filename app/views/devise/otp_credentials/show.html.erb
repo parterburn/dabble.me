@@ -11,7 +11,6 @@
     <%= form_for(resource, as: resource_name, url: [resource_name, :otp_credential], html: { method: :put, "data-turbo" => false, class: "space-y-5" }) do |f| %>
       <%= hidden_field_tag :challenge, @challenge %>
       <%= hidden_field_tag :recovery, @recovery %>
-      <%= hidden_field_tag :remember_me, @remember_me %>
 
       <div class="space-y-3">
         <% if @recovery %>
@@ -45,11 +44,7 @@
       <button type="button" id="otp-use-passkey" class="button-secondary w-full">Use a passkey instead</button>
       <script>
         DABBLE.webauthn.setupSignIn({
-          buttonId: "otp-use-passkey",
-          rememberMe: function() {
-            var field = document.getElementById("remember_me");
-            return field ? field.value : false;
-          }
+          buttonId: "otp-use-passkey"
         });
       </script>
     <% end %>

@@ -17,12 +17,11 @@ class SignedInDevicesController < ApplicationController
 
   # DELETE /security/sessions: every browser and app but this one, and every connected app.
   def destroy_all
-    remembered = cookies.signed[remember_key(current_user, :user)].present?
     current_user.sign_out_everywhere!(keep: Current.user_session)
     current_user.reload
     # The salt changed: store the new one so this browser stays signed in (and remembered).
     bypass_sign_in(current_user, scope: :user)
-    remember_me(current_user) if remembered
+    remember_me(current_user)
     redirect_to security_path(anchor: 'sessions'), notice: 'Signed out of all other devices and disconnected your connected apps.'
   end
 end

@@ -10,7 +10,7 @@ class User
       prepend SaltWithSessionSalt
     end
 
-    # Devise keeps the salt in each browser's session and in "Stay logged in" cookies, and turns
+    # Devise keeps the salt in each browser's session and in remember cookies, and turns
     # a browser away when it no longer matches. session_salt changes it without a new password.
     module SaltWithSessionSalt
       def authenticatable_salt
@@ -21,7 +21,7 @@ class User
       end
     end
 
-    # Sign out of all devices: every browser (sessions and "Stay logged in" cookies, including
+    # Sign out of all devices: every browser (sessions and remember cookies, including
     # ones from before sessions were listed), the iOS app, and every connected app (Claude,
     # ChatGPT), which have to connect again. Pass keep: to leave the browser asking signed in;
     # its controller then stores the new salt (bypass_sign_in).
