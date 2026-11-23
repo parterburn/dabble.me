@@ -148,6 +148,7 @@ class RegistrationsController < Devise::RegistrationsController
     # be cut off.
     @oauth_applications = Doorkeeper::Application.authorized_for(current_user)
     @oauth_applications = @oauth_applications.where.not(uid: MobileApp::CLIENT_ID) unless unlisted_app_sign_ins?
+    @oauth_last_used = ConnectedAppUsage.last_used(current_user.id, @oauth_applications.map(&:id))
     @user_sessions = current_user.user_sessions.listable.most_recent_first
     render 'devise/registrations/security'
   end

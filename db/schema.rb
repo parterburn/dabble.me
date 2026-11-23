@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -320,6 +320,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_030000) do
     t.index ["singleton"], name: "index_site_closures_on_singleton", unique: true
   end
 
+  create_table "stale_app_notices", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.bigint "oauth_application_id", null: false
+    t.datetime "last_used_at", null: false
+    t.datetime "notified_at", null: false
+    t.index ["oauth_application_id"], name: "index_stale_app_notices_on_oauth_application_id"
+    t.index ["user_id", "oauth_application_id"], name: "index_stale_app_notices_on_user_id_and_oauth_application_id", unique: true
+  end
+
   create_table "user_sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "kind", null: false
@@ -431,6 +440,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_030000) do
   add_foreign_key "oauth_access_tokens", "users", column: "resource_owner_id"
   add_foreign_key "service_notice_deliveries", "service_notices", on_delete: :cascade
   add_foreign_key "service_notice_deliveries", "users", on_delete: :cascade
+  add_foreign_key "stale_app_notices", "oauth_applications", on_delete: :cascade
+  add_foreign_key "stale_app_notices", "users", on_delete: :cascade
   add_foreign_key "user_sessions", "users", on_delete: :cascade
   add_foreign_key "webauthn_credentials", "users"
 end
