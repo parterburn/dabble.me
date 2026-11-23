@@ -225,3 +225,34 @@ struct DictationHashtagTests {
         #expect(!spellings.contains("Leo2"))
     }
 }
+
+/// A name the transcriber spelled its own way takes the writer's spelling, by sound, and only
+/// a name: capitalized, not a dictionary word, sounding like exactly one of theirs.
+struct SoundAlikeNamesTests {
+    private let ordinary: Set<String> = ["cattle", "kettle", "catalog"]
+    private func apply(_ names: [String], _ text: String) -> String {
+        SoundAlikeNames.apply(names, to: text, isOrdinaryWord: { ordinary.contains($0.lowercased()) })
+    }
+
+    @Test func aSpellingOfTheirNameBecomesTheirs() {
+        #expect(apply(["Katelyn"], "I saw Caitlin today.") == "I saw Katelyn today.")
+        #expect(apply(["Katelyn"], "Kaitlyn's birthday") == "Katelyn's birthday")
+        #expect(apply(["Stephen"], "Steven called") == "Stephen called")
+    }
+
+    @Test func onlyANameThatSoundsTheSameChanges() {
+        #expect(apply(["Katelyn"], "Catalina and Kate") == "Catalina and Kate")
+        #expect(apply(["Katelyn"], "Cattle grazed") == "Cattle grazed")
+        #expect(apply(["Katelyn"], "i saw caitlin") == "i saw caitlin")
+        #expect(apply(["Katelyn"], "#Caitlin") == "#Caitlin")
+        // Both are theirs: neither is guessed, and each keeps its own.
+        #expect(apply(["Katelyn", "Caitlin"], "Caitlin and Kaitlyn") == "Caitlin and Kaitlyn")
+    }
+
+    @Test func soundKeys() {
+        #expect(SoundAlikeNames.soundKey("Caitlin") == "ktln")
+        #expect(SoundAlikeNames.soundKey("Katelyn") == "ktln")
+        #expect(SoundAlikeNames.soundKey("Catalina") == "ktlna")
+        #expect(SoundAlikeNames.soundKey("Hannah") != SoundAlikeNames.soundKey("Anna"))
+    }
+}

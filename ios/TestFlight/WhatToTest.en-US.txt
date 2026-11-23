@@ -1,4 +1,4 @@
-Dictation's row is simpler, your entry template shows on a new entry's empty page, Writing ideas has tidier spacing, and the welcome cards put photos beside the words.
+Dictation's row is simpler and it spells your names your way, your entry template shows on a new entry's empty page, Writing ideas has tidier spacing, and the welcome cards put photos beside the words.
 
 Dictation row
 - Tap the mic in the composer. The small olive title above the row says "Dictation" the whole time.
@@ -21,3 +21,8 @@ Writing ideas spacing
 Welcome screen cards
 - Sign out. On the example entries, the date ("1 year ago") has its own row across the top of the card, and the photo sits to the right of the words, below the date.
 - The Bruges card still shows its #anniversary pill under the words; the apartment card (no photo) uses the full width.
+
+Dictation: names spelled your way
+- If you tag a name with its own spelling (say #Katelyn), dictate "I had lunch with Katelyn." It should come out as Katelyn, not Caitlin or Kaitlyn, in Polished and Verbatim.
+- Ordinary words that sound close (Cattle, Kate, Catalina) stay as said, and so does a hashtag you say aloud.
+- If you use two names that sound alike (#Caitlin and #Katelyn), dictation leaves whichever it hears alone.
