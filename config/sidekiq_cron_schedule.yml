@@ -53,3 +53,8 @@ user_session_cleanup:
   cron: "50 4 * * *"
   class: "UserSessionCleanupWorker"
   description: "Daily at 4:50 AM UTC. Deletes Sessions-list rows that can no longer sign in (UserSession)."
+
+stale_connected_apps:
+  cron: "0 16 * * 2"
+  class: "StaleConnectedAppsWorker"
+  description: "Tuesdays at 4:00 PM UTC. Emails users about connected apps they haven't used in a year (at most once per app per unused stretch)."

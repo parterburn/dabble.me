@@ -11,7 +11,13 @@
         <li class="flex items-center justify-between gap-4 px-4 py-3">
           <div class="min-w-0">
             <p class="truncate font-medium text-primary"><%= application.name %></p>
-            <p class="text-sm text-muted">Added <%= application.created_at.strftime("%b %d, %Y") %></p>
+            <% last_used = @oauth_last_used&.dig(application.id) %>
+            <p class="text-sm text-muted">
+              Added <%= application.created_at.strftime("%b %d, %Y") %><% if last_used %> · Last used <%= last_used.strftime("%b %d, %Y") %><% end %>
+            </p>
+            <% if ConnectedAppUsage.stale?(last_used) %>
+              <p class="text-sm font-medium text-amber-800">Not used in over a year. Remove it if you don't need it.</p>
+            <% end %>
           </div>
           <%= link_to "Remove", oauth_authorized_application_path(application), method: :delete, data: { confirm: "Are you sure?" }, class: "shrink-0 text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
         </li>
