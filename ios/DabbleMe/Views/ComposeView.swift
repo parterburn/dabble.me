@@ -2059,6 +2059,12 @@ private struct DictationProblemToast: View {
         .accessibilityAction(named: "Close", close)
         .accessibilityIdentifier("DictationProblem")
         .onAppear { AccessibilityNotification.Announcement(problem.message).post() }
+        // Closes itself after a few seconds (longer with a Settings button to reach). Keyed to
+        // the problem so a new one gets its full time.
+        .task(id: problem) {
+            try? await Task.sleep(for: .seconds(problem == .microphoneDenied ? 8 : 4))
+            if !Task.isCancelled { close() }
+        }
     }
 }
 
