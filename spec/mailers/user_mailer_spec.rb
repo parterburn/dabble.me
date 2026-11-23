@@ -182,21 +182,5 @@ RSpec.describe UserMailer do
       expect(email.text_part.body.decoded).to include("attacker.example (unverified app)")
     end
   end
-
-  describe "#stale_connected_apps" do
-    it "lists each unused app with when it was last used and links to Connected apps" do
-      app = Doorkeeper::Application.create!(name: "Claude", redirect_uri: "https://claude.ai/api/mcp/auth_callback",
-                                             scopes: "mcp:access", confidential: false, created_at: Time.zone.parse("2026-05-02"))
-      stale = StaleConnectedAppsWorker::StaleApp.new(application: app, last_used_at: Time.zone.parse("2026-06-10"))
-      email = described_class.stale_connected_apps(user, [stale])
-      text = email.text_part.body.decoded
-
-      expect(email.to).to eq([user.email])
-      expect(email.subject).to eq("Connected apps you haven't used in a year")
-      expect(text).to include("This app is still connected", "Claude (claude.ai): last used June 2026, added May 2026",
-                              "/security#connected-apps")
-      expect(email.html_part.body.decoded).to include("<strong>Claude</strong>")
-    end
-  end
 end
 

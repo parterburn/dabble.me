@@ -160,14 +160,4 @@ class UserMailer < ActionMailer::Base
     email = mail(to: user.cleaned_to_address, subject: "New app connected to your Dabble Me account")
     email.mailgun_options = { tag: "Security" }
   end
-
-  # Connected apps (StaleConnectedAppsWorker::StaleApp list) that can still reach the journal
-  # but haven't been used in a year, with a link to remove them.
-  def stale_connected_apps(user, stale_apps)
-    @user = user
-    @stale_apps = stale_apps
-    @user.increment!(:emails_sent)
-    email = mail(to: user.cleaned_to_address, subject: "Connected apps you haven't used in a year")
-    email.mailgun_options = { tag: "Security" }
-  end
 end
