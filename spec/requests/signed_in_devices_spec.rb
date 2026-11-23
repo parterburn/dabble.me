@@ -57,6 +57,15 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
     expect(response.body.index('id="sessions"')).to be < response.body.index("Connected apps")
   end
 
+  it "says how long ago an idle device was last active" do
+    sign_in_with_password
+    user.user_sessions.create!(kind: "web", browser: "Chrome", os: "Windows", last_active_at: 3.hours.ago)
+
+    get security_path
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Active about 3 hours ago")
+  end
+
   it "keeps no IP address" do
     sign_in_with_password
     expect(UserSession.column_names.grep(/ip/)).to be_empty
