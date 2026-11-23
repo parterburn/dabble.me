@@ -351,6 +351,10 @@ struct ComposeView: View {
                 if !focused, dictation.state == .listening { dictation.stop() }
             }
             .onDisappear { dictation.cancel() }
+            // A tap in the hand as the recording starts, and another as it stops (Done, a held mic
+            // let go, the X, or the silence limit).
+            .sensoryFeedback(.start, trigger: dictation.state) { _, now in now == .listening }
+            .sensoryFeedback(.stop, trigger: dictation.state) { was, now in was == .listening && now != .listening }
             // Why it couldn't listen is said for a while, then the row closes.
             .task(id: dictation.problem) {
                 guard dictation.problem != nil else { return }
