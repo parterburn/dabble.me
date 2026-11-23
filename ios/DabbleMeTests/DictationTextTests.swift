@@ -242,6 +242,9 @@ struct SoundAlikeNamesTests {
 
     @Test func onlyANameThatSoundsTheSameChanges() {
         #expect(apply(["Katelyn"], "Catalina and Kate") == "Catalina and Kate")
+        // Another person with the same consonants is still another person.
+        #expect(apply(["Michael"], "I saw Michelle today.") == "I saw Michelle today.")
+        #expect(apply(["Danielle"], "Daniel called") == "Daniel called")
         #expect(apply(["Katelyn"], "Cattle grazed") == "Cattle grazed")
         #expect(apply(["Katelyn"], "i saw caitlin") == "i saw caitlin")
         #expect(apply(["Katelyn"], "#Caitlin") == "#Caitlin")
@@ -250,9 +253,15 @@ struct SoundAlikeNamesTests {
     }
 
     @Test func soundKeys() {
-        #expect(SoundAlikeNames.soundKey("Caitlin") == "ktln")
-        #expect(SoundAlikeNames.soundKey("Katelyn") == "ktln")
-        #expect(SoundAlikeNames.soundKey("Catalina") == "ktlna")
+        #expect(SoundAlikeNames.soundKey("Caitlin") == "kAtlIn")
+        #expect(SoundAlikeNames.soundKey("Katelyn") == "kAtlIn")
+        #expect(SoundAlikeNames.soundKey("Kaitlyn") == "kAtlIn")
+        #expect(SoundAlikeNames.soundKey("Catalina") == "kAtAlInA")
+        #expect(SoundAlikeNames.soundKey("Steven") == SoundAlikeNames.soundKey("Stephen"))
+        #expect(SoundAlikeNames.soundKey("Brian") == SoundAlikeNames.soundKey("Bryan"))
+        #expect(SoundAlikeNames.soundKey("Michael") != SoundAlikeNames.soundKey("Michelle"))
+        #expect(SoundAlikeNames.soundKey("Daniel") != SoundAlikeNames.soundKey("Danielle"))
+        #expect(SoundAlikeNames.soundKey("Erin") != SoundAlikeNames.soundKey("Aaron"))
         #expect(SoundAlikeNames.soundKey("Hannah") != SoundAlikeNames.soundKey("Anna"))
     }
 }

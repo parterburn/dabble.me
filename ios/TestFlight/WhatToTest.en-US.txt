@@ -1,28 +1,6 @@
-Dictation's row is simpler and it spells your names your way, your entry template shows on a new entry's empty page, Writing ideas has tidier spacing, and the welcome cards put photos beside the words.
+Dictation: names spelled your way, without mixing up different people.
 
-Dictation row
-- Tap the mic in the composer. The small olive title above the row says "Dictation" the whole time.
-- While it gets ready, and again after Done while it writes your words down, the row shows only the moving dots.
-- The first time, while it downloads what it needs, the dots have "Downloading 42%" next to them.
-- Problems show as a toast over the bar instead of filling the row. Try staying quiet for 10 seconds after tapping the mic, or turning the microphone off for Dabble Me in iOS Settings (the toast then has a Settings button).
-- Tap the toast to close it, or wait: it closes on its own after a few seconds.
-
-Entry template on the empty page
-- With a template (Settings → Entry Template), a new entry's empty page shows it, faint, under "Start writing or [Swipe →] to use template:".
-- Swipe right across the page, or tap the Swipe badge: the template goes in. Just start typing to write without it.
-- A long template shows its first lines and fades out at the bottom.
-- The "Start New Entries with It" switch is gone. If you had it on, new entries open empty with the template one swipe away, and Today and the widget show the day's prompt again.
-- Holding a Write button on Today still opens an entry with the template already in.
-
-Writing ideas spacing
-- Tap the lightbulb. The prompt has no sparkle icon in front of it now, and sits a little further below the "Writing ideas" heading.
-- Calendar event names start closer to their times. Check an event at 12:00 PM, an all-day one, and a larger text size: the times shouldn't cut off.
-
-Welcome screen cards
-- Sign out. On the example entries, the date ("1 year ago") has its own row across the top of the card, and the photo sits to the right of the words, below the date.
-- The Bruges card still shows its #anniversary pill under the words; the apartment card (no photo) uses the full width.
-
-Dictation: names spelled your way
-- If you tag a name with its own spelling (say #Katelyn), dictate "I had lunch with Katelyn." It should come out as Katelyn, not Caitlin or Kaitlyn, in Polished and Verbatim.
+- If you tag a name with its own spelling (say #Katelyn), dictate "I had lunch with Katelyn." It should come out as Katelyn, not Caitlin or Kaitlyn. Try it with Polished and with Verbatim.
+- A different name that only shares its consonants is left alone: with #Michael, saying "Michelle" stays Michelle; with #Danielle, "Daniel" stays Daniel.
 - Ordinary words that sound close (Cattle, Kate, Catalina) stay as said, and so does a hashtag you say aloud.
 - If you use two names that sound alike (#Caitlin and #Katelyn), dictation leaves whichever it hears alone.

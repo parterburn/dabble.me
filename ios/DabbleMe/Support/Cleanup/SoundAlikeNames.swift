@@ -5,7 +5,8 @@ import Foundation
 /// and the transcriber's words to expect only nudge it, so a name with a common spelling of its
 /// own ("Caitlin", "Steven") still comes out that way.
 ///
-/// This matches by sound instead, carefully: one capitalized word, three or more sounds, that
+/// This matches by sound instead, carefully: one capitalized word, three or more consonant sounds
+/// and the same vowel sounds (so "Michelle" is never "Michael"), that
 /// the dictionary doesn't know in lowercase ("Cattle" is never a name), that isn't one of the
 /// writer's own names already, and that sounds like exactly one of them.
 nonisolated enum SoundAlikeNames {
@@ -20,7 +21,8 @@ nonisolated enum SoundAlikeNames {
         for name in names where name.count >= 3 && name.allSatisfy(\.isLetter) {
             own.insert(name.lowercased())
             let key = soundKey(name)
-            guard key.count >= 3 else { continue }
+            // Three consonant sounds or more: "Kate" and "Kat" are too short to guess between.
+            guard key.filter(\.isLowercase).count >= 3 else { continue }
             if let existing = byKey[key] {
                 if existing.lowercased() != name.lowercased() { ambiguous.insert(key) }
             } else {
@@ -64,9 +66,12 @@ nonisolated enum SoundAlikeNames {
         return output
     }
 
-    /// How a name sounds, roughly, in English: its consonants in order, with like sounds merged
-    /// (c/k/q, s/z, f/v/ph), doubles and silent letters dropped, and a mark for a vowel it starts
-    /// or ends on. "Caitlin", "Kaitlyn" and "Katelyn" are all "ktln"; "Catalina" is "ktlna".
+    /// How a name sounds, roughly, in English: consonants in lowercase, with like sounds merged
+    /// (c/k/q, s/z, f/v/ph) and doubles and silent letters dropped, and each sounded vowel as a
+    /// capital (A E I O U, "y" as I, "ai" as A). A silent "e" goes: at the end ("Kate"), and in
+    /// the middle where a syllable runs on ("Kate-lyn"), but an "e" after a double consonant at
+    /// the end is sounded ("Michelle"). "Caitlin", "Kaitlyn" and "Katelyn" are all "kAtlIn";
+    /// "Michael" ("mIkAl") and "Michelle" ("mIklE") stay apart, as do "Daniel" and "Danielle".
     static func soundKey(_ name: String) -> String {
         var letters = name.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
             .lowercased().filter { $0.isLetter && $0.isASCII }
@@ -85,13 +90,47 @@ nonisolated enum SoundAlikeNames {
             return vowels.contains(chars[index])
         }
 
-        var key = isVowel(0) ? "a" : ""
+        /// The vowel sound of a run of vowels ("ai" → A), or nil where it's silent.
+        func vowelSound(from start: Int, to end: Int) -> Character? {
+            let group = String(chars[start..<end])
+            if end == chars.count {
+                if group == "e" {
+                    // Silent, except after a double consonant ("Michelle", "Danielle", "Annette").
+                    let doubled = start >= 2 && chars[start - 1] == chars[start - 2]
+                    return doubled ? "E" : nil
+                }
+                if group.hasSuffix("y") || group.hasSuffix("i") || ["ie", "ee", "ey"].contains(group) { return "I" }
+            } else if group == "e", start > 0 {
+                // "Kate-lyn", "Ste-phen": the next consonants run straight into another vowel.
+                var next = end
+                while next < chars.count, !isVowel(next) { next += 1 }
+                if next > end, next < chars.count { return nil }
+            }
+            if group.hasPrefix("ai") || group.hasPrefix("ay") { return "A" }
+            switch group.first ?? "i" {
+            case "a": return "A"
+            case "e": return "E"
+            case "o": return "O"
+            case "u": return "U"
+            default: return "I"
+            }
+        }
+
+        var key = ""
         var lastSound: Character?
-        for (index, char) in chars.enumerated() {
+        var index = 0
+        while index < chars.count {
             if isVowel(index) {
-                lastSound = nil
+                var end = index
+                while end < chars.count, isVowel(end) { end += 1 }
+                if let vowel = vowelSound(from: index, to: end) {
+                    key.append(vowel)
+                    lastSound = vowel
+                }
+                index = end
                 continue
             }
+            let char = chars[index]
             let sound: String
             switch char {
             case "c": sound = isVowel(index + 1) && "eiy".contains(chars[index + 1]) ? "s" : "k"
@@ -107,11 +146,7 @@ nonisolated enum SoundAlikeNames {
                 key.append(s)
                 lastSound = s
             }
-        }
-        // A sounded last vowel ("Katie", "Catalina"), not a silent "e" ("Kate").
-        if let end = chars.indices.last, isVowel(end) {
-            let silentE = chars[end] == "e" && end > 1 && !isVowel(end - 1)
-            if !silentE { key.append("a") }
+            index += 1
         }
         return key
     }
