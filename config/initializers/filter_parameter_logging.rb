@@ -7,6 +7,11 @@ Rails.application.config.filter_parameters += [
   :current_password,
   :password_confirmation,
   :access_token,
+  # OAuth (Doorkeeper /oauth/token, /oauth/revoke, /oauth/introspect).
+  :refresh_token,
+  :client_secret,
+  :code_verifier,
+  /\Atoken\z/,
   :authorization,
   :otp_attempt,
   :otp_code,

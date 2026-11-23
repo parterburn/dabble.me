@@ -24,7 +24,11 @@ module Oauth
       end
 
       client_name = OauthClientNames.clean(registration_params[:client_name])
-      if (brand = OauthClientNames.impersonated_brand(client_name, uris))
+      if OauthClientNames.refuse_registration?(client_name, uris)
+        brand = OauthClientNames.impersonated_brand(client_name, uris)
+        # Warn level reaches the production log, so a real client refused here shows up.
+        Rails.logger.warn("[Oauth::RegistrationsController] refused lookalike client_name #{client_name.inspect} " \
+                          "(#{brand}) for #{uris.filter_map { |uri| URI.parse(uri).host rescue nil }.uniq.join(', ')}")
         return render json: {
           error: 'invalid_client_metadata',
           error_description: "client_name uses the name #{brand}, but redirect_uris are not on #{brand}'s domains"

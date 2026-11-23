@@ -6,76 +6,56 @@
 #
 # Clients sometimes send two refreshes at once (MCP clients do), so a reuse within GRACE of the
 # rotation is the client's own race and is only refused, as Doorkeeper refuses it anyway. Past
-# GRACE, the live token at the end of the old token's rotation chain is revoked, and the user is
-# emailed. The app has to connect again; whoever holds the copy loses access too.
+# GRACE, every live token descended from the same sign-in is revoked and the user is emailed.
+# The app has to connect again; whoever holds the copy loses access too. A client that shares
+# one refresh token between processes can trip this too: the Sentry message shows how often.
 #
-# There's no lineage column, so the chain is rebuilt from timing: a refresh revokes the old row
-# and creates its successor in the same request, so a token's successor is the row for the same
-# account, app (and, for the iOS app, device) created within ROTATION_SLACK of its revoked_at. A
-# token revoked any other way (removed in Connected apps, idle expiry, sign out of all devices, a
-# password change) has no such row, so replaying it can't touch a connection authorized later.
+# Lineage: each rotated token carries refresh_chain_id, the id of the token that began its
+# chain (record_rotation, from Doorkeeper's after_successful_strategy_response). A token was
+# rotated if its chain has a newer token. One revoked any other way (removed in Connected apps,
+# idle expiry, sign out of all devices, a password change) was the end of its chain, so replaying
+# it does nothing here, and a later sign-in starts a new chain it can't reach.
+#
+# Tokens rotated before refresh_chain_id existed have no lineage; a replay of one is only refused.
 module OauthRefreshReuse
   GRACE = 60.seconds
-  ROTATION_SLACK = 2.seconds
-  # A year of daily refreshes, with room to spare.
-  MAX_CHAIN = 1_000
 
   module_function
 
-  # The live token the old one was rotated into, or nil when this isn't a suspicious reuse.
-  def live_successor(token, now: Time.current)
-    return nil unless token&.revoked_at && token.revoked_at <= now - GRACE
+  def record_rotation(old_token, new_token)
+    return unless old_token && new_token&.persisted?
 
-    chain_leaf(token)
+    new_token.update_column(:refresh_chain_id, chain_id(old_token))
   end
 
-  # The unrevoked token at the end of a revoked token's rotation chain, or nil.
-  def chain_leaf(token)
-    current = token
-    MAX_CHAIN.times do
-      successor = rotated_into(current)
-      return nil unless successor
-      return successor if successor.revoked_at.nil?
-
-      current = successor
-    end
-    nil
+  def chain_id(token)
+    token.refresh_chain_id || token.id
   end
 
-  def rotated_into(token)
-    scope = Doorkeeper::AccessToken.where(
-      resource_owner_id: token.resource_owner_id,
-      application_id: token.application_id,
-      created_at: (token.revoked_at - ROTATION_SLACK)..(token.revoked_at + ROTATION_SLACK)
-    ).where.not(id: token.id).where('id > ?', token.id)
-    scope = scope.where(user_session_id: token.user_session_id) if token.user_session_id
-    scope.order(:id).first
+  # Live tokens in the replayed token's chain, or none when this isn't a suspicious reuse.
+  def live_descendants(token, now: Time.current)
+    none = Doorkeeper::AccessToken.none
+    return none unless token&.revoked_at && token.revoked_at <= now - GRACE
+
+    chain = Doorkeeper::AccessToken.where(refresh_chain_id: chain_id(token)).where('id > ?', token.id)
+    return none unless chain.exists? # the end of its chain: revoked some other way, not rotated
+
+    chain.where(revoked_at: nil)
   end
 
-  # Revokes the live successor and emails the user. True when it did.
+  # Revokes the chain's live tokens and emails the user. True when it did.
   #
-  # Doorkeeper locks a refresh token's row while it rotates it, so the successor is locked and
-  # checked again here: if a refresh rotated it in the meantime, the walk starts over from it and
-  # revokes the newer token instead, so the email is never sent while a token is still live.
+  # The rows are locked, as Doorkeeper locks a token while it rotates it, so a refresh racing
+  # this one either finishes first or finds its token revoked. One gap remains: a token created
+  # by a refresh that commits in the same instant gets its refresh_chain_id a moment later
+  # (record_rotation runs after Doorkeeper's transaction) and is missed.
   def handle!(token, now: Time.current)
-    return false unless live_successor(token, now: now)
+    revoked = Doorkeeper::AccessToken.transaction do
+      ids = live_descendants(token, now: now).lock.pluck(:id)
+      next false if ids.empty?
 
-    revoked = false
-    start = token
-    3.times do
-      live = chain_leaf(start)
-      break unless live
-
-      revoked = Doorkeeper::AccessToken.transaction do
-        live.lock!
-        next false if live.revoked_at
-
-        live.update_columns(revoked_at: now)
-        true
-      end
-      break if revoked
-
-      start = live
+      Doorkeeper::AccessToken.where(id: ids).update_all(revoked_at: now)
+      true
     end
     return false unless revoked
 

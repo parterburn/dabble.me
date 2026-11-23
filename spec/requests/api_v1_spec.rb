@@ -1162,6 +1162,19 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(Doorkeeper::AccessToken.where(application: mobile_app).count).to eq(0)
     end
 
+    it "refuses the app's code even when the client authenticates with HTTP Basic" do
+      grant = Doorkeeper::AccessGrant.create!(
+        application: mobile_app, resource_owner_id: free_user.id, redirect_uri: MobileApp::REDIRECT_URI,
+        scopes: MobileApp::SCOPE, expires_in: 10.minutes, code_challenge: code_challenge, code_challenge_method: "S256"
+      )
+      post oauth_token_path,
+           params: { grant_type: "authorization_code", code: grant.plaintext_token, redirect_uri: MobileApp::REDIRECT_URI,
+                     code_verifier: code_verifier },
+           headers: { "Authorization" => "Basic #{Base64.strict_encode64("#{mobile_app.uid}:")}" }
+      expect(response).to have_http_status(:bad_request)
+      expect(json["error"]).to eq("unauthorized_client")
+    end
+
     it "still renews the app's token with its refresh token" do
       token = MobileApp.issue_token!(free_user)
       post oauth_token_path, params: {

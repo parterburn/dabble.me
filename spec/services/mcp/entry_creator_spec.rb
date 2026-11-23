@@ -133,6 +133,20 @@ RSpec.describe Mcp::EntryCreator do
       expect(a_request(:get, /attacker\.example/)).not_to have_been_made
     end
 
+    it "refuses Google hosts other than its image hosts, such as Compute Engine VM names" do
+      result = Mcp::EntryCreator.new(user: paid_user).create(
+        date_string: "2099-01-05",
+        body_text: "hello",
+        image_url: "https://1.2.3.4.bc.googleusercontent.com/pixel.png?q=secret"
+      )
+
+      expect(result[:success]).to eq(false)
+      expect(result[:errors].first).to include("not allowed")
+      expect(Mcp::ImageUrlHosts.allowed?("lh3.googleusercontent.com")).to be(true)
+      expect(Mcp::ImageUrlHosts.allowed?("script.googleusercontent.com")).to be(false)
+      expect(Mcp::ImageUrlHosts.allowed?("evil-oaiusercontent.com")).to be(false)
+    end
+
     it "refuses a redirect from an allowed file host to any other host" do
       allow(Resolv).to receive(:getaddresses).with("files.oaiusercontent.com").and_return(["93.184.216.34"])
       stub_request(:get, "https://files.oaiusercontent.com/start.png")
@@ -150,7 +164,7 @@ RSpec.describe Mcp::EntryCreator do
     end
 
     it "fetches from a host added with MCP_IMAGE_URL_HOSTS" do
-      stub_const("ENV", ENV.to_h.merge("MCP_IMAGE_URL_HOSTS" => " Files.NewAssistant.example. ,other.example"))
+      stub_const("ENV", ENV.to_h.merge("MCP_IMAGE_URL_HOSTS" => " .NewAssistant.example. ,other.example"))
       allow(Resolv).to receive(:getaddresses).with("cdn.files.newassistant.example").and_return(["93.184.216.34"])
       stub_request(:get, "https://cdn.files.newassistant.example/a.png")
         .to_return(status: 200, body: png_bytes, headers: { "Content-Type" => "image/png" })

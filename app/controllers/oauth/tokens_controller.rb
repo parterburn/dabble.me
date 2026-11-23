@@ -31,10 +31,15 @@ module Oauth
 
     # The iOS app no longer signs in on the web (Oauth::AuthorizationsController refuses its
     # client), so no code of its can be exchanged here. Its refresh tokens still renew.
+    # Checked on the code itself, so client credentials sent with HTTP Basic instead of
+    # client_id can't get past it.
     def refuse_mobile_app_code_exchange
-      return unless params[:grant_type] == 'authorization_code' && params[:client_id].to_s == MobileApp::CLIENT_ID
+      return unless params[:grant_type] == 'authorization_code'
 
-      render_token_error(:unauthorized_client)
+      grant = Doorkeeper.config.access_grant_model.by_token(params[:code].to_s) if params[:code].present?
+      mobile = params[:client_id].to_s == MobileApp::CLIENT_ID ||
+               (grant && MobileApp.client?(grant.application))
+      render_token_error(:unauthorized_client) if mobile
     end
 
     # A rotated refresh token sent again (OauthRefreshReuse). Doorkeeper refuses it either way;

@@ -10,12 +10,20 @@ module Mcp
   # fetches from the file services AI apps host images on, where uploaders can't read the
   # request logs. Any other image goes through get_image_upload_url.
   #
+  # Entries match one host exactly; an entry starting with "." matches that domain's subdomains
+  # instead. Only OpenAI's own file domain gets a wildcard: googleusercontent.com as a whole also
+  # names Compute Engine VMs (*.bc.googleusercontent.com) and proxies for other sites, so only
+  # Google's image hosts are listed.
+  #
   # Add a host (a new assistant's file service) with MCP_IMAGE_URL_HOSTS, comma-separated, e.g.
-  # "files.example-ai.com,cdn.example-ai.com". A host also allows its subdomains.
+  # "files.example-ai.com,.cdn.example-ai.com".
   module ImageUrlHosts
     DEFAULT_HOSTS = %w[
-      oaiusercontent.com
-      googleusercontent.com
+      .oaiusercontent.com
+      lh3.googleusercontent.com
+      lh4.googleusercontent.com
+      lh5.googleusercontent.com
+      lh6.googleusercontent.com
     ].freeze
 
     module_function
@@ -29,7 +37,9 @@ module Mcp
       host = normalize(host)
       return false if host.blank?
 
-      hosts.any? { |candidate| host == candidate || host.end_with?(".#{candidate}") }
+      hosts.any? do |candidate|
+        candidate.start_with?('.') ? host.end_with?(candidate) : host == candidate
+      end
     end
 
     def normalize(host)

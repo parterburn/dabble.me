@@ -179,11 +179,22 @@ RSpec.describe "OAuth authorization screen", type: :request do
     end
 
     it "refuses to register a lookalike name for a site that isn't the brand's" do
-      ["Claude", "ChatGPT", "Notion", "Dabble Me for iOS", "dabble-me"].each do |name|
+      ["Claude", "ChatGPT", "Notion", "ClaudeAI", "Claude_", "OpenAI Helper", "Codex Runner",
+       "Ｃｌａｕｄｅ", "Cl\u0430ude", "CIaude", "C l a u d e"].each do |name|
         body = register(name, ["https://attacker.example/cb"])
         expect(response).to have_http_status(:bad_request), name
         expect(body["error"]).to eq("invalid_client_metadata")
       end
+    end
+
+    it "registers names that only mention a brand, and the consent screen warns about them" do
+      ["Acme for Claude", "Dabble Me for iOS", "dabble-me"].each do |name|
+        register(name, ["https://attacker.example/cb"])
+        expect(response).to have_http_status(:created), name
+      end
+
+      get_consent_screen(Doorkeeper::Application.find_by!(name: "Dabble Me for iOS"))
+      expect(response.body).to include("isn’t from Dabble Me")
     end
 
     it "registers the real clients and local tools" do

@@ -79,6 +79,7 @@ Doorkeeper.configure do
   after_successful_strategy_response do |request, _response|
     if request.is_a?(Doorkeeper::OAuth::RefreshTokenRequest)
       AppSessions.carry_over(request.refresh_token, request.access_token)
+      OauthRefreshReuse.record_rotation(request.refresh_token, request.access_token)
     end
   end
 end

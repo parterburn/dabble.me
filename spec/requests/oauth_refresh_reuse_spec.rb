@@ -80,23 +80,26 @@ RSpec.describe "Reusing a rotated refresh token", type: :request do
     end
   end
 
-  it "revokes the newer token when the chain rotates while it's being cut off" do
+  it "leaves alone a sign-in made in the same instant its old tokens were revoked" do
     old = issue
     old_refresh = old.plaintext_refresh_token
-    second = refresh(old_refresh)
-    stale_leaf = Doorkeeper::AccessToken.by_token(second["access_token"])
-    third = refresh(second["refresh_token"]) # rotates the leaf after it was looked up
-
-    calls = 0
-    allow(OauthRefreshReuse).to receive(:chain_leaf).and_wrap_original do |original, token|
-      calls += 1
-      calls == 2 ? stale_leaf : original.call(token) # live_successor, then the stale first walk
-    end
+    refresh(old_refresh)
+    user.revoke_doorkeeper_access_tokens! # e.g. the account claimed by emailed code...
+    fresh_sign_in = issue                 # ...and the new sign-in in the same request
 
     travel_to(2.minutes.from_now) do
-      expect(OauthRefreshReuse.handle!(old.reload)).to be(true)
-      expect(Doorkeeper::AccessToken.by_token(third["access_token"])).to be_revoked
+      expect { refresh(old_refresh) }.not_to have_enqueued_mail(UserMailer, :oauth_refresh_token_reused)
+      expect(fresh_sign_in.reload).not_to be_revoked
     end
+  end
+
+  it "records each refresh's chain" do
+    old = issue
+    second = refresh(old.plaintext_refresh_token)
+    third = refresh(second["refresh_token"])
+
+    expect(Doorkeeper::AccessToken.by_token(second["access_token"]).refresh_chain_id).to eq(old.id)
+    expect(Doorkeeper::AccessToken.by_token(third["access_token"]).refresh_chain_id).to eq(old.id)
   end
 
   it "can't disconnect a connection made after the old one was removed" do
