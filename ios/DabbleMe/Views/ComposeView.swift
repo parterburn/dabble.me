@@ -52,6 +52,8 @@ struct ComposeView: View {
     @State private var showsFormatBar = false
     @State private var boldHeldAt: Date?
     @State private var autoTagNotice: String?
+    /// Space between a notice floating over the text and the bar's buttons under it.
+    private static let noticeGap: CGFloat = 12
     @State private var photoItems: [PhotosPickerItem] = []
     /// Prepared photos keyed by picker item, so re-selecting doesn't redo the work.
     @State private var prepared: [PhotosPickerItem: PreparedPhoto] = [:]
@@ -212,7 +214,7 @@ struct ComposeView: View {
                                    : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
                                trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
                                trailingEnd: isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil,
-                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(dictation.state)|\(dictation.problem != nil)|\(editor.isEditingLink)",
+                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -224,7 +226,7 @@ struct ComposeView: View {
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
                                 .background(.regularMaterial, in: .capsule)
-                                .padding(.bottom, 68)
+                                .padding(.bottom, editor.barCover + Self.noticeGap)
                                 .padding(.horizontal, 24)
                                 .transition(.opacity)
                                 .allowsHitTesting(false)
@@ -235,12 +237,13 @@ struct ComposeView: View {
                     .overlay(alignment: .bottom) {
                         if let problem = dictation.problem {
                             DictationProblemToast(problem: problem) { dictation.clearProblem() }
-                                .padding(.bottom, 68)
+                                .padding(.bottom, editor.barCover + Self.noticeGap)
                                 .padding(.horizontal, 24)
                                 .transition(.opacity)
                         }
                     }
                     .animation(.easeOut(duration: 0.2), value: dictation.problem)
+                    .animation(.easeOut(duration: 0.2), value: editor.barCover)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Group {
@@ -741,32 +744,30 @@ struct ComposeView: View {
     }
 
     /// Speak the entry: starts the recording, and stops it to have it written in. Selected while on.
+    /// Its own view, watching the dictation itself: the bar isn't rebuilt when it starts, which
+    /// would take the button out from under a finger holding it.
     private var dictationButton: some View {
-        Button {
-            if dictation.isActive {
-                dictation.stop()
-            } else {
-                showsHashtagBar = false
-                showsAskRow = false
-                showsPhotoDrawer = false
-                editor.endLink()
-                // The writer's hashtags, as names to expect (asked for again once it's said).
-                if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
-                if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
-                // Settings → Dictation's own words first, then the hashtags.
-                dictation.start(style: DictationSettings.style,
-                                hints: { Dictation.expected(words: DictationSettings.words, recentTags: recentTags, allTags: allTags) },
-                                canListen: { editor.isFocused }) { editor.insertDictated($0) }
-            }
-        } label: {
-            appIcon("slab-microphone")
-                .frame(width: 40, height: 36)
-                .background(dictation.isActive ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
-        .accessibilityHint("Records what you say, then writes it into the entry, on your phone")
-        .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
+        DictationMicButton(dictation: dictation, start: startDictation, closeRows: closeRowsForDictation)
+    }
+
+    /// One row at a time: dictation's takes over. A hold closes them once it's let go instead,
+    /// since closing one rebuilds the bar, taking the mic out from under the finger.
+    private func closeRowsForDictation() {
+        showsHashtagBar = false
+        showsAskRow = false
+        showsPhotoDrawer = false
+        editor.endLink()
+    }
+
+    private func startDictation(closingRows: Bool) {
+        if closingRows { closeRowsForDictation() }
+        // The writer's hashtags, as names to expect (asked for again once it's said).
+        if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
+        if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
+        // Settings → Dictation's own words first, then the hashtags.
+        dictation.start(style: DictationSettings.style,
+                        hints: { Dictation.expected(words: DictationSettings.words, recentTags: recentTags, allTags: allTags) },
+                        canListen: { editor.isFocused }) { editor.insertDictated($0) }
     }
 
     /// The attached photos as a little stack; tap to show or hide the photo row. Held, it goes
@@ -1996,25 +1997,20 @@ struct FormatButton: View {
 private struct DictationRow: View {
     let dictation: Dictation
 
-    /// While speaking: a title, then, while recording, an X on the left (drops it), the waveform
+    /// While speaking: while recording, an X on the left (drops it), the waveform
     /// with the time so far, and Done on the right (writes it in). Nothing's written until Done:
     /// it's heard in one go, then tidied.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // One title throughout, matching Settings → Dictation; the row below shows the state.
-            Text("Dictation")
-                .font(.caption.weight(.semibold))
-                .textCase(.uppercase)
-                .foregroundStyle(.tint)
-                .padding(.bottom, 4)
-                .accessibilityAddTraits(.isHeader)
-                .accessibilityValue(dictationState)
             HStack(alignment: .center, spacing: 12) {
                 if dictation.state == .listening {
                     closeButton("Cancel Recording") { dictation.cancel() }
                         .accessibilityHint("Drops what you said")
                     DictationWaveform(levels: dictation.levels)
                         .frame(maxWidth: .infinity)
+                        .accessibilityElement()
+                        .accessibilityLabel("Dictation")
+                        .accessibilityValue(dictationState)
                     if let since = dictation.listeningSince {
                         TimelineView(.periodic(from: since, by: 1)) { context in
                             Text(Duration.seconds(context.date.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond)))
@@ -2038,6 +2034,9 @@ private struct DictationRow: View {
                     // Getting ready or writing it down: just the dots (and, the first time, how
                     // much of the download is in).
                     TypingDots(size: .small)
+                        .accessibilityElement()
+                        .accessibilityLabel("Dictation")
+                        .accessibilityValue(dictationState)
                     if let progress = dictation.downloadProgress {
                         Text("Downloading \(Int(progress * 100))%")
                             .monospacedDigit()
@@ -2069,7 +2068,7 @@ private struct DictationRow: View {
         .accessibilityLabel(label)
     }
 
-    /// Read out with the title, since the title itself no longer changes.
+    /// What VoiceOver says it's doing (there's no title on the row).
     private var dictationState: String {
         switch dictation.state {
         case .idle, .preparing: "Getting ready"
@@ -2078,6 +2077,63 @@ private struct DictationRow: View {
         }
     }
 
+}
+
+/// The bar's mic. Tapped: starts, or stops and writes it in. Held: records until the finger
+/// lifts, then writes it in. A press counts as a hold once it's lasted `holdToTalk`; anything
+/// shorter is a tap.
+private struct DictationMicButton: View {
+    let dictation: Dictation
+    let start: (_ closingRows: Bool) -> Void
+    let closeRows: () -> Void
+    static let holdToTalk: Duration = .milliseconds(300)
+
+    /// The finger's on it. Gesture state, so it's let go of even when the touch is cancelled.
+    @GestureState private var pressing = false
+    @State private var holding = false
+    @State private var holdTimer: Task<Void, Never>?
+
+    var body: some View {
+        appIcon("slab-microphone")
+            .frame(width: 40, height: 36)
+            .background(dictation.isActive || pressing ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
+            .contentShape(.capsule)
+            .gesture(DragGesture(minimumDistance: 0).updating($pressing) { _, pressing, _ in pressing = true })
+            .onChange(of: pressing) { _, down in down ? pressed() : released() }
+            .onDisappear { holdTimer?.cancel() }
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
+            .accessibilityHint("Records what you say, then writes it into the entry, on your phone")
+            .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
+            .accessibilityAction { tap() }
+    }
+
+    private func pressed() {
+        // Already recording: this press stops it, however long it lasts.
+        guard !dictation.isActive else { return }
+        holdTimer = Task {
+            try? await Task.sleep(for: Self.holdToTalk)
+            guard !Task.isCancelled, pressing, !dictation.isActive else { return }
+            holding = true
+            start(false)
+        }
+    }
+
+    private func released() {
+        holdTimer?.cancel()
+        holdTimer = nil
+        guard holding else { return tap() }
+        holding = false
+        // Still getting ready (the first download, the microphone prompt): it carries on as a
+        // tapped recording, stopped with Done.
+        if dictation.state == .listening { dictation.stop() }
+        closeRows()
+    }
+
+    private func tap() {
+        if dictation.isActive { dictation.stop() } else { start(true) }
+    }
 }
 
 /// Why dictation couldn't listen, as a toast over the bar. Tap to close; it also closes itself.
@@ -2136,7 +2192,6 @@ private struct DictationWaveform: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .frame(height: 28)
-        .accessibilityHidden(true)
     }
 
     private func bar(_ level: Double) -> some View {
