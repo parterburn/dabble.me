@@ -441,7 +441,8 @@ final class Dictation {
     /// one-word names ("Caitlin" → "Katelyn" when they tag #Katelyn).
     private static func ownSpellings(_ spellings: [String], in text: String) -> String {
         let spelled = VocabularySpelling.apply(spellings, to: text)
-        let names = spellings.filter { $0.allSatisfy(\.isLetter) }
+        // Only a capitalized one: a lowercase Custom Vocabulary word is no name to swap in.
+        let names = spellings.filter { $0.first?.isUppercase == true && $0.allSatisfy(\.isLetter) }
         return SoundAlikeNames.apply(names, to: spelled, isOrdinaryWord: { isOrdinaryWord($0) })
     }
 
