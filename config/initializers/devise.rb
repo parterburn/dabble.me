@@ -302,7 +302,13 @@ Devise.setup do |config|
 
 end
 
-Warden::Manager.after_authentication do |user, auth, _opts|
+# Signing back in keeps an account that was set to be deleted (DeleteUserJob checks
+# deleted_at again before it deletes anything). after_set_user, not after_authentication:
+# Devise's sign_in (the emailed code, a passkey, the 2FA step after a password or a code)
+# sets the user with Warden's :set_user event, which after_authentication never sees. Only
+# the password form and the remember cookie go through a Warden strategy (:authentication).
+# A session read back on a later request (:fetch) is not a sign-in.
+Warden::Manager.after_set_user except: :fetch do |user, auth, _opts|
   next unless user.is_a?(User) && user.cancel_pending_deletion!
 
   auth.request.flash[:notice] = I18n.t('devise.sessions.deletion_cancelled')
