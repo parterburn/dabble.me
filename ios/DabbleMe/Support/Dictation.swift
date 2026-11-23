@@ -196,6 +196,9 @@ final class Dictation {
         guard !Self.isDebugFake, !isClosed, warm == nil, warming == nil, state == .idle,
               Self.isSupported, DictationSettings.isEnabled else { return }
         guard #available(iOS 26.0, *) else { return }
+        // Only once the microphone's been allowed (at a tap): it never asks for it itself, and a
+        // writer who hasn't dictated yet has no model loaded for them.
+        guard AVAudioApplication.shared.recordPermission == .granted else { return }
         let requested = DictationSettings.language ?? .current
         warming = Task { [weak self] in
             let began = ContinuousClock.now
