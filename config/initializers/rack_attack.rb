@@ -180,6 +180,15 @@ class Rack::Attack
     req.ip if !req.get? && CONFIRMATION_CODE_PATHS.include?(auth_path(req))
   end
 
+  # Changing the email on Account Security mails a code to the new address
+  # (EmailChangesController). EmailCode also caps those codes per account, whatever the IP.
+  throttle('email_changes/send/ip', limit: 10, period: 1.hour) do |req|
+    path = auth_path(req)
+    next req.ip if req.post? && path == '/security/email/resend'
+
+    req.ip if (req.put? || req.patch?) && path == '/users' && submitted_email(req).present?
+  end
+
   throttle('checkout/ip', limit: 10, period: 10.minutes) do |req|
     req.ip if auth_path(req) == '/checkout' && req.post?
   end

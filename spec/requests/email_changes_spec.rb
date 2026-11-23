@@ -92,6 +92,14 @@ RSpec.describe "Changing the account email", type: :request do
     expect(mail.to).to eq(["victim@example.com"])
   end
 
+  it "caps new-address codes per account, even across different addresses" do
+    EmailCode::SENDS_PER_HOUR.times { |i| ask_for("rotate-#{i}@example.com") }
+    ask_for("one-more@example.com")
+
+    expect(code_sent_to("one-more@example.com")).to be_nil
+    expect(flash[:alert]).to include("Too many codes")
+  end
+
   it "stays on the old address after a wrong code" do
     ask_for(new_email)
     post email_change_path, params: { code: "000000" }

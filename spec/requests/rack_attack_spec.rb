@@ -16,6 +16,20 @@ RSpec.describe 'Rack::Attack', type: :request do
     Rack::Attack.cache.store = original
   end
 
+  it 'throttles email-change requests from one IP, which each mail a code to a new address' do
+    user = create(:user, password: 'correct-horse-battery')
+    sign_in user
+
+    statuses = Array.new(11) do |index|
+      put '/users', params: { user: { email: "rotate-#{index}@example.com", current_password: 'correct-horse-battery' } },
+                    env: { 'REMOTE_ADDR' => '203.0.113.200' }
+      response.status
+    end
+
+    expect(statuses.first(10)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
   it 'throttles sign-in attempts against the same email across IP addresses' do
     email = 'throttle-target@example.com'
 

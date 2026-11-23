@@ -84,9 +84,13 @@ class EmailCode < ActiveRecord::Base
       code.present? && redeem(user.email, code, purpose: 'confirm', user: user)
     end
 
-    # Emails a "new_email" code to the account's pending_email. Returns send_status.
+    # Emails a "new_email" code to the account's pending_email. Returns send_status, or
+    # :too_many once the account has had SENDS_PER_HOUR of them in an hour, to any addresses
+    # (send_status alone counts per address, so rotating addresses would get around it).
     def send_new_email_code(user)
       address = user.pending_email
+      return :too_many if where(user: user, purpose: 'new_email', created_at: 1.hour.ago..).count >= SENDS_PER_HOUR
+
       status = send_status(address, purpose: 'new_email')
       return status unless status == :ok
 
