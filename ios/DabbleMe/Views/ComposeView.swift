@@ -216,49 +216,7 @@ struct ComposeView: View {
             }
             .navigationTitle(isNew ? "New Entry" : "Edit Entry")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // The date is the title, which leaves more room to write.
-                ToolbarItem(placement: .principal) { dateTitle }
-                ToolbarItem(placement: .cancellationAction) {
-                    // With something to lose, Cancel drops down Save Draft and Discard, no
-                    // question around them: a tap outside it is Keep Writing.
-                    if hasChanges {
-                        Menu("Cancel") {
-                            // A draft is kept on this device and comes back the next time this is opened.
-                            if canSaveDraft {
-                                Button("Save Draft") {
-                                    // What's still being said goes in first.
-                                    Task {
-                                        await dictation.finish()
-                                        draftSave?.cancel()
-                                        saveDraftNow()
-                                        dismiss()
-                                    }
-                                }
-                            }
-                            Button("Discard", role: .destructive) {
-                                discardDraft()
-                                dismiss()
-                            }
-                        }
-                    } else {
-                        Button("Cancel") {
-                            discardDraft()
-                            dismiss()
-                        }
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isSaving {
-                        TypingDots(size: .small)
-                            .accessibilityLabel("Saving")
-                            .padding(.horizontal, 8)
-                    } else {
-                        Button("Save") { Task { await save() } }
-                            .disabled(!canSave)
-                    }
-                }
-            }
+            .toolbar { composerToolbar }
             .interactiveDismissDisabled(hasChanges || isSaving)
             // An alert, for its Cancel button (a confirmation dialog shows none here): Cancel puts
             // the date back to the entry's own day.
@@ -281,6 +239,59 @@ struct ComposeView: View {
             }
             // (In a function of its own: one chain this long was too much for the compiler to type-check.)
             .composed { rowsAndDictation($0) }
+            .composed { photosMomentsAndDrafts($0) }
+        }
+    }
+
+    /// The date as the title, Cancel (or Save Draft and Discard), and Save.
+    @ToolbarContentBuilder private var composerToolbar: some ToolbarContent {
+        // The date is the title, which leaves more room to write.
+        ToolbarItem(placement: .principal) { dateTitle }
+        ToolbarItem(placement: .cancellationAction) {
+            // With something to lose, Cancel drops down Save Draft and Discard, no
+            // question around them: a tap outside it is Keep Writing.
+            if hasChanges {
+                Menu("Cancel") {
+                    // A draft is kept on this device and comes back the next time this is opened.
+                    if canSaveDraft {
+                        Button("Save Draft") {
+                            // What's still being said goes in first.
+                            Task {
+                                await dictation.finish()
+                                draftSave?.cancel()
+                                saveDraftNow()
+                                dismiss()
+                            }
+                        }
+                    }
+                    Button("Discard", role: .destructive) {
+                        discardDraft()
+                        dismiss()
+                    }
+                }
+            } else {
+                Button("Cancel") {
+                    discardDraft()
+                    dismiss()
+                }
+            }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            if isSaving {
+                TypingDots(size: .small)
+                    .accessibilityLabel("Saving")
+                    .padding(.horizontal, 8)
+            } else {
+                Button("Save") { Task { await save() } }
+                    .disabled(!canSave)
+            }
+        }
+    }
+
+    /// Photos, hashtags, moments and the draft: the rest of the composer's modifiers, apart from
+    /// `body` so the compiler type-checks them on their own.
+    private func photosMomentsAndDrafts<Content: View>(_ content: Content) -> some View {
+        content
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .onChange(of: photoItems) { old, new in
@@ -330,41 +341,50 @@ struct ComposeView: View {
             .onChange(of: date) { scheduleDraftSave() }
             .onChange(of: removesExistingPhoto) { scheduleDraftSave() }
             .task { await restoreDraftPhotos() }
-            .onChange(of: scenePhase) { _, phase in
-                if phase != .active { saveDraftNow() }
-                // Leaving mid-recording: what was said is written in, then the draft saved again
-                // (if iOS suspends the app first, that finishes when it's back).
-                if phase == .background, dictation.isActive {
-                    Task {
-                        await dictation.finish()
-                        saveDraftNow()
-                    }
-                }
-            }
-            .onAppear {
-                editor.allowsLinks = model.me?.mayAddLinks == true
-                // A swipe right across the empty page puts the template in.
-                if !template.isEmpty {
-                    editor.onSwipeRightWhenEmpty = { [editor, template] in
-                        HoldHaptic.play()
-                        editor.addTemplate(template)
-                        editor.focus()
-                    }
-                }
-                // Today's date in the journal's time zone, preferring the freshest source.
-                if isNew, !startsOnDay, restoredDraft?.date == nil, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
-                    date = today.localDate
-                }
-            }
-            .task {
-                // Give the sheet a moment to settle so the keyboard animates in with it.
-                try? await Task.sleep(for: .milliseconds(350))
+            .onChange(of: scenePhase) { _, phase in scenePhaseChanged(to: phase) }
+            .onAppear { prepareOnAppear() }
+            .task { await focusThenPrewarm() }
+    }
+
+    /// On opening: links allowed or not, the swipe that adds the template, and the day to write.
+    private func prepareOnAppear() {
+        editor.allowsLinks = model.me?.mayAddLinks == true
+        // A swipe right across the empty page puts the template in.
+        if !template.isEmpty {
+            editor.onSwipeRightWhenEmpty = { [editor, template] in
+                HoldHaptic.play()
+                editor.addTemplate(template)
                 editor.focus()
-                // Then, once the keyboard's up, the speech model loads, so the mic records at its
-                // tap. Nothing that slows the composer: no microphone, and the loading is iOS's.
-                try? await Task.sleep(for: .milliseconds(400))
-                guard !Task.isCancelled else { return }
-                dictation.prewarm()
+            }
+        }
+        // Today's date in the journal's time zone, preferring the freshest source.
+        guard isNew, !startsOnDay, restoredDraft?.date == nil else { return }
+        let fromAccount: JournalDay? = model.me.flatMap { JournalDay($0.today) }
+        if let today = model.today?.day ?? fromAccount {
+            date = today.localDate
+        }
+    }
+
+    /// The keyboard up once the sheet's settled, then the speech model loaded.
+    private func focusThenPrewarm() async {
+        // Give the sheet a moment to settle so the keyboard animates in with it.
+        try? await Task.sleep(for: .milliseconds(350))
+        editor.focus()
+        // Then, once the keyboard's up, the speech model loads, so the mic records at its
+        // tap. Nothing that slows the composer: no microphone, and the loading is iOS's.
+        try? await Task.sleep(for: .milliseconds(400))
+        guard !Task.isCancelled else { return }
+        dictation.prewarm()
+    }
+
+    private func scenePhaseChanged(to phase: ScenePhase) {
+        if phase != .active { saveDraftNow() }
+        // Leaving mid-recording: what was said is written in, then the draft saved again
+        // (if iOS suspends the app first, that finishes when it's back).
+        if phase == .background, dictation.isActive {
+            Task {
+                await dictation.finish()
+                saveDraftNow()
             }
         }
     }
