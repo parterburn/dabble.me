@@ -747,14 +747,20 @@ struct ComposeView: View {
     /// Its own view, watching the dictation itself: the bar isn't rebuilt when it starts, which
     /// would take the button out from under a finger holding it.
     private var dictationButton: some View {
-        DictationMicButton(dictation: dictation, start: startDictation)
+        DictationMicButton(dictation: dictation, start: startDictation, closeRows: closeRowsForDictation)
     }
 
-    private func startDictation() {
+    /// One row at a time: dictation's takes over. A hold closes them once it's let go instead,
+    /// since closing one rebuilds the bar, taking the mic out from under the finger.
+    private func closeRowsForDictation() {
         showsHashtagBar = false
         showsAskRow = false
         showsPhotoDrawer = false
         editor.endLink()
+    }
+
+    private func startDictation(closingRows: Bool) {
+        if closingRows { closeRowsForDictation() }
         // The writer's hashtags, as names to expect (asked for again once it's said).
         if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
         if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
@@ -2078,44 +2084,23 @@ private struct DictationRow: View {
 /// shorter is a tap.
 private struct DictationMicButton: View {
     let dictation: Dictation
-    let start: () -> Void
+    let start: (_ closingRows: Bool) -> Void
+    let closeRows: () -> Void
     static let holdToTalk: Duration = .milliseconds(300)
 
-    @State private var pressed = false
+    /// The finger's on it. Gesture state, so it's let go of even when the touch is cancelled.
+    @GestureState private var pressing = false
     @State private var holding = false
     @State private var holdTimer: Task<Void, Never>?
 
     var body: some View {
         appIcon("slab-microphone")
             .frame(width: 40, height: 36)
-            .background(dictation.isActive || pressed ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
+            .background(dictation.isActive || pressing ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             .contentShape(.capsule)
-            .gesture(DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    guard !pressed else { return }
-                    pressed = true
-                    // Already recording: this press stops it, however long it lasts.
-                    guard !dictation.isActive else { return }
-                    holdTimer = Task {
-                        try? await Task.sleep(for: Self.holdToTalk)
-                        guard !Task.isCancelled, pressed, !dictation.isActive else { return }
-                        holding = true
-                        start()
-                    }
-                }
-                .onEnded { _ in
-                    pressed = false
-                    holdTimer?.cancel()
-                    holdTimer = nil
-                    if holding {
-                        holding = false
-                        // Still getting ready (the first download, the microphone prompt): it
-                        // carries on as a tapped recording, stopped with Done.
-                        if dictation.state == .listening { dictation.stop() }
-                    } else {
-                        tap()
-                    }
-                })
+            .gesture(DragGesture(minimumDistance: 0).updating($pressing) { _, pressing, _ in pressing = true })
+            .onChange(of: pressing) { _, down in down ? pressed() : released() }
+            .onDisappear { holdTimer?.cancel() }
             .accessibilityElement()
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
@@ -2124,8 +2109,30 @@ private struct DictationMicButton: View {
             .accessibilityAction { tap() }
     }
 
+    private func pressed() {
+        // Already recording: this press stops it, however long it lasts.
+        guard !dictation.isActive else { return }
+        holdTimer = Task {
+            try? await Task.sleep(for: Self.holdToTalk)
+            guard !Task.isCancelled, pressing, !dictation.isActive else { return }
+            holding = true
+            start(false)
+        }
+    }
+
+    private func released() {
+        holdTimer?.cancel()
+        holdTimer = nil
+        guard holding else { return tap() }
+        holding = false
+        // Still getting ready (the first download, the microphone prompt): it carries on as a
+        // tapped recording, stopped with Done.
+        if dictation.state == .listening { dictation.stop() }
+        closeRows()
+    }
+
     private func tap() {
-        if dictation.isActive { dictation.stop() } else { start() }
+        if dictation.isActive { dictation.stop() } else { start(true) }
     }
 }
 
