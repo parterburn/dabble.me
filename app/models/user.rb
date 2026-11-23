@@ -4,6 +4,8 @@ class User < ActiveRecord::Base
   BLOCKED_EMAIL_DOMAINS = %w[pentest2bot.ink].freeze
 
   validates :email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
+  validates :pending_email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
+  validate :pending_email_available, if: -> { pending_email.present? && will_save_change_to_pending_email? }
   validate :email_domain_not_blocked
 
   # Include default devise modules. Others available are:
@@ -127,6 +129,7 @@ class User < ActiveRecord::Base
   validate :send_timezone_must_exist, if: :will_save_change_to_send_timezone?
 
   before_save { email&.gsub!(",",".")&.gsub!(".@", "@")&.downcase! }
+  before_validation { self.pending_email = pending_email.strip.downcase.presence if pending_email }
   after_commit on: :update do
     restrict_free_frequency
   end
@@ -160,6 +163,12 @@ class User < ActiveRecord::Base
     "#{first_name} #{last_name&.first&.upcase}".strip
   end
 
+  # Where a code for a pending email change goes: the new address, not the current one.
+  def pending_to_address
+    name = full_name.to_s.gsub(/[^\w\s-]/i, '').squish
+    name.present? ? "#{name} <#{pending_email}>" : pending_email
+  end
+
   def cleaned_to_address
     name = full_name.to_s.gsub(/[^\w\s-]/i, '').squish
     name.present? ? "#{name} <#{email}>" : email
@@ -176,6 +185,17 @@ class User < ActiveRecord::Base
     return unless self.class.blocked_email_domain?(domain)
 
     errors.add(:email, 'is not allowed')
+  end
+
+  # Checked when the change is asked for, so a taken or blocked address is turned away before
+  # a code goes out. The unique index on email still decides if two accounts race for it.
+  def pending_email_available
+    domain = pending_email.split('@', 2).last
+    if self.class.blocked_email_domain?(domain)
+      errors.add(:email, 'is not allowed')
+    elsif self.class.where.not(id: id).exists?(email: pending_email)
+      errors.add(:email, 'has already been taken')
+    end
   end
 
   def send_timezone_must_exist
@@ -286,10 +306,29 @@ class User < ActiveRecord::Base
 
   # A new address hasn't been proven yet: its first code sign-in treats the account as unclaimed
   # (EmailSignIn.unclaimed?), so nobody can move an account onto someone else's address and
-  # keep it once they sign in.
+  # keep it once they sign in. Settings doesn't change the address this way any more (see
+  # #confirm_pending_email!); this stays as the backstop for anything else that does.
   def unverify_changed_email
-    self.email_verified_at = nil
+    self.email_verified_at = @new_email_proven ? Time.current : nil
     self.email_changed_at = Time.current
+  end
+
+  # Settings holds a new address in pending_email until a code sent there is entered
+  # (EmailChangesController). Then the address is proven, so the account stays verified and
+  # its next code sign-in wipes nothing.
+  def confirm_pending_email!
+    return false if pending_email.blank?
+
+    @new_email_proven = true
+    self.email = pending_email
+    self.pending_email = nil
+    save
+  ensure
+    @new_email_proven = false
+  end
+
+  def cancel_pending_email!
+    update_column(:pending_email, nil)
   end
 
   def deletion_pending?

@@ -83,7 +83,7 @@ class RegistrationsController < Devise::RegistrationsController
         # No password yet (made by email code): an emailed code confirms the change instead,
         # and may set the first password.
         if EmailCode.confirm(user, params[:user][:email_code])
-          changes = devise_parameter_sanitizer.sanitize(:account_update).except(:current_password)
+          changes = hold_email_change(devise_parameter_sanitizer.sanitize(:account_update).except(:current_password))
           changes = changes.except(:password, :password_confirmation) if changes[:password].blank?
           user.update(changes)
         else
@@ -91,13 +91,17 @@ class RegistrationsController < Devise::RegistrationsController
           false
         end
       elsif needs_password?
-        user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
+        user.update_with_password(hold_email_change(devise_parameter_sanitizer.sanitize(:account_update)))
       else
         params[:user].delete(:current_password)
         user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
       end
 
-      if successfully_updated
+      if successfully_updated && email_change_requested?
+        bypass_sign_in user
+        send_email_change_code
+        return redirect_to(email_change_path)
+      elsif successfully_updated
         set_flash_message :notice, :updated
         bypass_sign_in user
       else
@@ -282,6 +286,30 @@ class RegistrationsController < Devise::RegistrationsController
     params[:submit_method] == "security" ||
       (user_params[:email].present? && user.email != user_params[:email]) ||
       (user_params[:password].present? || user_params[:password_confirmation].present?)
+  end
+
+  # Settings never moves the account straight to a new address: it holds it in pending_email and
+  # emails a code there (EmailChangesController), so nobody can move an account onto an inbox they
+  # don't read. The rest of the form (a new password, say) still saves now.
+  def hold_email_change(changes)
+    new_email = changes[:email]
+    changes = changes.except(:email)
+    return changes unless new_email.present? && EmailCode.normalize(new_email) != user.email
+
+    changes.merge(pending_email: new_email)
+  end
+
+  def email_change_requested?
+    user_params[:email].present? && EmailCode.normalize(user_params[:email]) != user.email &&
+      user.pending_email.present?
+  end
+
+  def send_email_change_code
+    case EmailCode.send_new_email_code(user)
+    when :ok then flash[:notice] = "We emailed a code to #{user.pending_email}. Enter it to finish changing your email."
+    when :too_soon then flash[:alert] = 'We just sent a code. Give it a minute to arrive.'
+    else flash[:alert] = 'Too many codes. Try again in an hour.'
+    end
   end
 
   def user_params

@@ -122,6 +122,22 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = { tag: "Security" }
   end
 
+  # To the address an account asked to move to, before it moves (EmailCode.send_new_email_code).
+  def new_email_code(user, code)
+    @user = user
+    @code = code
+    email = mail(to: user.pending_to_address, subject: "#{code} is your Dabble Me code to confirm this email")
+    email.mailgun_options = { tag: "Security" }
+  end
+
+  # To the old address once the account has moved to a new one.
+  def email_changed(user, old_email)
+    @user = user
+    @old_email = old_email
+    email = mail(to: old_email, subject: "Your Dabble Me email was changed")
+    email.mailgun_options = { tag: "Security" }
+  end
+
   def passkey_added(user, nickname)
     @user = user
     @nickname = nickname

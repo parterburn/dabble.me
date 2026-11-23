@@ -5,6 +5,8 @@
 # - purpose "confirm": a signed-in account with no password confirms a change that would
 #   otherwise take the password (deleting the account, adding a passkey, changing the email or
 #   setting a password). Tied to the account as well as its address.
+# - purpose "new_email": sent to the address a signed-in account asked to move to
+#   (users.pending_email), proving that inbox before the change happens. Tied to the account.
 #
 # Codes last LIFETIME and work once. A resend doesn't void the code before it (mail can arrive
 # out of order): the LIVE_CODES newest still-unused codes all work, and the first one entered
@@ -14,7 +16,7 @@
 #
 # Only keyed digests are stored, never the code or the address.
 class EmailCode < ActiveRecord::Base
-  PURPOSES = %w[sign_in confirm].freeze
+  PURPOSES = %w[sign_in confirm new_email].freeze
   LIFETIME = 10.minutes
   LIVE_CODES = 3
   MAX_ATTEMPTS = 5
@@ -80,6 +82,21 @@ class EmailCode < ActiveRecord::Base
     # True once for a right "confirm" code sent to this account.
     def confirm(user, code)
       code.present? && redeem(user.email, code, purpose: 'confirm', user: user)
+    end
+
+    # Emails a "new_email" code to the account's pending_email. Returns send_status.
+    def send_new_email_code(user)
+      status = send_status(user.pending_email, purpose: 'new_email')
+      return status unless status == :ok
+
+      UserMailer.new_email_code(user, issue!(user.pending_email, purpose: 'new_email', user: user)).deliver_later
+      :ok
+    end
+
+    # True once for a right "new_email" code sent to this account's pending_email.
+    def confirm_new_email(user, code)
+      user.pending_email.present? && code.present? &&
+        redeem(user.pending_email, code, purpose: 'new_email', user: user)
     end
 
     def cleanup!

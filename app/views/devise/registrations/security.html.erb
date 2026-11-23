@@ -15,8 +15,13 @@
         <div class="sm:col-span-2">
           <%= f.label :email, class: "field-label" %>
           <%= f.email_field :email, autocomplete: "email", class: "field-input" %>
-          <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-            <p class="field-help">Currently waiting confirmation for: <%= resource.unconfirmed_email %></p>
+          <% if current_user.pending_email.present? %>
+            <p class="field-help">
+              Waiting for the code sent to <strong class="break-all"><%= current_user.pending_email %></strong>.
+              <%= link_to "Enter it", email_change_path, class: "text-accent underline hover:text-primary" %>
+            </p>
+          <% else %>
+            <p class="field-help">A change takes effect once you enter a code we email to the new address.</p>
           <% end %>
         </div>
         <div>
