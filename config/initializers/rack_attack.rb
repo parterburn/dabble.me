@@ -181,12 +181,15 @@ class Rack::Attack
   end
 
   # Changing the email on Account Security mails a code to the new address
-  # (EmailChangesController). EmailCode also caps those codes per account, whatever the IP.
+  # (EmailChangesController). The first code goes out from PUT /users, which the Account
+  # Security form also uses for every other save, so EmailCode.send_new_email_code caps those
+  # per account (whatever the address or IP) rather than counting every save here.
   throttle('email_changes/send/ip', limit: 10, period: 1.hour) do |req|
-    path = auth_path(req)
-    next req.ip if req.post? && path == '/security/email/resend'
+    req.ip if req.post? && auth_path(req) == '/security/email/resend'
+  end
 
-    req.ip if (req.put? || req.patch?) && path == '/users' && submitted_email(req).present?
+  throttle('email_changes/verify/ip', limit: 20, period: 10.minutes) do |req|
+    req.ip if req.post? && auth_path(req) == '/security/email'
   end
 
   throttle('checkout/ip', limit: 10, period: 10.minutes) do |req|

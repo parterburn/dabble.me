@@ -87,15 +87,20 @@ class EmailCode < ActiveRecord::Base
     # Emails a "new_email" code to the account's pending_email. Returns send_status, or
     # :too_many once the account has had SENDS_PER_HOUR of them in an hour, to any addresses
     # (send_status alone counts per address, so rotating addresses would get around it).
+    # The account's row is locked while it counts and issues, so parallel requests can't all
+    # pass the cap.
     def send_new_email_code(user)
       address = user.pending_email
-      return :too_many if where(user: user, purpose: 'new_email', created_at: 1.hour.ago..).count >= SENDS_PER_HOUR
+      code = nil
+      status = user.with_lock do
+        next :too_many if where(user: user, purpose: 'new_email', created_at: 1.hour.ago..).count >= SENDS_PER_HOUR
 
-      status = send_status(address, purpose: 'new_email')
-      return status unless status == :ok
-
-      UserMailer.new_email_code(user, issue!(address, purpose: 'new_email', user: user), address).deliver_later
-      :ok
+        result = send_status(address, purpose: 'new_email')
+        code = issue!(address, purpose: 'new_email', user: user) if result == :ok
+        result
+      end
+      UserMailer.new_email_code(user, code, address).deliver_later if code
+      status
     end
 
     # True once for a right "new_email" code sent to this account's pending_email.

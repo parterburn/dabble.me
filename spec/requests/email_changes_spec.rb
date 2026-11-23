@@ -100,6 +100,34 @@ RSpec.describe "Changing the account email", type: :request do
     expect(flash[:alert]).to include("Too many codes")
   end
 
+  it "treats the prefilled current address as no change, whatever its case" do
+    user.update_column(:email, "Writer@Example.com")
+    put user_registration_path, params: { user: { email: " writer@example.com ", password: "new-password-123",
+                                                  password_confirmation: "new-password-123", current_password: password } }
+
+    expect(response).not_to redirect_to(email_change_path)
+    expect(user.reload.pending_email).to be_nil
+    expect(user.valid_password?("new-password-123")).to be(true)
+  end
+
+  it "says a malformed new address is invalid, on the email field" do
+    ask_for("not-an-address")
+
+    expect(user.reload.pending_email).to be_nil
+    expect(flash[:alert].join).to include("Email is invalid")
+  end
+
+  it "cancels cleanly when another account takes the address at the last moment" do
+    ask_for(new_email)
+    allow_any_instance_of(User).to receive(:save).and_raise(ActiveRecord::RecordNotUnique)
+    post email_change_path, params: { code: code_sent_to(new_email) }
+
+    expect(response).to redirect_to(security_path)
+    expect(flash[:alert]).to include("already been taken")
+    expect(user.reload.email).to eq("writer@example.com")
+    expect(user.pending_email).to be_nil
+  end
+
   it "stays on the old address after a wrong code" do
     ask_for(new_email)
     post email_change_path, params: { code: "000000" }

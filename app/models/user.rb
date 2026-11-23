@@ -4,7 +4,6 @@ class User < ActiveRecord::Base
   BLOCKED_EMAIL_DOMAINS = %w[pentest2bot.ink].freeze
 
   validates :email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
-  validates :pending_email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
   validate :pending_email_available, if: -> { pending_email.present? && will_save_change_to_pending_email? }
   validate :email_domain_not_blocked
 
@@ -183,9 +182,12 @@ class User < ActiveRecord::Base
 
   # Checked when the change is asked for, so a taken or blocked address is turned away before
   # a code goes out. The unique index on email still decides if two accounts race for it.
+  # Errors go on :email, the field the address was typed in.
   def pending_email_available
     domain = pending_email.split('@', 2).last
-    if self.class.blocked_email_domain?(domain)
+    if !pending_email.match?(VALID_EMAIL_REGEX)
+      errors.add(:email, 'is invalid')
+    elsif self.class.blocked_email_domain?(domain)
       errors.add(:email, 'is not allowed')
     elsif self.class.where.not(id: id).exists?(email: pending_email)
       errors.add(:email, 'has already been taken')
@@ -317,6 +319,10 @@ class User < ActiveRecord::Base
     self.email = pending_email
     self.pending_email = nil
     save
+  rescue ActiveRecord::RecordNotUnique
+    # Another account took the address between the validation and the write.
+    errors.add(:email, 'has already been taken')
+    false
   ensure
     @new_email_proven = false
   end

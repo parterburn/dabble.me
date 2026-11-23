@@ -16,13 +16,25 @@ RSpec.describe 'Rack::Attack', type: :request do
     Rack::Attack.cache.store = original
   end
 
-  it 'throttles email-change requests from one IP, which each mail a code to a new address' do
+  it "doesn't count Account Security saves, which always carry the current email, as email changes" do
     user = create(:user, password: 'correct-horse-battery')
     sign_in user
 
-    statuses = Array.new(11) do |index|
-      put '/users', params: { user: { email: "rotate-#{index}@example.com", current_password: 'correct-horse-battery' } },
-                    env: { 'REMOTE_ADDR' => '203.0.113.200' }
+    statuses = Array.new(12) do
+      put '/users', params: { user: { email: user.email, current_password: 'wrong' } },
+                    env: { 'REMOTE_ADDR' => '203.0.113.201' }
+      response.status
+    end
+
+    expect(statuses).to all(be < 429)
+  end
+
+  it 'throttles resending email-change codes from one IP' do
+    user = create(:user, password: 'correct-horse-battery')
+    sign_in user
+
+    statuses = Array.new(11) do
+      post '/security/email/resend', env: { 'REMOTE_ADDR' => '203.0.113.202' }
       response.status
     end
 

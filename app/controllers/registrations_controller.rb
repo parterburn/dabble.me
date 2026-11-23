@@ -294,13 +294,13 @@ class RegistrationsController < Devise::RegistrationsController
   def hold_email_change(changes)
     new_email = changes[:email]
     changes = changes.except(:email)
-    return changes unless new_email.present? && EmailCode.normalize(new_email) != user.email
+    return changes unless new_email.present? && EmailCode.normalize(new_email) != user.email.to_s.downcase
 
     changes.merge(pending_email: new_email)
   end
 
   def email_change_requested?
-    user_params[:email].present? && EmailCode.normalize(user_params[:email]) != user.email &&
+    user_params[:email].present? && EmailCode.normalize(user_params[:email]) != user.email.to_s.downcase &&
       user.pending_email.present?
   end
 
