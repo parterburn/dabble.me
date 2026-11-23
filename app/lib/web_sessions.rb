@@ -115,7 +115,10 @@ module WebSessions
     Time.current < legacy_sessions_until
   end
 
+  # config.x returns an empty ActiveSupport::OrderedOptions (truthy) for a key nobody set, so only
+  # a real time counts as an override. Production sets none.
   def legacy_sessions_until
-    Rails.application.config.x.legacy_web_sessions_until || (TRACKING_STARTED_AT + LEGACY_SESSION_GRACE)
+    override = Rails.application.config.x.legacy_web_sessions_until
+    override.is_a?(Time) ? override : TRACKING_STARTED_AT + LEGACY_SESSION_GRACE
   end
 end
