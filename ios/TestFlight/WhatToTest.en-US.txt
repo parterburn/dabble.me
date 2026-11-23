@@ -1,4 +1,4 @@
-Dictation's row is simpler, your entry template shows on a new entry's empty page, and Writing ideas has tidier spacing.
+Dictation's row is simpler, your entry template shows on a new entry's empty page, Writing ideas has tidier spacing, and the welcome cards put photos beside the words.
 
 Dictation row
 - Tap the mic in the composer. The small olive title above the row says "Dictation" the whole time.
@@ -17,3 +17,7 @@ Entry template on the empty page
 Writing ideas spacing
 - Tap the lightbulb. The prompt has no sparkle icon in front of it now, and sits a little further below the "Writing ideas" heading.
 - Calendar event names start closer to their times. Check an event at 12:00 PM, an all-day one, and a larger text size: the times shouldn't cut off.
+
+Welcome screen cards
+- Sign out. On the example entries, the date ("1 year ago") has its own row across the top of the card, and the photo sits to the right of the words, below the date.
+- The Bruges card still shows its #anniversary pill under the words; the apartment card (no photo) uses the full width.
