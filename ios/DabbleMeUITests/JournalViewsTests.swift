@@ -330,11 +330,11 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Discard"].tap()
     }
 
-    /// With a template (Settings → Entry Template), the empty page offers it under its question
-    /// ("Use template", Swipe →): a tap or a swipe right puts it in, and the offer goes once
-    /// there's writing. The lightbulb row no longer offers it.
+    /// With a template (Settings → Entry Template), the empty page shows it under "Start writing
+    /// or [Swipe →] to use template:": a tap on the badge or a swipe right puts it in, and the
+    /// placeholder goes once there's writing. The lightbulb row doesn't offer it.
     func testTheTemplateIsOfferedOnTheEmptyPage() throws {
-        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
+        let app = launch(["-DabbleDebugTemplate", "What went well today?"])
         let editor = openComposer(app)
         let use = app.buttons["Use Template"]
         XCTAssertTrue(use.waitForExistence(timeout: 5))
@@ -360,10 +360,10 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// Today's Write button held, with a template: the entry starts from it, whatever the
-    /// setting says. A tap writes a blank one, as ever.
+    /// Today's Write button held, with a template: the entry starts from it. A tap writes a
+    /// blank one, as ever.
     func testHoldingWriteStartsFromTheTemplate() throws {
-        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
+        let app = launch(["-DabbleDebugTemplate", "What went well today?"])
         let write = app.buttons["Write Today's Entry"]
         XCTAssertTrue(write.waitForExistence(timeout: 15))
         write.press(forDuration: 0.9)
@@ -387,45 +387,16 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Cancel"].tap()
     }
 
-    /// Set to start new entries, Today shows the template where the day's prompt would be, and a
-    /// tap on it starts today's entry from it. Off, the prompt's back.
-    func testTodayShowsTheTemplateThatStartsNewEntries() throws {
+    /// The "Start New Entries with It" setting is gone: one left on by an earlier build doesn't
+    /// put the template in a new entry, or on Today in place of the prompt. The empty page shows it.
+    func testAnOldAutoTemplateSettingDoesNothing() throws {
         let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "YES"])
-        let card = app.buttons["TodayTemplate"]
-        XCTAssertTrue(card.waitForExistence(timeout: 15))
-        XCTAssertFalse(app.staticTexts["TodayPrompt"].exists, "The template stands in for the prompt")
-        snap("today-template")
-        card.tap()
-        let editor = app.textViews["Entry"]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        if app.buttons["Start Over"].waitForExistence(timeout: 2) { app.buttons["Start Over"].tap() }
-        XCTAssertEqual(editor.value as? String, "What went well today?")
-        app.buttons["Cancel"].tap()
-        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
-        app.terminate()
-
-        let off = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
-        XCTAssertTrue(off.buttons["Write Today's Entry"].waitForExistence(timeout: 15))
-        XCTAssertFalse(off.buttons["TodayTemplate"].exists)
-    }
-
-    /// Set to start new entries, the template is there when the composer opens, and there's
-    /// nothing to save until something's written.
-    func testNewEntriesStartWithTheTemplate() throws {
-        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "YES"])
+        XCTAssertTrue(app.buttons["Write Today's Entry"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["TodayTemplate"].exists)
         let editor = openComposer(app)
-        XCTAssertEqual(editor.value as? String, "What went well today?")
-        XCTAssertFalse(app.buttons["Save"].isEnabled)
-        snap("template-auto")
-        // Nothing offers it again: the page isn't empty, and the lightbulb row never does.
-        app.buttons["Prompt"].tap()
-        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
-        XCTAssertFalse(app.buttons["Use Template"].exists)
-        app.buttons["Prompt"].tap()
-        editor.typeText(" The walk.")
-        XCTAssertTrue(app.buttons["Save"].isEnabled)
+        XCTAssertEqual(editor.value as? String ?? "", "")
+        XCTAssertTrue(app.buttons["Use Template"].waitForExistence(timeout: 5))
         app.buttons["Cancel"].tap()
-        app.buttons["Discard"].tap()
     }
 
     /// Settings → Entry Template: written like an entry, kept as it's typed (blank lines and
@@ -438,7 +409,7 @@ final class JournalViewsTests: XCTestCase {
         row.tap()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.switches["Start New Entries with It"].exists)
+        XCTAssertFalse(app.switches["Start New Entries with It"].exists)
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
         // (Whatever an earlier run left behind goes first.)
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "One Win\n- ")

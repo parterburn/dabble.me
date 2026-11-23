@@ -1,13 +1,15 @@
-Dictation in the composer: one title, less text, errors as a toast.
+Dictation's row is simpler, and your entry template now shows on a new entry's empty page.
 
 Dictation row
 - Tap the mic in the composer. The small olive title above the row says "Dictation" the whole time.
-- While it gets ready, and again after Done while it writes your words down, the row shows only the moving dots. No more "One moment…" or "Turning what you said into words…".
+- While it gets ready, and again after Done while it writes your words down, the row shows only the moving dots.
 - The first time, while it downloads what it needs, the dots have "Downloading 42%" next to them.
-- Recording looks the same as before: X on the left, waveform and timer, Done on the right.
-- With VoiceOver on, the title reads as "Dictation" plus the current step (Getting ready, Listening, Writing it down).
+- Problems show as a toast over the bar instead of filling the row. Try staying quiet for 10 seconds after tapping the mic, or turning the microphone off for Dabble Me in iOS Settings (the toast then has a Settings button).
+- Tap the toast to close it, or wait: it closes on its own after a few seconds.
 
-Errors as a toast
-- Problems now show as a toast over the bar instead of filling the dictation row. Try: stay quiet for 10 seconds after tapping the mic ("Didn't hear anything"), or turn the microphone off for Dabble Me in iOS Settings.
-- With the microphone off, the toast has a Settings button that opens iOS Settings.
-- Tap the toast to close it, or wait: it closes on its own after a few seconds. Tapping the mic while it shows starts a new recording.
+Entry template on the empty page
+- With a template (Settings → Entry Template), a new entry's empty page shows it, faint, under "Start writing or [Swipe →] to use template:".
+- Swipe right across the page, or tap the Swipe badge: the template goes in. Just start typing to write without it.
+- A long template shows its first lines and fades out at the bottom.
+- The "Start New Entries with It" switch is gone. If you had it on, new entries open empty with the template one swipe away, and Today and the widget show the day's prompt again.
+- Holding a Write button on Today still opens an entry with the template already in.
