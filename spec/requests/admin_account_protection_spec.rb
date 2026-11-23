@@ -147,6 +147,19 @@ RSpec.describe "Admin account protection", type: :request do
     expect(admin.webauthn_credentials.count).to eq(1)
   end
 
+  it "keeps an account made admin while its deletion ran, and clears the deletion" do
+    user = create(:user)
+    user.update_column(:deleted_at, Time.current)
+    allow(user).to receive(:lock!) { user.update_column(:admin, true); user.reload }
+    allow(User).to receive(:find_by).and_call_original
+    allow(User).to receive(:find_by).with(id: user.id).and_return(user)
+
+    DeleteUserJob.perform_now(user.id, user.deleted_at.to_i)
+
+    expect(User.exists?(user.id)).to be(true)
+    expect(user.reload.deleted_at).to be_nil
+  end
+
   describe "an emailed-code sign-in" do
     it "never treats an admin as unclaimed, so nothing is wiped and 2FA still applies" do
       admin.update_columns(email_verified_at: nil, email_changed_at: Time.current)

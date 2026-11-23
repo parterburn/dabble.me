@@ -32,13 +32,16 @@ class DeleteUserJob < ActiveJob::Base
     user.exports.find_each(&:destroy)
 
     # Destroy remaining associations (including Doorkeeper OAuth rows) and the user atomically
+    refused = false
     ActiveRecord::Base.transaction do
       # Checked again under a lock: the entries above can take a while, and delete_all below
-      # skips WebauthnCredential's guard.
+      # skips WebauthnCredential's guard. Leaving the block (not rolling back) keeps the
+      # cleared deleted_at.
       user.lock!
       if AdminAccounts.protected?(user)
+        refused = true
         refuse_admin(user)
-        raise ActiveRecord::Rollback
+        next
       end
 
       Doorkeeper::AccessGrant.where(resource_owner_id: user_id).delete_all
@@ -47,6 +50,7 @@ class DeleteUserJob < ActiveJob::Base
       user.webauthn_credentials.delete_all
       user.delete
     end
+    return if refused
 
     # Log the deletion
     if user_plan.present? && user_plan.match(/pro/i)
