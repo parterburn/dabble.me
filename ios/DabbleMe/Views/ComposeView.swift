@@ -1057,7 +1057,7 @@ struct ComposeView: View {
         .accessibilityHint("Opens your iPhone's suggestions: photos, places, workouts and music to write about")
     }
 
-    /// The icon at the start of a row in Writing ideas (the prompt, a moment), in a column of its own.
+    /// The icon at the start of a row in Writing ideas (a moment), in a column of its own.
     private func ideaIcon(_ name: String) -> some View {
         Image(systemName: name)
             .font(.subheadline)
@@ -1212,7 +1212,6 @@ struct ComposeView: View {
     private var askLine: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 12) {
-                if isAsking || question != nil { ideaIcon("sparkles") }
                 if isAsking {
                     TypingDots(size: .small)
                     Text("Generating prompt…")
@@ -1248,6 +1247,8 @@ struct ComposeView: View {
             }
         }
         .padding(.horizontal)
+        // A little room under the heading.
+        .padding(.top, 6)
         .padding(.bottom, hasAgenda ? 6 : 0)
         .animation(.easeOut(duration: 0.2), value: question)
     }
@@ -1734,8 +1735,8 @@ private struct CalendarRow: View {
         changed(access == .allowed && events?.isEmpty == false)
     }
 
-    /// The width of the events' time column.
-    static let timeColumn: CGFloat = 72
+    /// The width of the events' time column: just past "12:00 PM", growing with the text size.
+    @ScaledMetric(relativeTo: .footnote) private var timeColumn: CGFloat = 62
 
     /// The whole day's events: the row shows the first few, up to its height, and scrolls to
     /// the rest. (Three at most left nothing to scroll to, so a busy day looked cut off.)
@@ -1749,7 +1750,7 @@ private struct CalendarRow: View {
                         Text(event.time)
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(.secondary)
-                            .frame(width: Self.timeColumn, alignment: .leading)
+                            .frame(width: timeColumn, alignment: .leading)
                         Text(event.title)
                             .font(.system(.subheadline, design: .serif))
                             .lineLimit(1)
