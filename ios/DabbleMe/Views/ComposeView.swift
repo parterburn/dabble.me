@@ -334,34 +334,8 @@ struct ComposeView: View {
                 CameraPicker { image in Task { await addCameraPhoto(image) } }
                     .ignoresSafeArea()
             }
-            // Held open, the format buttons go when the cursor's put somewhere else, and a
-            // selection (which shows them itself) takes over from the hold.
-            .onChange(of: editor.caretMoves) { showsFormatBar = false }
-            .onChange(of: editor.hasSelection) { showsFormatBar = false }
-            .onChange(of: editor.isEditingLink) { _, editing in
-                // One row at a time (the link row also opens by selecting a link).
-                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
-            }
-            // One row at a time: another one opening ends the recording (what was said is still
-            // written in), as does the keyboard (and the bar with it) going away, or the app.
-            .onChange(of: showsHashtagBar || showsAskRow || showsPhotoDrawer || editor.isEditingLink) { _, open in
-                if open { dictation.stop(); dictation.clearProblem() }
-            }
-            .onChange(of: editor.isFocused) { _, focused in
-                if !focused, dictation.state == .listening { dictation.stop() }
-            }
-            .onDisappear { dictation.cancel() }
-            // A tap in the hand as the recording starts, and another as it stops (Done, a held mic
-            // let go, the X, or the silence limit).
-            // (`.start` and `.stop` only play on watchOS: impacts, firmer to start, lighter to stop.)
-            .sensoryFeedback(.impact(weight: .medium), trigger: dictation.state) { _, now in now == .listening }
-            .sensoryFeedback(.impact(weight: .light), trigger: dictation.state) { was, now in was == .listening && now != .listening }
-            // Why it couldn't listen is said for a while, then the row closes.
-            .task(id: dictation.problem) {
-                guard dictation.problem != nil else { return }
-                try? await Task.sleep(for: .seconds(8))
-                if !Task.isCancelled { dictation.clearProblem() }
-            }
+            // (In a function of its own: one chain this long was too much for the compiler to type-check.)
+            .composed { rowsAndDictation($0) }
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .onChange(of: photoItems) { old, new in
@@ -448,6 +422,40 @@ struct ComposeView: View {
                 dictation.prewarm()
             }
         }
+    }
+
+    /// The rows over the keyboard taking turns, and dictation's hooks into the composer: what
+    /// ends a recording, its haptics, and how long a problem shows.
+    private func rowsAndDictation<Content: View>(_ content: Content) -> some View {
+        content
+            // Held open, the format buttons go when the cursor's put somewhere else, and a
+            // selection (which shows them itself) takes over from the hold.
+            .onChange(of: editor.caretMoves) { showsFormatBar = false }
+            .onChange(of: editor.hasSelection) { showsFormatBar = false }
+            .onChange(of: editor.isEditingLink) { _, editing in
+                // One row at a time (the link row also opens by selecting a link).
+                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
+            }
+            // One row at a time: another one opening ends the recording (what was said is still
+            // written in), as does the keyboard (and the bar with it) going away, or the app.
+            .onChange(of: showsHashtagBar || showsAskRow || showsPhotoDrawer || editor.isEditingLink) { _, open in
+                if open { dictation.stop(); dictation.clearProblem() }
+            }
+            .onChange(of: editor.isFocused) { _, focused in
+                if !focused, dictation.state == .listening { dictation.stop() }
+            }
+            .onDisappear { dictation.cancel() }
+            // A tap in the hand as the recording starts, and another as it stops (Done, a held mic
+            // let go, the X, or the silence limit).
+            // (`.start` and `.stop` only play on watchOS: impacts, firmer to start, lighter to stop.)
+            .sensoryFeedback(.impact(weight: .medium), trigger: dictation.state) { (_: Dictation.State, now: Dictation.State) in now == .listening }
+            .sensoryFeedback(.impact(weight: .light), trigger: dictation.state) { (was: Dictation.State, now: Dictation.State) in was == .listening && now != .listening }
+            // Why it couldn't listen is said for a while, then the row closes.
+            .task(id: dictation.problem) {
+                guard dictation.problem != nil else { return }
+                try? await Task.sleep(for: .seconds(8))
+                if !Task.isCancelled { dictation.clearProblem() }
+            }
     }
 
     /// The entry's date, which can be changed: for a new entry, and to move one being edited to
@@ -2210,4 +2218,10 @@ private struct DictationWaveform: View {
             .fill(.tint)
             .frame(width: 3, height: 3 + 25 * min(1, max(0, level)))
     }
+}
+
+private extension View {
+    /// `transform` applied to this view: splits a long modifier chain into pieces the compiler
+    /// type-checks one at a time.
+    func composed<V: View>(@ViewBuilder _ transform: (Self) -> V) -> V { transform(self) }
 }

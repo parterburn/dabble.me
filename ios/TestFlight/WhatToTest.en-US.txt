@@ -1,4 +1,4 @@
-Dictation: quicker to start and finish, a haptic tap at start and stop, and centered loading dots.
+Dictation: quicker to start and finish, a haptic tap at start and stop, and centered loading dots. (The last build of these didn't compile; this one does, with no change in behavior.)
 
 Starting
 - Open the composer: it should open and type exactly as fast as before (the model loads a moment after the keyboard is up). Wait a second, then tap the mic. The waveform should show almost at once, with only a blink of the dots first.
@@ -19,6 +19,9 @@ Centered loading dots
 - While dictation gets ready, and after Done while it writes your words in, the dots sit centered in the row, where the waveform is while recording.
 
 Still the same
+- Opening another row (hashtags, the lightbulb, photos, a link) while recording stops it and writes the words in; so does putting the keyboard away.
+- Closing the composer mid-recording drops it. A problem ("Didn't hear anything") clears on its own after a few seconds.
+- Moving the cursor closes the held-open format buttons.
 - X drops the recording, and the next tap still starts quickly.
 - Changing Settings → Dictation → Language, then dictating, uses the new language.
 - The very first time on a phone (or after iOS clears the model), it still downloads the speech model first, with "Downloading N%" next to the dots.
