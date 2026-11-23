@@ -7,13 +7,14 @@ module Mcp
 
       tool_name 'create_entry'
       title 'Create or append a journal entry'
-      description 'Write to the signed-in user’s private Dabble Me journal on a calendar day (default: today in the account timezone). Plain text becomes paragraphs. By default, text appends to an existing entry on that day; set merge_with_existing false to fail instead. Optionally attach one image: prefer image_url when you already have a public https URL; otherwise use get_image_upload_url + uploaded_image_key for local bytes; image_base64 only as a small fallback. API documentation: https://dabble.me/mcp-server#tool-create-entry'
+      description 'Write to the signed-in user’s private Dabble Me journal on a calendar day (default: today in the account timezone). Plain text becomes paragraphs. By default, text appends to an existing entry on that day; set merge_with_existing false to fail instead. Optionally attach one image: prefer image_url when your AI app already hosts the image on its own file service (for example a ChatGPT file link); otherwise use get_image_upload_url + uploaded_image_key; image_base64 only as a small fallback. API documentation: https://dabble.me/mcp-server#tool-create-entry'
       annotations(
         title: 'Create or append a journal entry',
         read_only_hint: false,
         destructive_hint: false,
         idempotent_hint: false,
-        open_world_hint: false
+        # image_url makes Dabble Me fetch an outside URL.
+        open_world_hint: true
       )
       input_schema(
         type: 'object',
@@ -29,7 +30,7 @@ module Mcp
           },
           image_url: {
             type: 'string',
-            description: 'Preferred when a public https image URL is already available. Dabble Me fetches and attaches the image server-side (avoids client sandbox egress allowlists and large base64). Private/loopback hosts are rejected. In production, only https is accepted. Do not combine with uploaded_image_key or image_base64.'
+            description: 'An https link to an image your AI app hosts on its own file service (such as ChatGPT file links or Google user content). Dabble Me fetches and attaches the image server-side. Links on any other site are refused: use get_image_upload_url and uploaded_image_key for those. Do not combine with uploaded_image_key or image_base64.'
           },
           uploaded_image_key: {
             type: 'string',

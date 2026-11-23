@@ -15,11 +15,11 @@ agent_setup_prompt = "Set up Dabble Me for this agent using the official guide a
 faq_items = [
   {
     question: "How should an AI assistant attach a photo to a journal entry?",
-    answer: "Prefer create_entry with image_url when a public https image URL is already available—Dabble Me fetches and attaches it server-side. That path avoids client sandbox egress allowlists and large base64 payloads. Only for local bytes without a public URL, call get_image_upload_url, upload with the returned PUT URL, then pass uploaded_image_key to create_entry. Use image_base64 only as a small last resort."
+    answer: "Prefer create_entry with image_url when your AI app already hosts the image on its own file service (such as ChatGPT file links)—Dabble Me fetches and attaches it server-side. That path avoids client sandbox egress allowlists and large base64 payloads. Dabble Me only fetches from those file services, so a link on any other site is refused: for those, and for local bytes, call get_image_upload_url, upload with the returned PUT URL, then pass uploaded_image_key to create_entry. Use image_base64 only as a small last resort."
   },
   {
     question: "Claude can’t upload a photo to Dabble Me—what should I check?",
-    answer: "If Claude is using get_image_upload_url, its code-execution sandbox must allow HTTPS egress to the Amazon S3 host in the returned upload URL (often a bucket like dabble-me.s3.amazonaws.com). In Claude settings → Capabilities, enable Code execution and file creation, then either allow that specific domain or choose All domains. On Team/Enterprise plans, org owners may control this under Organization settings → Capabilities. If domain allowlist entries under “Package managers only” do not stick, switching to All domains is a known workaround. Prefer create_entry image_url whenever Claude already has a public https image URL—that sidesteps the S3 allowlist entirely."
+    answer: "If Claude is using get_image_upload_url, its code-execution sandbox must allow HTTPS egress to the Amazon S3 host in the returned upload URL (often a bucket like dabble-me.s3.amazonaws.com). In Claude settings → Capabilities, enable Code execution and file creation, then either allow that specific domain or choose All domains. On Team/Enterprise plans, org owners may control this under Organization settings → Capabilities. If domain allowlist entries under “Package managers only” do not stick, switching to All domains is a known workaround. create_entry image_url sidesteps the S3 allowlist entirely, but only for images hosted on an AI app's own file service."
   },
   {
     question: "Can the connector read another user's journal?",

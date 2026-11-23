@@ -1,0 +1,23 @@
+<p>Hey <%= @user.first_name_or_fallback %>,</p>
+
+<p>
+  We disconnected “<%= @app_name %>” from your Dabble Me account
+  (<%= @user.email %>) as a precaution. It sent us a sign-in key it had already
+  swapped for a new one, which can mean a copy of the key ended up somewhere else.
+  This is rare, and it is sometimes just the app glitching.
+</p>
+
+<p>If you still use <%= @app_name %>, connect it again. Your journal is unchanged.</p>
+
+<p>
+  If anything looks off, check
+  <%= link_to "Connected apps", security_url(anchor: "connected-apps") %>
+  and <%= link_to "change your password", edit_user_registration_url %>.
+</p>
+
+<p>
+  <br>
+  Thanks,
+  <br>
+  Dabble Me
+</p>

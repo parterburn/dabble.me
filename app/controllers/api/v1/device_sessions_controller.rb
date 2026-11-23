@@ -16,7 +16,7 @@ module Api
         head :no_content
       end
 
-      # DELETE /api/v1/device_sessions: Sign out of all devices, this app included.
+      # DELETE /api/v1/device_sessions: Sign out of all devices, this app and connected apps included.
       def destroy_all
         current_user.sign_out_everywhere!
         head :no_content

@@ -1134,61 +1134,54 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
-  describe "OAuth sign-in for the iOS app" do
+  describe "OAuth for the iOS app" do
     let(:code_verifier) { SecureRandom.urlsafe_base64(48) }
     let(:code_challenge) { Base64.urlsafe_encode64(Digest::SHA256.digest(code_verifier), padding: false) }
 
-    it "skips the consent screen and issues an app:journal token to a free user" do
+    it "no longer signs in on the web" do
       sign_in free_user
       get oauth_authorization_path(
-        response_type: "code",
-        client_id: mobile_app.uid,
-        redirect_uri: MobileApp::REDIRECT_URI,
-        scope: MobileApp::SCOPE,
-        state: "xyz",
-        code_challenge: code_challenge,
-        code_challenge_method: "S256"
-      )
-      expect(response).to have_http_status(:redirect)
-      location = URI.parse(response.location)
-      expect("#{location.scheme}:#{location.path}").to eq(MobileApp::REDIRECT_URI)
-      query = Rack::Utils.parse_query(location.query)
-      expect(query["state"]).to eq("xyz")
-
-      post oauth_token_path, params: {
-        grant_type: "authorization_code",
-        code: query["code"],
-        client_id: mobile_app.uid,
-        redirect_uri: MobileApp::REDIRECT_URI,
-        code_verifier: code_verifier
-      }
-      expect(response).to have_http_status(:ok)
-      expect(json["scope"]).to eq(MobileApp::SCOPE)
-      expect(json["refresh_token"]).to be_present
-
-      get "/api/v1/me", headers: { "Authorization" => "Bearer #{json['access_token']}" }
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "sends signed-out users to the login page without a flash, and remembers where to return" do
-      authorize_path = oauth_authorization_path(
         response_type: "code", client_id: mobile_app.uid, redirect_uri: MobileApp::REDIRECT_URI,
         scope: MobileApp::SCOPE, state: "xyz", code_challenge: code_challenge, code_challenge_method: "S256"
       )
-      get authorize_path
-      expect(response).to redirect_to(new_user_session_path)
-      expect(flash[:alert]).to be_nil
-      expect(session["user_return_to"]).to eq(authorize_path)
+      expect(response).to have_http_status(:bad_request)
+      expect(response.location).to be_nil
     end
 
-    it "opens the sign-up page for prompt=create and returns there after signing up" do
-      authorize_path = oauth_authorization_path(
-        response_type: "code", client_id: mobile_app.uid, redirect_uri: MobileApp::REDIRECT_URI, scope: MobileApp::SCOPE,
-        state: "xyz", code_challenge: code_challenge, code_challenge_method: "S256", prompt: "create"
+    it "refuses to exchange a code for the app, even one issued before the change" do
+      grant = Doorkeeper::AccessGrant.create!(
+        application: mobile_app, resource_owner_id: free_user.id, redirect_uri: MobileApp::REDIRECT_URI,
+        scopes: MobileApp::SCOPE, expires_in: 10.minutes, code_challenge: code_challenge, code_challenge_method: "S256"
       )
-      get authorize_path
-      expect(response).to redirect_to(new_user_registration_path)
-      expect(session["user_return_to"]).to eq(authorize_path)
+      post oauth_token_path, params: {
+        grant_type: "authorization_code", code: grant.plaintext_token, client_id: mobile_app.uid,
+        redirect_uri: MobileApp::REDIRECT_URI, code_verifier: code_verifier
+      }
+      expect(response).to have_http_status(:bad_request)
+      expect(json["error"]).to eq("unauthorized_client")
+      expect(Doorkeeper::AccessToken.where(application: mobile_app).count).to eq(0)
+    end
+
+    it "refuses the app's code even when the client authenticates with HTTP Basic" do
+      grant = Doorkeeper::AccessGrant.create!(
+        application: mobile_app, resource_owner_id: free_user.id, redirect_uri: MobileApp::REDIRECT_URI,
+        scopes: MobileApp::SCOPE, expires_in: 10.minutes, code_challenge: code_challenge, code_challenge_method: "S256"
+      )
+      post oauth_token_path,
+           params: { grant_type: "authorization_code", code: grant.plaintext_token, redirect_uri: MobileApp::REDIRECT_URI,
+                     code_verifier: code_verifier },
+           headers: { "Authorization" => "Basic #{Base64.strict_encode64("#{mobile_app.uid}:")}" }
+      expect(response).to have_http_status(:bad_request)
+      expect(json["error"]).to eq("unauthorized_client")
+    end
+
+    it "still renews the app's token with its refresh token" do
+      token = MobileApp.issue_token!(free_user)
+      post oauth_token_path, params: {
+        grant_type: "refresh_token", refresh_token: token.plaintext_refresh_token, client_id: mobile_app.uid
+      }
+      expect(response).to have_http_status(:ok)
+      expect(json["scope"]).to eq(MobileApp::SCOPE)
     end
 
     it "does not let MCP clients register the app's redirect scheme for a different scope" do
