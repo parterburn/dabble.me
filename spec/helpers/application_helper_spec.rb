@@ -16,4 +16,14 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(ApplicationHelper.faq_plain_text(html)).to eq("Don't worry. One Two Done")
     end
   end
+
+  describe "#distance_of_time_in_words" do
+    it "keeps our two-date wording" do
+      expect(helper.distance_of_time_in_words(Date.new(2024, 1, 1), Date.new(2026, 4, 1))).to eq("2 years and 3 months")
+    end
+
+    it "leaves time_ago_in_words to Rails" do
+      expect(helper.time_ago_in_words(3.hours.ago)).to eq("about 3 hours")
+    end
+  end
 end

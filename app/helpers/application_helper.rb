@@ -185,7 +185,12 @@ module ApplicationHelper
     a.join(" ")
   end
 
-  def distance_of_time_in_words(earlier_date, later_date)
+  # Overrides Rails' helper for our own two-date labels ("2 years and 3 months").
+  # Rails' time_ago_in_words calls this with a third options argument; send those
+  # calls to the stock helper so "about 2 hours ago" keeps working.
+  def distance_of_time_in_words(earlier_date, later_date, options = nil)
+    return super unless options.nil?
+
     Jekyll::Timeago.timeago(earlier_date, later_date, depth: 2, threshold: 0.05).gsub(" ago", "").gsub("in ", "").gsub("tomorrow", "1 day")
   end
 
