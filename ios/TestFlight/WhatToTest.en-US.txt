@@ -1,12 +1,27 @@
-Dictation taps your hand when recording starts and stops, and its loading dots sit on the right.
+Dictation: quicker to start and finish, a haptic tap at start and stop, and loading dots on the right.
+
+Starting
+- Open the composer: it should open and type exactly as fast as before (the model loads a moment after the keyboard is up). Wait a second, then tap the mic. The waveform should show almost at once, with only a blink of the dots first.
+- Tap the mic straight away as the composer opens: it should still start promptly.
+- After one dictation, start another in the same entry: it should be just as quick.
+
+Finishing
+- Say a sentence or two and tap Done. The words should go in noticeably sooner than before.
+- Try a longer one (a minute or so): it takes a little longer, but should not sit on the dots for long.
+- With Settings → Dictation → Fix Misheard Words on, it's still the slowest (the on-device model rewrites the text), but a bit quicker than before.
 
 Haptics
-- Tap the mic in the composer: you feel a tap when the waveform appears (recording has started), not when you touch the button.
-- Tap Done, or the mic again: you feel a tap as recording stops.
-- Hold the mic to talk: a tap when recording starts while you're holding, and another when you let go.
-- The X (drop the recording) and the 10-second "Didn't hear anything" stop also give the stop tap.
+- You feel a tap when recording actually starts (as the waveform appears, not when you touch the mic), and another when it stops: Done, the mic again, letting go of a held mic, the X, or the 10-second "Didn't hear anything".
+- Hold the mic to talk: a tap once it starts recording, another when you let go.
 - With System Haptics off in iOS Settings → Sounds & Haptics, there's no tap.
 
 Loading dots on the right
-- While dictation gets ready, and after Done while it writes your words down, the moving dots now sit on the right of the row, where the timer and Done are while recording. The row should change in place instead of the dots jumping across.
-- The first time, "Downloading 42%" sits just left of the dots.
+- While dictation gets ready, and after Done while it writes your words in, the dots sit on the right of the row, where the timer and Done are while recording, so the row changes in place.
+
+Still the same
+- X drops the recording, and the next tap still starts quickly.
+- Changing Settings → Dictation → Language, then dictating, uses the new language.
+- The very first time on a phone (or after iOS clears the model), it still downloads the speech model first, with "Downloading N%" next to the dots.
+
+Timings
+- With the iPhone connected to a Mac, Console shows each dictation's timings: search for "Dictation".
