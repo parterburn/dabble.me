@@ -35,6 +35,7 @@
 @source "../../views/devise/registrations/_signed_in_devices.html.erb";
 @source "../../views/devise/registrations/delete_account.html.erb";
 @source "../../views/devise/registrations/posting_address.html.erb";
+@source "../../views/devise/registrations/email_change.html.erb";
 @source "../../views/devise/otp_credentials/*.html.erb";
 @source "../../views/devise/otp_tokens/*.html.erb";
 @source "../../views/devise/shared/_error_messages.html.erb";
