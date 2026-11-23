@@ -89,12 +89,16 @@ RSpec.describe AppleSubscription do
     end
 
     it "downgrades an expired web plan, and an active App Store subscription takes over" do
-      user.update!(plan: "PRO Monthly PayHere")
+      user.update!(plan: "PRO Monthly PayHere", frequency: %w[Mon Wed Fri])
       subscription
       user.payments.create!(amount: 4, date: 3.months.ago)
+      mcp = Doorkeeper::Application.create!(name: "MCP", redirect_uri: "http://127.0.0.1/cb", confidential: false, scopes: "mcp:access")
+      token = Doorkeeper::AccessToken.create!(application: mcp, resource_owner_id: user.id, scopes: "mcp:access", expires_in: 2.hours)
       expect(UserMailer).not_to receive(:downgraded) # Still PRO: no "you're on Free" email.
-      UserDowngradeExpiredWorker.new.perform
+      expect { UserDowngradeExpiredWorker.new.perform }.not_to have_enqueued_mail(UserMailer, :thanks_for_paying)
       expect(user.reload.plan).to eq("PRO Monthly Apple")
+      expect(user.frequency).to eq(%w[Mon Wed Fri])
+      expect(token.reload.revoked_at).to be_nil
     end
 
     it "doesn't let App Store charges keep a cancelled web plan alive" do
@@ -107,11 +111,15 @@ RSpec.describe AppleSubscription do
     end
 
     it "still emails an expired web plan with no App Store subscription" do
-      user.update!(plan: "PRO Monthly PayHere")
+      user.update!(plan: "PRO Monthly PayHere", frequency: %w[Mon Wed])
       user.payments.create!(amount: 4, date: 3.months.ago)
+      mcp = Doorkeeper::Application.create!(name: "MCP", redirect_uri: "http://127.0.0.1/cb", confidential: false, scopes: "mcp:access")
+      token = Doorkeeper::AccessToken.create!(application: mcp, resource_owner_id: user.id, scopes: "mcp:access", expires_in: 2.hours)
       expect(UserMailer).to receive(:downgraded).with(user, gift: false).and_call_original
       UserDowngradeExpiredWorker.new.perform
       expect(user.reload.plan).to eq("Free")
+      expect(user.frequency).to eq(["Sun"])
+      expect(token.reload.revoked_at).to be_present
     end
   end
 
