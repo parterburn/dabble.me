@@ -121,16 +121,18 @@ struct ComposeView: View {
     private let originalBlocks: [DocumentBlock]
     /// The writer's template (Settings → Entry Template), as it was when this opened.
     private let template: [DocumentRun]
-    /// A new entry set to start with the template.
+    /// The template as the empty page shows it: its words, without the blank lines left for writing.
+    private let templatePreview: AttributedString
+    /// A new entry started from the template (a held Write button).
     private let startsWithTemplate: Bool
-    /// The editor holds the template and nothing else yet (a new entry set to start with it):
+    /// The editor holds the template and nothing else yet (a new entry started from it):
     /// there's nothing to save until something's written.
     @State private var isUntouchedTemplate: Bool
     /// The lightbulb button was held (so the tap that ends the hold doesn't also open its row).
     @State private var heldAskIcon = false
 
     /// `day`: a new entry for that day (Stats' grid), not today. `withTemplate`: a new entry
-    /// that starts from the writer's template whatever the setting says (a held Write button).
+    /// that starts from the writer's template (a held Write button).
     init(mode: Mode, day: JournalDay? = nil, withTemplate: Bool = false, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
         self.mode = mode
         self.onSaved = onSaved
@@ -146,11 +148,12 @@ struct ComposeView: View {
             DraftStore.clear(key)
         }
         draftKey = key
-        // A new entry set to start with the template has it from the outset, and again after
-        // Start Over. A draft, as ever, comes first.
+        // A new entry started from the template (a held Write button) has it from the outset,
+        // and again after Start Over. A draft, as ever, comes first.
         let template = EntryTemplate.runs
         self.template = template
-        let startsWithTemplate = entry == nil && !template.isEmpty && (EntryTemplate.addsToNewEntries || withTemplate)
+        templatePreview = EntryTemplate.preview(template)
+        let startsWithTemplate = entry == nil && !template.isEmpty && withTemplate
         self.startsWithTemplate = startsWithTemplate
         originalBlocks = original
         _isUntouchedTemplate = State(initialValue: startsWithTemplate && draft == nil)
@@ -228,20 +231,35 @@ struct ComposeView: View {
                                 .accessibilityAddTraits(.updatesFrequently)
                         }
                     }
+                    // Why dictation couldn't listen: a toast over the bar, not in the row.
+                    .overlay(alignment: .bottom) {
+                        if let problem = dictation.problem {
+                            DictationProblemToast(problem: problem) { dictation.clearProblem() }
+                                .padding(.bottom, 68)
+                                .padding(.horizontal, 24)
+                                .transition(.opacity)
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.2), value: dictation.problem)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
-                            VStack(alignment: .leading, spacing: 12) {
-                                // About the day being written: today, yesterday, or another by name.
-                                Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
-                                    .font(Font(RichText.Style.journal.baseFont))
-                                    .foregroundStyle(.tertiary)
-                                    .allowsHitTesting(false)
-                                    .accessibilityHidden(true)
-                                // With a template, the empty page offers it: a tap here, or a swipe right.
-                                if !template.isEmpty { templateHint }
+                            Group {
+                                // With a template, the empty page is the template itself, under a
+                                // line that says how to use it. Without, a question about the day
+                                // being written: today, yesterday, or another by name.
+                                if !templatePreview.characters.isEmpty {
+                                    templatePlaceholder
+                                } else {
+                                    Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
+                                        .font(Font(RichText.Style.journal.baseFont))
+                                        .foregroundStyle(.tertiary)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                }
                             }
                             .padding(.top, 16)
                             .padding(.leading, 17)
+                            .padding(.trailing, 17)
                         }
                     }
             }
@@ -449,7 +467,7 @@ struct ComposeView: View {
     private var openRow: AnyView? {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
-        } else if dictation.isActive || dictation.problem != nil {
+        } else if dictation.isActive {
             AnyView(DictationRow(dictation: dictation))
         } else if let typed = editor.typedHashtag, !hashtagCompletions(for: typed).isEmpty {
             // A hashtag being typed: the writer's tags that start that way, whatever row was open.
@@ -576,7 +594,7 @@ struct ComposeView: View {
                 Image(systemName: "link")
                     .font(.system(size: 17, weight: .medium))
                     .frame(width: 40, height: 36)
-                    .background(editor.isEditingLink ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(editor.isEditingLink ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -667,7 +685,7 @@ struct ComposeView: View {
             } label: {
                 appIcon("slab-tag")
                     .frame(width: 40, height: 36)
-                    .background(showsHashtagBar ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(showsHashtagBar ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
             // Held: tags the entry's own words with the hashtags they match, in one go.
@@ -699,7 +717,7 @@ struct ComposeView: View {
             } label: {
                 appIcon("slab-lightbulb")
                     .frame(width: 40, height: 36)
-                    .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(showsAskRow ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
             // Held: Apple's moments open straight away (iPhone). (The template is on the empty page.)
@@ -727,9 +745,6 @@ struct ComposeView: View {
         Button {
             if dictation.isActive {
                 dictation.stop()
-            } else if dictation.problem != nil {
-                // Its message showing: the microphone closes it.
-                dictation.clearProblem()
             } else {
                 showsHashtagBar = false
                 showsAskRow = false
@@ -746,7 +761,7 @@ struct ComposeView: View {
         } label: {
             appIcon("slab-microphone")
                 .frame(width: 40, height: 36)
-                .background(dictation.isActive ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                .background(dictation.isActive ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
@@ -785,7 +800,7 @@ struct ComposeView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 1)
-            .background(showsPhotoDrawer ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+            .background(showsPhotoDrawer ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -1042,7 +1057,7 @@ struct ComposeView: View {
         .accessibilityHint("Opens your iPhone's suggestions: photos, places, workouts and music to write about")
     }
 
-    /// The icon at the start of a row in Writing ideas (the prompt, a moment), in a column of its own.
+    /// The icon at the start of a row in Writing ideas (a moment), in a column of its own.
     private func ideaIcon(_ name: String) -> some View {
         Image(systemName: name)
             .font(.subheadline)
@@ -1104,37 +1119,73 @@ struct ComposeView: View {
         }
     }
 
-    /// Under the empty page's question, with a template to offer (Settings → Entry Template):
-    /// "Use template" and a "Swipe →" badge, the way the swipe is learned. A tap does it too. Gone
-    /// once anything's written.
-    private var templateHint: some View {
+    /// The empty page, with a template (Settings → Entry Template): "Start writing or [Swipe →] to
+    /// use template:", and the template under it, faint, the way a placeholder is. A swipe right
+    /// across the page puts it in, as does a tap on the Swipe badge; a tap anywhere else is just
+    /// a tap into the page. A long template shows its first lines and fades out. Gone once
+    /// anything's written.
+    private var templatePlaceholder: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // On one line, or (large text) the badge on a line of its own.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) {
+                    Text("Start writing or").allowsHitTesting(false)
+                    templateBadge
+                    Text("to use template:").allowsHitTesting(false)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Start writing or").allowsHitTesting(false)
+                    HStack(spacing: 6) {
+                        templateBadge
+                        Text("to use template:").allowsHitTesting(false)
+                    }
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            Text(templatePreview)
+                .font(Font(RichText.Style.journal.baseFont))
+                .foregroundStyle(.tertiary)
+                .lineLimit(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .mask {
+                    // A long one fades out at the foot, so it reads as more to come.
+                    LinearGradient(stops: [.init(color: .black, location: templateIsLong ? 0.6 : 1),
+                                           .init(color: .black.opacity(templateIsLong ? 0.15 : 1), location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// "Swipe →", the way the swipe is learned: a tap on it puts the template in too.
+    private var templateBadge: some View {
         Button {
             editor.addTemplate(template)
             editor.focus()
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "doc.text")
-                    .imageScale(.small)
-                Text("Use template")
-                HStack(spacing: 3) {
-                    Text("Swipe")
-                    Image(systemName: "arrow.right")
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.secondary.opacity(0.1), in: .rect(cornerRadius: 4))
-                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color.secondary.opacity(0.3)))
+            HStack(spacing: 3) {
+                Text("Swipe")
+                Image(systemName: "arrow.right")
             }
-            .font(.subheadline)
+            .font(.caption.weight(.semibold))
             .foregroundStyle(.tint)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color("AccentColor").opacity(0.1), in: .rect(cornerRadius: 5))
+            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color("AccentColor").opacity(0.35)))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Use Template")
         .accessibilityHint("Adds your entry template. You can also swipe right on the empty page.")
+    }
+
+    /// More than the placeholder's eight lines, or near enough once long lines wrap.
+    private var templateIsLong: Bool {
+        let text = String(templatePreview.characters)
+        return text.split(separator: "\n", omittingEmptySubsequences: false).count > 8 || text.count > 320
     }
 
     /// A small filled button at the right of a row over the keyboard ("Auto Tag").
@@ -1161,7 +1212,6 @@ struct ComposeView: View {
     private var askLine: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 12) {
-                if isAsking || question != nil { ideaIcon("sparkles") }
                 if isAsking {
                     TypingDots(size: .small)
                     Text("Generating prompt…")
@@ -1197,6 +1247,8 @@ struct ComposeView: View {
             }
         }
         .padding(.horizontal)
+        // A little room under the heading.
+        .padding(.top, 6)
         .padding(.bottom, hasAgenda ? 6 : 0)
         .animation(.easeOut(duration: 0.2), value: question)
     }
@@ -1683,8 +1735,8 @@ private struct CalendarRow: View {
         changed(access == .allowed && events?.isEmpty == false)
     }
 
-    /// The width of the events' time column.
-    static let timeColumn: CGFloat = 72
+    /// The width of the events' time column: just past "12:00 PM", growing with the text size.
+    @ScaledMetric(relativeTo: .footnote) private var timeColumn: CGFloat = 62
 
     /// The whole day's events: the row shows the first few, up to its height, and scrolls to
     /// the rest. (Three at most left nothing to scroll to, so a busy day looked cut off.)
@@ -1698,7 +1750,7 @@ private struct CalendarRow: View {
                         Text(event.time)
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(.secondary)
-                            .frame(width: Self.timeColumn, alignment: .leading)
+                            .frame(width: timeColumn, alignment: .leading)
                         Text(event.title)
                             .font(.system(.subheadline, design: .serif))
                             .lineLimit(1)
@@ -1927,7 +1979,7 @@ struct FormatButton: View {
         Button(action: toggle) {
             letter.label
                 .frame(width: 40, height: 36)
-                .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                .background(isOn ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -1940,31 +1992,22 @@ struct FormatButton: View {
 /// and clock update here without redrawing the whole composer.
 private struct DictationRow: View {
     let dictation: Dictation
-    @Environment(\.openURL) private var openURL
 
     /// While speaking: a title, then, while recording, an X on the left (drops it), the waveform
     /// with the time so far, and Done on the right (writes it in). Nothing's written until Done:
     /// it's heard in one go, then tidied.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(dictationTitle)
+            // One title throughout, matching Settings → Dictation; the row below shows the state.
+            Text("Dictation")
                 .font(.caption.weight(.semibold))
                 .textCase(.uppercase)
                 .foregroundStyle(.tint)
                 .padding(.bottom, 4)
                 .accessibilityAddTraits(.isHeader)
+                .accessibilityValue(dictationState)
             HStack(alignment: .center, spacing: 12) {
-                if let problem = dictation.problem {
-                    closeButton("Close") { dictation.clearProblem() }
-                    Text(problem.message)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
-                        Button("Settings") { openURL(settings) }
-                            .font(.subheadline.weight(.semibold))
-                    }
-                } else if dictation.state == .listening {
+                if dictation.state == .listening {
                     closeButton("Cancel Recording") { dictation.cancel() }
                         .accessibilityHint("Drops what you said")
                     DictationWaveform(levels: dictation.levels)
@@ -1989,12 +2032,15 @@ private struct DictationRow: View {
                     .accessibilityLabel("Done")
                     .accessibilityHint("Writes what you said into the entry")
                 } else {
+                    // Getting ready or writing it down: just the dots (and, the first time, how
+                    // much of the download is in).
                     TypingDots(size: .small)
-                    dictationLine
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityIdentifier("DictationStatus")
+                    if let progress = dictation.downloadProgress {
+                        Text("Downloading \(Int(progress * 100))%")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
                 }
             }
             .font(.subheadline)
@@ -2004,7 +2050,7 @@ private struct DictationRow: View {
         .padding(.top, 10)
     }
 
-    /// The X on the row's left: drops a recording, or closes a message.
+    /// The X on the row's left: drops the recording.
     private func closeButton(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             appIcon("slab-close")
@@ -2020,20 +2066,49 @@ private struct DictationRow: View {
         .accessibilityLabel(label)
     }
 
-    private var dictationTitle: String {
-        if dictation.problem != nil { return "Speak your entry" }
-        return switch dictation.state {
+    /// Read out with the title, since the title itself no longer changes.
+    private var dictationState: String {
+        switch dictation.state {
         case .idle, .preparing: "Getting ready"
         case .listening: "Listening"
         case .writing: "Writing it down"
         }
     }
 
-    @ViewBuilder private var dictationLine: some View {
-        if let progress = dictation.downloadProgress {
-            Text("Downloading what's needed to listen, just this once… \(Int(progress * 100))%")
-        } else {
-            Text(dictation.state == .writing ? "Turning what you said into words, on your phone…" : "One moment…")
+}
+
+/// Why dictation couldn't listen, as a toast over the bar. Tap to close; it also closes itself.
+/// Microphone turned off: a Settings button to turn it on.
+private struct DictationProblemToast: View {
+    let problem: Dictation.Problem
+    let close: () -> Void
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(problem.message)
+                .font(.subheadline.weight(.medium))
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+            if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
+                Button("Settings") { openURL(settings); close() }
+                    .font(.subheadline.weight(.semibold))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.regularMaterial, in: .capsule)
+        .contentShape(.capsule)
+        .onTapGesture(perform: close)
+        .accessibilityElement(children: .combine)
+        .accessibilityAction(named: "Close", close)
+        .accessibilityIdentifier("DictationProblem")
+        .onAppear { AccessibilityNotification.Announcement(problem.message).post() }
+        // Closes itself after a few seconds (longer with a Settings button to reach). Keyed to
+        // the problem so a new one gets its full time.
+        .task(id: problem) {
+            try? await Task.sleep(for: .seconds(problem == .microphoneDenied ? 8 : 4))
+            if !Task.isCancelled { close() }
         }
     }
 }

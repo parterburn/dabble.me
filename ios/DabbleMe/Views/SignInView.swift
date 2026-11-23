@@ -277,30 +277,33 @@ private struct MemoryDeck: View {
     }
 
     private func card(_ memory: Memory, isFront: Bool) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(memory.caption)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.tint)
-                Self.withHashtags(memory.text)
-                    .font(.system(.body, design: .serif))
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(4)
-                    .minimumScaleFactor(0.85)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if let dated = memory.datedTag {
-                    HashtagPill(tag: dated.tag, age: dated.age)
+        // The date has the full width to itself; the photo sits beside the words, under it.
+        VStack(alignment: .leading, spacing: 8) {
+            Text(memory.caption)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.tint)
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Self.withHashtags(memory.text)
+                        .font(.system(.body, design: .serif))
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(4)
+                        .minimumScaleFactor(0.85)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if let dated = memory.datedTag {
+                        HashtagPill(tag: dated.tag, age: dated.age)
+                    }
                 }
-                Spacer(minLength: 0)
+                if let photo = memory.photo {
+                    Image(photo)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 64, height: 64)
+                        .clipShape(.rect(cornerRadius: 10))
+                        .padding(.top, 3)
+                }
             }
-            if let photo = memory.photo {
-                Image(photo)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 64, height: 64)
-                    .clipShape(.rect(cornerRadius: 10))
-                    .padding(.top, 2)
-            }
+            Spacer(minLength: 0)
         }
         .padding(18)
         .frame(maxWidth: 340, minHeight: 176, maxHeight: 176, alignment: .topLeading)

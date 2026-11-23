@@ -13,8 +13,6 @@ struct WidgetEntry: TimelineEntry {
     var lastFiveDays: [Bool]? = nil
     let memories: Int?
     let prompt: String?
-    /// `prompt` is the writer's template (every new entry starts with it), shown as Today does.
-    var promptIsTemplate = false
     /// With nothing on this day in past years: "You have a memory from 36 days ago."
     var memoryNote: String? = nil
     /// An entry to look back on, or today's (only with previews turned on in the app).
@@ -211,7 +209,7 @@ VStack(spacing: 0) {
                         .font(.system(.subheadline, design: .serif))
                         .foregroundStyle(Color(uiColor: .label)) // not the link's tint
                 } else if !entry.wroteToday, let prompt = entry.prompt {
-                    Text(entry.promptIsTemplate ? "Your template" : "A prompt for you")
+                    Text("A prompt for you")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.widgetLabel)
                     Text(prompt)
