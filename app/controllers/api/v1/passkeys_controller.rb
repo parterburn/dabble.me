@@ -15,6 +15,8 @@ module Api
     class PasskeysController < BaseController
       SETUP_WINDOW = 15.minutes
 
+      before_action :refuse_admin_passkey, only: %i[options create]
+
       # POST /api/v1/passkeys/options {setup_token | current_password | email_code}: what the app's registration
       # request needs. The proof is checked here, before the system's sheet saves a passkey on the
       # phone, so a wrong password can't leave one there that the server never keeps.
@@ -94,6 +96,17 @@ module Api
       end
 
       private
+
+      # On the web, an admin must use a passkey before adding another, and needs the password
+      # for the first (ApplicationController#require_admin_passkey). The app has neither check,
+      # and an emailed code or the setup token after a code sign-in (the inbox alone) would do as
+      # proof here, so admins add passkeys on the web.
+      def refuse_admin_passkey
+        return unless AdminAccounts.protected?(current_user)
+
+        render_error(:forbidden, 'admin_passkey_on_web',
+                     'Admin accounts add passkeys on dabble.me.')
+      end
 
       def proof_valid?
         setup_token_valid? || current_user.valid_password?(params[:current_password].to_s)

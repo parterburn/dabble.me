@@ -55,7 +55,12 @@ module EmailSignIn
   # this), before its owner ever proved they read the inbox. Whoever made it may not own the
   # address, so the first code sign-in wipes its credentials
   # (User#clear_credentials_for_email_claim!) and needs no 2FA code.
+  #
+  # Never an admin's: admins are made in the Rails console, and their passkeys and 2FA stay
+  # (AdminAccounts), so a code sign-in to one still needs its 2FA code and wipes nothing.
   def unclaimed?(user)
+    return false if AdminAccounts.protected?(user)
+
     user.email_verified_at.nil? && (user.created_at >= UNCLAIMED_FROM || user.email_changed_at.present?)
   end
 

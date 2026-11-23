@@ -75,7 +75,8 @@ module MobileApp
   # (Api::V1::PasskeysController). Passkey sign-in has no need of it. It works only with the
   # access token it came with.
   def passkey_setup(user, token)
-    return {} if user.webauthn_credentials.exists?
+    # Admins add passkeys on the web only (Api::V1::PasskeysController#refuse_admin_passkey).
+    return {} if user.webauthn_credentials.exists? || AdminAccounts.protected?(user)
 
     { passkey_setup_token: Api::V1::PasskeysController.setup_token_for(user, token) }
   end

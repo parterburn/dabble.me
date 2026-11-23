@@ -25,6 +25,11 @@ module Api
       # account's own passkeys (challenge from GET /api/v1/session/passkey), for someone who
       # signs in with a passkey and may not know the password.
       def create
+        # Deleting the account would delete its passkeys, which admins keep (AdminAccounts).
+        if AdminAccounts.protected?(current_user)
+          return render_error(:forbidden, 'admin_account', 'Admin accounts can only be deleted from the Rails console.')
+        end
+
         if params[:credential].present?
           unless passkey_user == current_user
             return render_error(:forbidden, 'passkey_failed', "That passkey didn't confirm it. Try again, or use your password.")

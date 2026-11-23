@@ -6,6 +6,7 @@ class RegistrationsController < Devise::RegistrationsController
   # No new accounts once a closing is announced. Prepended last, so it runs first.
   prepend_before_action :refuse_when_closing, only: [:new, :create, :gift, :redeem_gift]
   before_action :require_gift, only: [:gift, :redeem_gift]
+  before_action :refuse_admin_deletion, only: [:destroy, :delete_account]
 
   def edit
     cookies.permanent[:viewed_settings] = true
@@ -260,6 +261,13 @@ class RegistrationsController < Devise::RegistrationsController
     else
       'application'
     end
+  end
+
+  # Deleting the account would delete its passkeys, which admins keep (AdminAccounts).
+  def refuse_admin_deletion
+    return unless AdminAccounts.protected?(current_user)
+
+    redirect_to security_path, alert: "Admin accounts can only be deleted from the Rails console."
   end
 
   def schedule_user_deletion

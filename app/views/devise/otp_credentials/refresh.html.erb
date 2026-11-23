@@ -14,8 +14,13 @@
       <%= f.hidden_field :email %>
 
       <div>
-        <%= f.label :refresh_password, "Password", class: "field-label" %>
-        <%= f.password_field :refresh_password, autocomplete: "current-password", autofocus: true, class: "field-input" %>
+        <% if current_user.has_password? %>
+          <%= f.label :refresh_password, "Password", class: "field-label" %>
+          <%= f.password_field :refresh_password, autocomplete: "current-password", autofocus: true, class: "field-input" %>
+        <% else %>
+          <%# OtpRefreshByEmailCode: an account with no password confirms with an emailed code. %>
+          <%= render "devise/shared/password_or_code", f: f, label: "Password" %>
+        <% end %>
       </div>
 
       <%= f.submit I18n.t(:go_on, scope: 'devise.otp.credentials_refresh'), class: "button-primary w-full" %>

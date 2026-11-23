@@ -111,6 +111,9 @@ class ApplicationController < ActionController::Base
   # Adding a passkey on the web needs the password, or an emailed code on an account with
   # none, unless this session signed in with an emailed code in the last few minutes.
   def passkey_proof_needed?
+    # An admin's first passkey always takes the password (admin_first_passkey_proof_valid?).
+    return true if admin_adding_first_passkey?
+
     signed_in_at = session[EmailCodesController::SIGNED_IN_SESSION]
     !(signed_in_at.is_a?(Integer) && Time.at(signed_in_at) > EmailCodesController::FRESH_FOR.ago)
   end
@@ -123,6 +126,18 @@ class ApplicationController < ActionController::Base
     else
       EmailCode.confirm(current_user, email_code)
     end
+  end
+
+  # An admin's first passkey is what the admin pages ask for, so it takes the password: not an
+  # emailed code, and not the minutes after an emailed-code sign-in, either of which is the
+  # inbox alone (AdminAccounts). An admin with no password and no passkey is set up from the
+  # Rails console.
+  def admin_adding_first_passkey?
+    AdminAccounts.protected?(current_user) && !current_user.webauthn_credentials.exists?
+  end
+
+  def admin_first_passkey_proof_valid?(password)
+    current_user.has_password? && current_user.valid_password?(password.to_s)
   end
 
   def refuse_when_closing

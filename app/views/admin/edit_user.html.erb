@@ -29,8 +29,13 @@
 
         <div>
           <%= f.label :email, class: "field-label" %>
-          <%= f.email_field :email, class: "field-input" %>
-          <p class="field-help">Changing it signs them out of the iOS app and connected AI apps<%= ", and updates their Stripe customer" if @user.stripe_id.present? %>.</p>
+          <% if @user.admin? %>
+            <%= f.email_field :email, class: "field-input", disabled: true %>
+            <p class="field-help">An admin changes their own address in Account Security.</p>
+          <% else %>
+            <%= f.email_field :email, class: "field-input" %>
+            <p class="field-help">Changing it signs them out of the iOS app and connected AI apps<%= ", and updates their Stripe customer" if @user.stripe_id.present? %>.</p>
+          <% end %>
         </div>
 
         <fieldset>
