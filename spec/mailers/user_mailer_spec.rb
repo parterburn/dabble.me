@@ -38,6 +38,16 @@ RSpec.describe UserMailer do
     end
   end
 
+  describe "#downgraded" do
+    it "has a plain subject for an ended subscription" do
+      expect(described_class.downgraded(user).subject).to eq("Account Downgraded")
+    end
+
+    it "says the gift year ended for a gift" do
+      expect(described_class.downgraded(user, gift: true).subject).to eq("Your gift year of Dabble Me PRO has ended")
+    end
+  end
+
   describe "#no_user_here" do
     let(:notification) { { "email" => "buyer@example.com", "purchaser_id" => "4444" } }
 

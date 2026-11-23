@@ -37,7 +37,7 @@ class UserMailer < ActionMailer::Base
     @user = user
     @gift = gift
     @user.increment!(:emails_sent)
-    subject = gift ? 'Your gift year of Dabble Me PRO has ended' : '[ACTION REQUIRED] Account Downgraded'
+    subject = gift ? 'Your gift year of Dabble Me PRO has ended' : 'Account Downgraded'
     email = mail(to: user.cleaned_to_address, subject: subject)
     email.mailgun_options = {tag: 'Downgraded'}
   end
