@@ -96,7 +96,7 @@ class UserSession < ActiveRecord::Base
   end
 
   # Signs this device out: the app's tokens stop working at once; a browser is turned away on its
-  # next request, because its session and "Stay logged in" cookies point to this row (WebSessions).
+  # next request, because its session and remember cookies point to this row (WebSessions).
   def revoke!
     Doorkeeper::AccessToken.where(user_session_id: id, revoked_at: nil).update_all(revoked_at: Time.current)
     destroy!

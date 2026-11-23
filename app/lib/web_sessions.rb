@@ -3,13 +3,15 @@
 # Web sign-ins as UserSession rows (Warden hooks in config/initializers/user_sessions.rb).
 #
 # A sign-in makes a row and a random token. The token goes in the Rails session (so the browser's
-# session cookie names its row) and in an encrypted device cookie that lasts as long as "Stay
-# logged in" (so a remembered browser coming back names its row too). On every request the row
+# session cookie names its row) and in an encrypted device cookie that lasts as long as Devise's
+# remember cookie (so a remembered browser coming back names its row too). Every sign-in is
+# remembered (User#remember_me), and both cookies are renewed while the browser is used, so a
+# browser stays signed in until it goes Devise.remember_for without a visit. On every request the row
 # must still exist: signing a session out deletes it, and that browser is signed out on its next
 # request, even if it holds a copy of its old cookies.
 #
 # Browsers signed in before this shipped have no token. Their session is given a row the first
-# time it's seen, until LEGACY_SESSIONS_UNTIL; their "Stay logged in" cookie is given one when
+# time it's seen, until LEGACY_SESSIONS_UNTIL; their remember cookie is given one when
 # it was made before TRACKING_STARTED_AT. Sign out of all devices (User#sign_out_everywhere!)
 # ends those too, by changing the salt Devise checks.
 module WebSessions
@@ -18,10 +20,12 @@ module WebSessions
   TRACKING_STARTED_AT = Time.utc(2026, 11, 24)
   # Browsers keep session cookies for as long as they stay open, so this is generous.
   LEGACY_SESSION_GRACE = 30.days
+  # How often a browser in use gets its remember and device cookies rewritten.
+  RENEW_COOKIES_EVERY = 1.day
 
   module_function
 
-  # A sign-in (password, passkey, emailed code, sign-up) or "Stay logged in" bringing one back.
+  # A sign-in (password, passkey, emailed code, sign-up) or a remember cookie bringing one back.
   def signed_in(user, warden, options)
     return unless tracked?(user, options) && options[:store] != false
 
@@ -31,7 +35,7 @@ module WebSessions
     session = nil unless session&.user_id == user.id
 
     if remembered?(warden) && session.nil? && !legacy_remember_cookie?(warden, device_token)
-      # This browser's row was signed out (or never made): its "Stay logged in" cookie no longer
+      # This browser's row was signed out (or never made): its remember cookie no longer
       # counts. Devise's logout hook deletes that cookie.
       warden.logout(options[:scope])
       return
@@ -56,6 +60,7 @@ module WebSessions
 
     if session&.user_id == user.id
       session.touch_activity!(request)
+      keep_remembered(user, warden, request, token)
       Current.user_session = session
     elsif (token.nil? || session) && legacy_sessions_allowed?
       # No token, or another account's (a session switched accounts without a sign-in, which
@@ -85,11 +90,30 @@ module WebSessions
   def store(warden, scope, request, session, token)
     warden.raw_session["warden.user.#{scope}.session"] ||= {}
     scoped_session(warden, scope)[SESSION_KEY] = token
+    write_device_cookie(request, token)
+    Current.user_session = session
+  end
+
+  def write_device_cookie(request, token)
     request.cookie_jar.encrypted[DEVICE_COOKIE] = {
       value: token, expires: Devise.remember_for.from_now, httponly: true, same_site: :lax,
       secure: Rails.env.production?
     }
-    Current.user_session = session
+  end
+
+  # Devise renews its remember cookie only when the cookie signs a browser back in, so a browser
+  # that keeps its session cookie would see the cookie run out 30 days after sign-in however often
+  # it's used. Rewriting both cookies (at most daily) makes the 30 days count from the last visit.
+  def keep_remembered(user, warden, request, token)
+    _id, _salt, generated_at = request.cookie_jar.signed[remember_cookie_key(user)]
+    return if generated_at && Time.at(generated_at.to_f) > RENEW_COOKIES_EVERY.ago
+
+    Devise::Hooks::Proxy.new(warden).remember_me(user)
+    write_device_cookie(request, token)
+  end
+
+  def remember_cookie_key(user)
+    user.rememberable_options.fetch(:key, 'remember_user_token')
   end
 
   # Warden's per-scope session hash, read directly: warden.session(scope) looks the user up
@@ -102,7 +126,7 @@ module WebSessions
     warden.winning_strategy.is_a?(Devise::Strategies::Rememberable)
   end
 
-  # A "Stay logged in" cookie from before sessions were tracked, from a browser that never had a
+  # A remember cookie from before sessions were tracked, from a browser that never had a
   # device cookie. Devise's cookie holds the time it was written.
   def legacy_remember_cookie?(warden, device_token)
     return false if device_token.present?
