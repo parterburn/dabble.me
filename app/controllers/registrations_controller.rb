@@ -211,6 +211,14 @@ class RegistrationsController < Devise::RegistrationsController
     redirect_to settings_path(token: user.email_settings_token)
   end
 
+  protected
+
+  # No passkey page straight after sign-up (PasskeyOffer).
+  def after_sign_up_path_for(resource)
+    skip_passkey_offer!
+    super
+  end
+
   private
 
   # Live iOS app tokens not yet tied to a Sessions row (AppSessions links them on first use).

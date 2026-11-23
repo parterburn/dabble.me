@@ -111,7 +111,7 @@ RSpec.describe "Stay logged in (remember me)", type: :request do
       sign_in_with_password("1")
       complete_otp_challenge
 
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
       expect(remember_cookie_set?).to be(true)
     end
 
@@ -119,7 +119,7 @@ RSpec.describe "Stay logged in (remember me)", type: :request do
       sign_in_with_password("0")
       complete_otp_challenge
 
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
       expect(remember_cookie_set?).to be(false)
     end
   end

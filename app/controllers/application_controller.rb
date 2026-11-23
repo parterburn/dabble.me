@@ -109,13 +109,28 @@ class ApplicationController < ActionController::Base
   # payments. Used as a before_action where either starts. The /pay redirects
   # in config/routes.rb make the same check.
   # Adding a passkey on the web needs the password, or an emailed code on an account with
-  # none, unless this session signed in with an emailed code in the last few minutes.
+  # none, unless this browser signed in in the last few minutes (FreshSignIn).
   def passkey_proof_needed?
     # An admin's first passkey always takes the password (admin_first_passkey_proof_valid?).
     return true if admin_adding_first_passkey?
 
-    signed_in_at = session[EmailCodesController::SIGNED_IN_SESSION]
-    !(signed_in_at.is_a?(Integer) && Time.at(signed_in_at) > EmailCodesController::FRESH_FOR.ago)
+    !FreshSignIn.fresh?(session)
+  end
+
+  # Every web sign-in lands here (Devise, the emailed code, 2FA, a passkey). An account with no
+  # passkey stops at the page that offers one, once per browser (PasskeyOffer), then carries on.
+  def after_sign_in_path_for(resource)
+    destination = super
+    return destination if @skip_passkey_offer || !FreshSignIn.fresh?(session)
+    return destination unless PasskeyOffer.offer?(resource, cookies, destination)
+
+    session[PasskeyOffer::RETURN_TO] = destination
+    passkeys_offer_path
+  end
+
+  # Straight after sign-up, the journal comes first.
+  def skip_passkey_offer!
+    @skip_passkey_offer = true
   end
   helper_method :passkey_proof_needed?
 

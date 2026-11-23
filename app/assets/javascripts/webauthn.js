@@ -56,8 +56,25 @@
       return !!(window.PublicKeyCredential && navigator.credentials && window.fetch);
     },
 
+    // Account Security's Add Passkey: reloads the page when it's saved.
     register: function(nickname, currentPassword, emailCode) {
-      getJSON("/passkeys/registrations/new")
+      webauthn.create(nickname, currentPassword, emailCode)
+        .then(function(created) {
+          if (created) { location.reload(); }
+        })
+        .catch(function(err) {
+          if (err && err.errors) {
+            alert("Registration failed: " + err.errors.join(", "));
+          } else {
+            alert("Error creating credential: " + err);
+          }
+        });
+    },
+
+    // Makes a passkey and saves it. Resolves true once saved, false if the browser's prompt was
+    // dismissed. Rejects with { status, errors } when the server refused it, or the browser's error.
+    create: function(nickname, currentPassword, emailCode) {
+      return getJSON("/passkeys/registrations/new")
         .then(function(options) {
           options.challenge = webauthn.bufferDecode(options.challenge);
           options.user.id = webauthn.bufferDecode(options.user.id);
@@ -80,16 +97,10 @@
             email_code: emailCode
           });
         })
-        .then(function() {
-          location.reload();
-        })
+        .then(function() { return true; })
         .catch(function(err) {
-          if (isCancel(err)) { return; }
-          if (err && err.errors) {
-            alert("Registration failed: " + err.errors.join(", "));
-          } else {
-            alert("Error creating credential: " + err);
-          }
+          if (isCancel(err)) { return false; }
+          throw err;
         });
     },
 
