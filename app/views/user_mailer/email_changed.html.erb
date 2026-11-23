@@ -1,0 +1,15 @@
+<p>Hey <%= @user.first_name_or_fallback %>,</p>
+
+<p>Your Dabble Me account's email was changed from <%= @old_email %> to <%= @user.email %>. Emails from Dabble Me now go to the new address.</p>
+
+<p>
+  If you didn't make this change, someone else may be signed in to your account.
+  Reply to this email and we'll help.
+</p>
+
+<p>
+  <br>
+  Thanks,
+  <br>
+  Dabble Me
+</p>

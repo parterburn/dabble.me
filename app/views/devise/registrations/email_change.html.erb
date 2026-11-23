@@ -1,0 +1,36 @@
+<%# Finishing an email change (EmailChangesController): the code went to the new address. %>
+<% title 'Confirm your new email — Dabble me.' %>
+<% content_for :tailwind, true %>
+
+<div class="tw mx-auto max-w-lg pt-4 pb-16 sm:pt-8">
+  <header class="mb-8 text-center">
+    <h1 class="font-serif text-3xl tracking-tight text-primary sm:text-4xl">Confirm your new email</h1>
+    <p class="mt-3 text-muted">
+      We sent a 6-digit code to
+      <strong class="text-primary break-all"><%= current_user.pending_email %></strong>.
+      Your email stays <span class="break-all"><%= current_user.email %></span> until you enter it.
+    </p>
+  </header>
+
+  <div class="card p-6 sm:p-8 space-y-5">
+    <%= form_tag email_change_path, method: :post, class: "space-y-5", id: "email-change-form" do %>
+      <div>
+        <%= label_tag :code, "Code", class: "field-label" %>
+        <%= text_field_tag :code, nil,
+            autofocus: true,
+            required: true,
+            autocomplete: "one-time-code",
+            inputmode: "numeric",
+            pattern: "[0-9 ]{6,7}",
+            maxlength: 7,
+            placeholder: "123456",
+            class: "field-input text-center text-2xl tracking-[0.4em] font-mono" %>
+        <p class="field-help">It works for <%= EmailCode::LIFETIME.in_minutes.to_i %> minutes. Not there? Check spam, or send a new one.</p>
+      </div>
+      <%= submit_tag "Change my email", class: "button-primary w-full" %>
+    <% end %>
+
+    <%= button_to "Send a new code", resend_email_change_path, class: "w-full text-sm text-accent underline hover:text-primary cursor-pointer", form_class: "text-center" %>
+    <%= button_to "Keep my current email", email_change_path, method: :delete, class: "w-full text-sm text-muted underline hover:text-primary cursor-pointer", form_class: "text-center" %>
+  </div>
+</div>

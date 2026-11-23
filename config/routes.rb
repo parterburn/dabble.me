@@ -125,6 +125,11 @@ Rails.application.routes.draw do
   end
 
   # Account Security's Sessions list (SignedInDevicesController).
+  # A new email waits in users.pending_email until a code sent there is entered (EmailChangesController).
+  get 'security/email'           => 'email_changes#show', as: 'email_change'
+  post 'security/email'          => 'email_changes#update'
+  post 'security/email/resend'   => 'email_changes#resend', as: 'resend_email_change'
+  delete 'security/email'        => 'email_changes#destroy'
   delete 'security/sessions'     => 'signed_in_devices#destroy_all', as: 'signed_in_devices'
   delete 'security/sessions/:id' => 'signed_in_devices#destroy', as: 'signed_in_device'
 

@@ -356,10 +356,13 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(paid_user.frequency.count).to eq 1
       old_password = paid_user.encrypted_password
       email = Faker::Internet.email
+      old_email = paid_user.email
       post :update, params: {user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: paid_user.password }}, as: :json
       expect(response.status).to eq 302
-      expect(response).to redirect_to(edit_user_registration_url)
-      expect(paid_user.reload.email).to eq email
+      # The new email waits for a code sent to it (EmailChangesController); the password saves now.
+      expect(response).to redirect_to(email_change_url)
+      expect(paid_user.reload.email).to eq old_email
+      expect(paid_user.pending_email).to eq email.downcase
       expect(paid_user.encrypted_password).not_to eq old_password
     end
 
