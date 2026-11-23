@@ -1,9 +1,15 @@
-Composer toasts sit above the bar's buttons.
+Dictation: hold the mic to talk, no title on the row, toasts clear of the buttons.
 
-Dictation toast
-- Tap the mic in the composer, then stay quiet for 10 seconds. "Didn't hear anything. Try again." should float fully above the photo/camera and B/tag/lightbulb/mic buttons, with a small gap, not tucked under them.
-- Same with the microphone turned off for Dabble Me in iOS Settings: the toast and its Settings button sit clear of the buttons.
-- With a row open in the bar (a hashtag list, the writing ideas row), toasts sit above that row too.
+Hold to talk
+- In the composer, press and hold the mic. Recording starts after a moment (the waveform shows). Talk, then lift your finger: it writes what you said into the entry.
+- A quick tap still works as before: tap to start, then Done (or the mic again) to write it in, X to drop it.
+- A slightly slow tap should still count as a tap, not a hold that stops the moment you let go.
+- Hold and say nothing for 10 seconds: it stops with "Didn't hear anything".
 
-Hashtag notice
-- The notice that says hashtags were added sits in the same place, clear of the buttons.
+Dictation row
+- The row has no "Dictation" title anymore: just the dots while it gets ready or writes, and the X, waveform, timer and Done while recording.
+- With VoiceOver on, the dots and the waveform read as "Dictation" plus the current step.
+
+Toasts above the buttons
+- Tap the mic and stay quiet for 10 seconds. "Didn't hear anything. Try again." should sit fully above the bar's buttons, with a small gap.
+- The same goes for the microphone-off toast (with its Settings button) and the notice that hashtags were added.
