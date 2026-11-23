@@ -81,7 +81,11 @@ final class WelcomeTests: XCTestCase {
         XCTAssertTrue(email.waitForExistence(timeout: 5))
         XCTAssertFalse(app.textFields["First Name (optional)"].exists, "Sign-up asks for no name")
         XCTAssertFalse(app.secureTextFields["Password"].exists, "Sign-up asks for no password")
-        XCTAssertFalse(app.buttons["Continue"].isEnabled, "Nothing to send until there's an email")
+        // Continue looks ready from the start: tapped too soon, it asks for the email and stays put.
+        XCTAssertTrue(app.buttons["Continue"].isEnabled, "Continue never sits greyed out")
+        app.buttons["Continue"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Enter your email first, and we'll send you a code."].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Check your email"].exists, "Nothing sent without an email")
 
         // A mistyped domain gets a suggestion before anything is sent.
         email.tap()

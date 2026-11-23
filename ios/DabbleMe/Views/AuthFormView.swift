@@ -11,8 +11,10 @@ enum AuthFormMode: String, Identifiable {
 /// The app's own sign-in and sign-up, in a sheet over the welcome screens. Passwordless:
 ///
 /// 1. An email. The field offers the account's passkeys above the keyboard (`AppModel.passkeyAutoFill`),
-///    and "Sign In with a Passkey" opens the system's sheet: either signs straight in. A
-///    mistyped common domain gets a "Did you mean …?" (`EmailTypo`).
+///    and the "Sign In with a Passkey" link under Continue opens the system's sheet: either
+///    signs straight in. A mistyped common domain gets a "Did you mean …?" (`EmailTypo`).
+///    The main buttons always look ready: tapped too soon, they say what's missing under the
+///    field and put the cursor there, rather than sitting greyed out.
 /// 2. Continue always emails a six-digit code and shows the code screen, with or without an
 ///    account at that address (the server never says which). An unknown address becomes an
 ///    account once its code is entered, so a typo leaves nothing behind: the screen shows where
@@ -46,6 +48,8 @@ struct AuthFormView: View {
     @State private var isWorking = false
     @State private var error: String?
     @State private var notice: String?
+    /// What to fill in first, from a main button tapped too soon. Shown under that field.
+    @State private var hint: String?
     @State private var autoFill: Task<Void, Never>?
     @FocusState private var focus: Field?
 
@@ -57,12 +61,23 @@ struct AuthFormView: View {
     private var trimmedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var codeDigits: String { emailCode.filter(\.isNumber) }
 
-    private var canContinue: Bool { !isWorking && trimmedEmail.contains("@") }
+    private var hasEmail: Bool { trimmedEmail.contains("@") }
 
-    private var canSubmitCode: Bool {
-        guard !isWorking, !needsOTP || !otpCode.isEmpty else { return false }
-        return usesPassword ? !password.isEmpty : codeDigits.count == 6
+    /// What the email step still needs before Continue can go, if anything.
+    private var emailHint: String? {
+        if trimmedEmail.isEmpty { return "Enter your email first, and we'll send you a code." }
+        if !hasEmail { return "That doesn't look like an email address yet." }
+        return nil
     }
+
+    /// What the code step still needs, and the field to put the cursor in.
+    private var codeHint: (text: String, field: Field)? {
+        if usesPassword && password.isEmpty { return ("Enter your password first.", .password) }
+        if !usesPassword && codeDigits.count != 6 { return ("Enter the 6-digit code from your email.", .code) }
+        if needsOTP && otpCode.isEmpty { return ("Enter your two-factor code.", .otp) }
+        return nil
+    }
+
 
     var body: some View {
         NavigationStack {
@@ -128,9 +143,14 @@ struct AuthFormView: View {
                 .submitLabel(.continue)
                 .focused($focus, equals: .email)
                 .onSubmit(continueWithEmail)
-                .onChange(of: email) { typoShownFor = nil }
+                .onChange(of: email) {
+                    typoShownFor = nil
+                    hint = nil
+                }
         } footer: {
-            if let suggestion = shownSuggestion {
+            if let hint {
+                hintText(hint)
+            } else if let suggestion = shownSuggestion {
                 Button {
                     email = suggestion
                     typoShownFor = nil
@@ -152,19 +172,11 @@ struct AuthFormView: View {
             }
             .filledButtonStyle()
             .controlSize(.large)
-            .disabled(!canContinue)
+            .disabled(isWorking)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
 
-            Button(action: signInWithPasskey) {
-                Label("Sign In with a Passkey", systemImage: "person.badge.key")
-                    .frame(maxWidth: .infinity, minHeight: 30)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .disabled(isWorking)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
+            passkeyLink
 
             errorRow
         } footer: {
@@ -217,11 +229,16 @@ struct AuthFormView: View {
                     .multilineTextAlignment(.center)
                     .focused($focus, equals: .code)
                     .onChange(of: emailCode) {
+                        hint = nil
                         // Filled from the email or pasted: go as soon as six digits are in.
                         if codeDigits.count == 6 && !needsOTP { submitCode() }
                     }
             } footer: {
-                Text("It works for 10 minutes. Not there? Check spam, or send a new one.")
+                if let hint, codeHint?.field == .code {
+                    hintText(hint)
+                } else {
+                    Text("It works for 10 minutes. Not there? Check spam, or send a new one.")
+                }
             }
         } else {
             Section {
@@ -230,10 +247,14 @@ struct AuthFormView: View {
                     .submitLabel(needsOTP ? .next : .go)
                     .focused($focus, equals: .password)
                     .onSubmit { if needsOTP { focus = .otp } else { submitCode() } }
+                    .onChange(of: password) { hint = nil }
                     .disabled(needsOTP)
             } footer: {
-                Button("Forgot Password?") { openURL(AppConfig.webURL("users/password/new")) }
-                    .font(.footnote)
+                VStack(alignment: .leading, spacing: 6) {
+                    if let hint, codeHint?.field == .password { hintText(hint) }
+                    Button("Forgot Password?") { openURL(AppConfig.webURL("users/password/new")) }
+                        .font(.footnote)
+                }
             }
         }
 
@@ -244,10 +265,15 @@ struct AuthFormView: View {
                     .keyboardType(.asciiCapableNumberPad)
                     .focused($focus, equals: .otp)
                     .onSubmit(submitCode)
+                    .onChange(of: otpCode) { hint = nil }
             } header: {
                 Text("Two-Factor Code")
             } footer: {
-                Text("From your authenticator app, or one of your recovery codes.")
+                if let hint, codeHint?.field == .otp {
+                    hintText(hint)
+                } else {
+                    Text("From your authenticator app, or one of your recovery codes.")
+                }
             }
         }
 
@@ -260,7 +286,7 @@ struct AuthFormView: View {
             }
             .filledButtonStyle()
             .controlSize(.large)
-            .disabled(!canSubmitCode)
+            .disabled(isWorking)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
 
@@ -286,6 +312,7 @@ struct AuthFormView: View {
                     otpCode = ""
                     error = nil
                     notice = nil
+                    hint = nil
                 }
                 focus = usesPassword ? .password : .code
             }
@@ -293,6 +320,35 @@ struct AuthFormView: View {
         .frame(maxWidth: .infinity)
         .font(.subheadline)
         .disabled(isWorking)
+    }
+
+    /// The secondary way in: olive words under Continue, a link rather than a second button.
+    private var passkeyLink: some View {
+        Button(action: signInWithPasskey) {
+            Text("Sign In with a Passkey")
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .font(.subheadline.weight(.medium))
+        .foregroundStyle(Color.accentColor)
+        .disabled(isWorking)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 0, trailing: 0))
+    }
+
+    /// A main button's "fill this in first", in a field's footer: olive, not an error's red.
+    private func hintText(_ text: String) -> some View {
+        Text(text)
+            .foregroundStyle(Color.accentColor)
+            .transition(.opacity)
+    }
+
+    /// Says what's missing, out loud too, and puts the cursor in that field.
+    private func remind(_ text: String, in field: Field) {
+        withAnimation { hint = text }
+        focus = field
+        AccessibilityNotification.Announcement(text).post()
     }
 
     @ViewBuilder private var errorRow: some View {
@@ -325,7 +381,11 @@ struct AuthFormView: View {
     }
 
     private func continueWithEmail() {
-        guard canContinue else { return }
+        guard !isWorking else { return }
+        if let missing = emailHint {
+            remind(missing, in: .email)
+            return
+        }
         // A likely typo: say so once, and let a second Continue go ahead as typed.
         if EmailTypo.suggestion(for: trimmedEmail) != nil && typoShownFor != trimmedEmail {
             withAnimation { typoShownFor = trimmedEmail }
@@ -361,6 +421,7 @@ struct AuthFormView: View {
             step = .email
             error = nil
             notice = nil
+            hint = nil
         }
         focus = .email
         startAutoFill()
@@ -384,7 +445,11 @@ struct AuthFormView: View {
     }
 
     private func submitCode() {
-        guard canSubmitCode else { return }
+        guard !isWorking else { return }
+        if let missing = codeHint {
+            remind(missing.text, in: missing.field)
+            return
+        }
         isWorking = true
         error = nil
         notice = nil
