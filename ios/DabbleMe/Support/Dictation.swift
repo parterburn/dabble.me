@@ -122,7 +122,7 @@ final class Dictation {
                 // The writer's own spellings ("dabble me" → "Dabble Me"), in either style.
                 let expected = Self.hints(from: hints())
                 let spellings = Self.spellings(from: expected, vocabulary: DictationSettings.words)
-                var cleaned = VocabularySpelling.apply(spellings, to: heard)
+                var cleaned = Self.ownSpellings(spellings, in: heard)
                 if style == .polished, cleansUp {
                     cleaned = await CleanupTagger.shared.clean(cleaned, within: Self.cleanupBudget, protectedTerms: expected)
                     // Settings → Dictation → Fix Misheard Words (Apple Intelligence), when it's on.
@@ -131,7 +131,7 @@ final class Dictation {
                     // tags and spellings again (a capital after a new "." can undo "iPhone").
                     cleaned = SpokenPunctuation.format(cleaned, language: "en")
                     cleaned = Self.knownHashtags(in: cleaned, tags: expected)
-                    cleaned = VocabularySpelling.apply(spellings, to: cleaned)
+                    cleaned = Self.ownSpellings(spellings, in: cleaned)
                 }
                 try Task.checkCancellation()
                 insert(cleaned)
@@ -435,6 +435,22 @@ final class Dictation {
         let trimmed = before.trimmingCharacters(in: .whitespaces)
         guard let last = trimmed.last, !last.isNewline else { return false }
         return !".!?…:".contains(last)
+    }
+
+    /// The writer's spellings, by letters ("dabble me" → "Dabble Me"), then by sound for their
+    /// one-word names ("Caitlin" → "Katelyn" when they tag #Katelyn).
+    private static func ownSpellings(_ spellings: [String], in text: String) -> String {
+        let spelled = VocabularySpelling.apply(spellings, to: text)
+        // Only a capitalized one: a lowercase Custom Vocabulary word is no name to swap in.
+        let names = spellings.filter { $0.first?.isUppercase == true && $0.allSatisfy(\.isLetter) }
+        return SoundAlikeNames.apply(names, to: spelled, isOrdinaryWord: { isOrdinaryWord($0) })
+    }
+
+    /// The dictionary knows `word` in lowercase ("Cattle"). With no dictionary, every word is
+    /// taken as ordinary, so nothing is changed by sound.
+    private static func isOrdinaryWord(_ word: String) -> Bool {
+        guard let language = checkerLanguage else { return true }
+        return knowsInLowercase(word, language: language)
     }
 
     /// A capitalized first word that reads the same in lowercase: not "I" or its contractions,
