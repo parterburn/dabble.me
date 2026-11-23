@@ -1,4 +1,4 @@
-Dictation taps your hand when recording starts and stops.
+Dictation taps your hand when recording starts and stops, and its loading dots sit on the right.
 
 Haptics
 - Tap the mic in the composer: you feel a tap when the waveform appears (recording has started), not when you touch the button.
@@ -6,3 +6,7 @@ Haptics
 - Hold the mic to talk: a tap when recording starts while you're holding, and another when you let go.
 - The X (drop the recording) and the 10-second "Didn't hear anything" stop also give the stop tap.
 - With System Haptics off in iOS Settings → Sounds & Haptics, there's no tap.
+
+Loading dots on the right
+- While dictation gets ready, and after Done while it writes your words down, the moving dots now sit on the right of the row, where the timer and Done are while recording. The row should change in place instead of the dots jumping across.
+- The first time, "Downloading 42%" sits just left of the dots.

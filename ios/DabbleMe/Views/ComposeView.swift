@@ -2036,17 +2036,19 @@ private struct DictationRow: View {
                     .accessibilityHint("Writes what you said into the entry")
                 } else {
                     // Getting ready or writing it down: just the dots (and, the first time, how
-                    // much of the download is in).
-                    TypingDots(size: .small)
-                        .accessibilityElement()
-                        .accessibilityLabel("Dictation")
-                        .accessibilityValue(dictationState)
+                    // much of the download is in), on the right where the timer and Done sit while
+                    // recording, so the row changes in place.
+                    Spacer(minLength: 0)
                     if let progress = dictation.downloadProgress {
                         Text("Downloading \(Int(progress * 100))%")
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                     }
-                    Spacer(minLength: 0)
+                    TypingDots(size: .small)
+                        .accessibilityElement()
+                        .accessibilityLabel("Dictation")
+                        .accessibilityValue(dictationState)
+                        .padding(.trailing, 16)
                 }
             }
             .font(.subheadline)
