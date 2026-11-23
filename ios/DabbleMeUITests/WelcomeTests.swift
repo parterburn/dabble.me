@@ -81,6 +81,7 @@ final class WelcomeTests: XCTestCase {
         XCTAssertTrue(email.waitForExistence(timeout: 5))
         XCTAssertFalse(app.textFields["First Name (optional)"].exists, "Sign-up asks for no name")
         XCTAssertFalse(app.secureTextFields["Password"].exists, "Sign-up asks for no password")
+        XCTAssertFalse(app.buttons["Sign In with a Passkey"].exists, "A passkey can't start an account")
         // Continue looks ready from the start: tapped too soon, it asks for the email and stays put.
         XCTAssertTrue(app.buttons["Continue"].isEnabled, "Continue never sits greyed out")
         app.buttons["Continue"].firstMatch.tap()
