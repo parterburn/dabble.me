@@ -1,4 +1,4 @@
-Dictation: quicker to start and finish, a haptic tap at start and stop, and loading dots on the right.
+Dictation: quicker to start and finish, a haptic tap at start and stop, and centered loading dots.
 
 Starting
 - Open the composer: it should open and type exactly as fast as before (the model loads a moment after the keyboard is up). Wait a second, then tap the mic. The waveform should show almost at once, with only a blink of the dots first.
@@ -15,8 +15,8 @@ Haptics
 - Hold the mic to talk: a tap once it starts recording, another when you let go.
 - With System Haptics off in iOS Settings → Sounds & Haptics, there's no tap.
 
-Loading dots on the right
-- While dictation gets ready, and after Done while it writes your words in, the dots sit on the right of the row, where the timer and Done are while recording, so the row changes in place.
+Centered loading dots
+- While dictation gets ready, and after Done while it writes your words in, the dots sit centered in the row, where the waveform is while recording.
 
 Still the same
 - X drops the recording, and the next tap still starts quickly.
