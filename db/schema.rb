@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -257,7 +257,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_160000) do
     t.datetime "created_at", precision: nil, null: false
     t.datetime "revoked_at", precision: nil
     t.bigint "user_session_id"
+    t.bigint "refresh_chain_id"
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
+    t.index ["refresh_chain_id"], name: "index_oauth_access_tokens_on_refresh_chain_id"
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
     t.index ["resource_owner_id"], name: "index_oauth_access_tokens_on_resource_owner_id"
     t.index ["token"], name: "index_oauth_access_tokens_on_token", unique: true
@@ -318,15 +320,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_160000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["singleton"], name: "index_site_closures_on_singleton", unique: true
-  end
-
-  create_table "stale_app_notices", force: :cascade do |t|
-    t.integer "user_id", null: false
-    t.bigint "oauth_application_id", null: false
-    t.datetime "last_used_at", null: false
-    t.datetime "notified_at", null: false
-    t.index ["oauth_application_id"], name: "index_stale_app_notices_on_oauth_application_id"
-    t.index ["user_id", "oauth_application_id"], name: "index_stale_app_notices_on_user_id_and_oauth_application_id", unique: true
   end
 
   create_table "user_sessions", force: :cascade do |t|
@@ -440,8 +433,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_160000) do
   add_foreign_key "oauth_access_tokens", "users", column: "resource_owner_id"
   add_foreign_key "service_notice_deliveries", "service_notices", on_delete: :cascade
   add_foreign_key "service_notice_deliveries", "users", on_delete: :cascade
-  add_foreign_key "stale_app_notices", "oauth_applications", on_delete: :cascade
-  add_foreign_key "stale_app_notices", "users", on_delete: :cascade
   add_foreign_key "user_sessions", "users", on_delete: :cascade
   add_foreign_key "webauthn_credentials", "users"
 end

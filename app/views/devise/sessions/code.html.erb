@@ -47,7 +47,6 @@
         <summary class="cursor-pointer text-center text-sm text-muted hover:text-primary">Use password instead</summary>
         <%= form_tag user_session_path, class: "mt-4 space-y-4" do %>
           <%= hidden_field_tag "user[email]", pending["email"], autocomplete: "username" %>
-          <%= hidden_field_tag "user[remember_me]", pending["remember_me"] ? "1" : "0" %>
           <%# Sends a failed attempt back here, not to the email page (CodeAwareFailureApp). %>
           <%= hidden_field_tag :from_code, "1" %>
           <div>

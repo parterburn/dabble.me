@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # Admin accounts must confirm a passkey before their session can be used, and
-# again every PASSKEY_FRESHNESS. A password, a two-factor code, a "Stay logged
-# in" cookie or a trusted-browser cookie alone never reaches an admin session.
+# again every PASSKEY_FRESHNESS. A password, a two-factor code, a remember
+# cookie or a trusted-browser cookie alone never reaches an admin session.
 #
 # The proof lives in the session as [user id, unix time]. Tying it to the user
 # id keeps one account's check from vouching for another in the same browser.

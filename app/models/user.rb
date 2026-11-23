@@ -13,6 +13,14 @@ class User < ActiveRecord::Base
          :recoverable, :rememberable, :trackable, :validatable
   include SignedInDevices
 
+  # Every web sign-in is remembered: there's no "Stay logged in" box. Devise's hook writes the
+  # remember cookie on each sign-in (password, passkey, emailed code, two-factor, sign-up), and
+  # WebSessions.fetched keeps it running 30 days past the last visit. Sign Out, and the Sessions
+  # list on Account Security, end a browser's sign-in.
+  def remember_me
+    true
+  end
+
   # user_key is the posting address (<user_key>@post.dabble.me) and appears in
   # every email we send. image_key names the user's S3 photo folder and never
   # changes once set. Existing users have image_key == user_key; new users get
@@ -297,8 +305,10 @@ class User < ActiveRecord::Base
   end
 
   # The first emailed-code sign-in to an unclaimed account (EmailSignIn.unclaimed?): whoever set
-  # its password, passkeys, 2FA or sign-ins may not own the address, so all of them go. Clearing
-  # the password changes the salt, which ends its web sessions and "Stay logged in" cookies.
+  # its password, passkeys, 2FA or sign-ins may not own the address, so all of them go, and every
+  # device is signed out as by Sign out of all devices: browsers (sessions and remember cookies),
+  # the iOS app and connected apps. That can't hang on the password changing, since an account
+  # with no password has none to clear. The caller then signs the claimer in with the new salt.
   def clear_credentials_for_email_claim!
     # EmailSignIn.unclaimed? never holds for an admin, whose passkeys only the console removes.
     raise AdminAccounts::Refused, 'Admin accounts keep their credentials' if AdminAccounts.protected?(self)
@@ -306,9 +316,8 @@ class User < ActiveRecord::Base
     transaction do
       webauthn_credentials.destroy_all
       disable_otp! if otp_enabled?
-      revoke_doorkeeper_access_tokens!
-      update_columns(encrypted_password: '', remember_created_at: nil, reset_password_token: nil,
-                     reset_password_sent_at: nil)
+      sign_out_everywhere!
+      update_columns(encrypted_password: '', reset_password_token: nil, reset_password_sent_at: nil)
       # Its old posting address may be known to whoever made the account: entries mailed there
       # would still land in this journal.
       rotate_user_key!
@@ -394,7 +403,7 @@ class User < ActiveRecord::Base
     false
   end
 
-  # Devise ties sessions and "Stay logged in" cookies to the password hash's salt, so changing
+  # Devise ties sessions and remember cookies to the password hash's salt, so changing
   # the password signs other browsers out. An account with no password has no hash: it gets a
   # stand-in, which changes (signing those browsers out) once a password is set.
   def authenticatable_salt

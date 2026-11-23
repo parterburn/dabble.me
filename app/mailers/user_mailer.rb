@@ -37,7 +37,7 @@ class UserMailer < ActionMailer::Base
     @user = user
     @gift = gift
     @user.increment!(:emails_sent)
-    subject = gift ? 'Your gift year of Dabble Me PRO has ended' : '[ACTION REQUIRED] Account Downgraded'
+    subject = gift ? 'Your gift year of Dabble Me PRO has ended' : 'Account Downgraded'
     email = mail(to: user.cleaned_to_address, subject: subject)
     email.mailgun_options = {tag: 'Downgraded'}
   end
@@ -161,13 +161,13 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = { tag: "Security" }
   end
 
-  # Connected apps (StaleConnectedAppsWorker::StaleApp list) that can still reach the journal
-  # but haven't been used in a year, with a link to remove them.
-  def stale_connected_apps(user, stale_apps)
+  # A connected app's old refresh token came back after it had been replaced
+  # (OauthRefreshReuse): the app was disconnected in case someone copied it.
+  def oauth_refresh_token_reused(user, app_name)
     @user = user
-    @stale_apps = stale_apps
+    @app_name = app_name
     @user.increment!(:emails_sent)
-    email = mail(to: user.cleaned_to_address, subject: "Connected apps you haven't used in a year")
+    email = mail(to: user.cleaned_to_address, subject: "We disconnected #{app_name} from your Dabble Me account")
     email.mailgun_options = { tag: "Security" }
   end
 end

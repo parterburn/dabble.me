@@ -47,6 +47,21 @@ RSpec.describe DeleteUserJob, type: :job do
     end
   end
 
+  it 'keeps the account when it is signed back into while the entries are going' do
+    user.update_column(:deleted_at, 1.hour.ago)
+    requested_at = user.reload.deleted_at.to_i
+    create(:entry, user: user)
+    allow_any_instance_of(Entry).to receive(:destroy).and_wrap_original do |original|
+      user.cancel_pending_deletion!
+      original.call
+    end
+
+    expect do
+      described_class.perform_now(user.id, requested_at)
+    end.not_to change(User, :count)
+    expect(user.reload.deleted_at).to be_nil
+  end
+
   it 'deletes the user when deletion is still pending' do
     user.update_column(:deleted_at, Time.current)
 

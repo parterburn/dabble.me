@@ -314,10 +314,11 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
     end
 
     it "wipes them on the web too, and signs the owner straight in" do
-      post email_codes_path, params: { user: { email: user.email, remember_me: "1" } }
+      post email_codes_path, params: { user: { email: user.email } }
       post verify_email_code_path, params: { code: last_code }
 
-      expect(response).to redirect_to(root_path)
+      # Its passkeys were wiped, so the passkey offer comes first (PasskeyOffer).
+      expect(response).to redirect_to(passkeys_offer_path)
       user.reload
       expect(user.has_password?).to be(false)
       expect(user.webauthn_credentials).to be_empty
@@ -366,6 +367,96 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       expect(user.reload.valid_password?(password)).to be(true)
       expect(user.webauthn_credentials.count).to eq(1)
       expect(squatter_token.reload.revoked_at).to be_nil
+    end
+  end
+
+  describe "claiming an address signs out every device the account had" do
+    before do
+      https!
+      stub_const("EmailSignIn::UNCLAIMED_FROM", 1.day.ago)
+      stub_const("WebSessions::TRACKING_STARTED_AT", 1.day.ago)
+    end
+
+    # A browser of the account's earlier holder, with its own cookies.
+    def old_browser_signed_in
+      open_session do |browser|
+        browser.https!
+        yield browser
+      end
+    end
+
+    def signed_in?(browser = self)
+      browser.get entries_path
+      !browser.response.location.to_s.include?("sign_in")
+    end
+
+    def claim_on_the_web(email)
+      post email_codes_path, params: { user: { email: email } }
+      post verify_email_code_path, params: { code: last_code(to: email) }
+    end
+
+    # Signed out for good: not by its session cookie, nor by its remember cookie after a restart.
+    def expect_signed_out(browser)
+      expect(signed_in?(browser)).to be(false)
+      browser.cookies.delete("_dabbleme_session")
+      expect(signed_in?(browser)).to be(false)
+    end
+
+    it "ends the earlier holder's browsers when the account had a password" do
+      old = old_browser_signed_in do |browser|
+        browser.post user_session_path, params: { user: { email: user.email, password: password } }
+      end
+      expect(signed_in?(old)).to be(true)
+
+      claim_on_the_web(user.email)
+
+      expect(user.reload.has_password?).to be(false)
+      expect_signed_out(old)
+      expect(signed_in?).to be(true)
+      expect(user.user_sessions.count).to eq(1)
+    end
+
+    it "ends them when the account had no password, so nothing about the password changed" do
+      # The first holder proves the address by code (which wipes the password), then the account
+      # is moved onto another address without a code to that inbox, as an admin edit does.
+      old = old_browser_signed_in do |browser|
+        browser.post email_codes_path, params: { user: { email: user.email } }
+        browser.post verify_email_code_path, params: { code: last_code(to: user.email) }
+      end
+      user.reload.update!(email: "moved@example.com")
+      expect(user.reload.has_password?).to be(false)
+      expect(user.email_verified_at).to be_nil
+      expect(signed_in?(old)).to be(true)
+
+      claim_on_the_web("moved@example.com")
+
+      expect_signed_out(old)
+      expect(signed_in?).to be(true)
+      # Still the claimer's after a browser restart: their remember cookie carries the new salt.
+      cookies.delete("_dabbleme_session")
+      expect(signed_in?).to be(true)
+    end
+
+    it "ends the earlier holder's app and connected apps when claimed in the app" do
+      app_token = MobileApp.issue_token!(user)
+      claude = Doorkeeper::Application.create!(name: "Claude", redirect_uri: "https://claude.ai/callback",
+                                               confidential: false, scopes: "mcp:access")
+      grant = Doorkeeper::AccessGrant.create!(application: claude, resource_owner_id: user.id, scopes: "mcp:access",
+                                              redirect_uri: "https://claude.ai/callback", expires_in: 10.minutes,
+                                              token: SecureRandom.hex(32))
+      old = old_browser_signed_in do |browser|
+        browser.post user_session_path, params: { user: { email: user.email, password: password } }
+      end
+
+      send_app_code(user.email)
+      verify_app_code(user.email, last_code)
+
+      expect(response).to have_http_status(:ok)
+      expect(app_token.reload).to be_revoked
+      expect(grant.reload).to be_revoked
+      expect_signed_out(old)
+      get "/api/v1/me", headers: bearer(json["access_token"])
+      expect(response).to have_http_status(:ok)
     end
   end
 
@@ -448,7 +539,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
 
   describe "the web" do
     def send_web_code(email, **extra)
-      post email_codes_path, params: { user: { email: email, remember_me: "1" } }.merge(extra)
+      post email_codes_path, params: { user: { email: email } }.merge(extra)
     end
 
     it "asks only for an email on Log in and Sign up" do
@@ -491,7 +582,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
     it "signs an existing account in with the code" do
       send_web_code(user.email)
       post verify_email_code_path, params: { code: last_code }
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
       get edit_user_registration_path
       expect(response).to have_http_status(:ok)
     end
@@ -519,7 +610,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
     it "still signs in with the password from the code page" do
       send_web_code(user.email)
       post user_session_path, params: { user: { email: user.email, password: password }, from_code: "1" }
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
     end
 
     it "asks for the 2FA code after the emailed code" do

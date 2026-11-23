@@ -2,20 +2,19 @@
 
 # First-party Dabble Me iOS app. From build 109 it signs in natively: email, password and, with
 # 2FA on, the code (POST /api/v1/session), or a dabble.me passkey (/api/v1/session/passkey);
-# new accounts POST /api/v1/registration. Earlier builds sign in through the web login via
-# OAuth (authorization code + PKCE), which stays. Either way it then calls /api/v1 with a
-# token scoped to SCOPE.
+# new accounts POST /api/v1/registration. It then calls /api/v1 with a token scoped to SCOPE,
+# renewed at /oauth/token with its refresh token. Builds before 109 signed in on the web through
+# /oauth/authorize; that path is gone (Oauth::AuthorizationsController refuses this client).
 #
-# Unlike MCP clients it is open to free and PRO users alike, skips the consent
-# screen (it's our own app), and its tokens are kept when a user loses PRO —
+# Unlike MCP clients it is open to free and PRO users alike, and its tokens are kept when a user loses PRO —
 # that only gates MCP. Password / email / 2FA changes
 # still sign the app out (see User#revoke_doorkeeper_oauth_if_credentials_changed).
 module MobileApp
   CLIENT_ID = 'dabble-me-ios'
   NAME = 'Dabble Me for iOS'
   SCOPE = 'app:journal'
-  # RFC 8252 private-use URI scheme (reverse DNS of dabble.me). ASWebAuthenticationSession
-  # delivers the callback only to the app that started the session.
+  # The client record's redirect URI from the old web sign-in. Nothing is sent to it any more;
+  # Doorkeeper requires the record to have one.
   REDIRECT_SCHEME = 'me.dabble.app'
   REDIRECT_URI = "#{REDIRECT_SCHEME}:/oauth/callback"
   # The app's ID for universal links: Apple team ID, then the bundle ID.

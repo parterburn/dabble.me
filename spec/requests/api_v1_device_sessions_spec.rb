@@ -102,7 +102,7 @@ RSpec.describe "iOS app sessions (/api/v1/device_sessions)", type: :request do
     expect(UserSession.exists?(stranger_row.id)).to be(true)
   end
 
-  it "signs out of all devices, this app included, but keeps connected apps" do
+  it "signs out of all devices, this app and connected apps included" do
     this_app = new_token(user)
     other_app = new_token(user)
     claude = Doorkeeper::Application.create!(name: "Claude", redirect_uri: "https://claude.ai/callback",
@@ -115,7 +115,7 @@ RSpec.describe "iOS app sessions (/api/v1/device_sessions)", type: :request do
 
     expect(response).to have_http_status(:no_content)
     expect([this_app.reload, other_app.reload]).to all(be_revoked)
-    expect(mcp.reload).not_to be_revoked
+    expect(mcp.reload).to be_revoked
     expect(user.user_sessions.count).to eq(0)
     expect(user.reload.authenticatable_salt).not_to eq(salt) # every browser's cookies stop matching
 

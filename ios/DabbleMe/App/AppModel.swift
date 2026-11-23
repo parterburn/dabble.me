@@ -369,8 +369,8 @@ final class AppModel {
     /// stays signed in then, so it never looks like other devices were signed out when they weren't.
     var signOutEverywhereError: String?
 
-    /// Signs out every browser and app on the account (connected apps like Claude keep their
-    /// access), then this app. dabble.me revokes this app's token along with the rest.
+    /// Signs out every browser and app on the account (connected apps like Claude are
+    /// disconnected too), then this app. dabble.me revokes this app's token along with the rest.
     func signOutEverywhere() async {
         do {
             try await api.delete("api/v1/device_sessions")

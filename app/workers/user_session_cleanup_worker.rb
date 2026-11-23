@@ -1,5 +1,5 @@
 # Deletes Sessions-list rows (UserSession) that can't sign anything in any more:
-# - a browser not seen in Devise.remember_for: its "Stay logged in" cookie has run out, and its
+# - a browser not seen in Devise.remember_for: its remember cookie has run out, and its
 #   row would turn away any older session cookie anyway;
 # - an app sign-in with no unrevoked token (the app signed out, or its tokens were revoked),
 #   after a day, so a refresh in progress isn't caught.

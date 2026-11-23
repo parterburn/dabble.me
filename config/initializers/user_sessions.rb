@@ -3,6 +3,7 @@
 # WebSessions is looked up when a hook runs, so code reloading in development still works.
 Warden::Manager.after_set_user except: :fetch do |user, warden, options|
   WebSessions.signed_in(user, warden, options)
+  FreshSignIn.record(user, warden, options)
 end
 
 Warden::Manager.after_set_user only: :fetch do |user, warden, options|

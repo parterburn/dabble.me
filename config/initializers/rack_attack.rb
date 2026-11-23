@@ -196,6 +196,22 @@ class Rack::Attack
     req.ip if auth_path(req) == '/checkout' && req.post?
   end
 
+  # Token requests. A refresh replayed after rotation walks its token chain (OauthRefreshReuse),
+  # so one refresh token is held to a few tries; the IP limit is loose because hosted clients
+  # (Claude, ChatGPT) refresh for all their users from a few addresses.
+  OAUTH_TOKEN_PATH = '/oauth/token'.freeze
+
+  throttle('oauth/token/ip', limit: 120, period: 1.minute) do |req|
+    req.ip if req.post? && auth_path(req) == OAUTH_TOKEN_PATH
+  end
+
+  throttle('oauth/token/refresh_token', limit: 10, period: 1.minute) do |req|
+    next unless req.post? && auth_path(req) == OAUTH_TOKEN_PATH
+
+    refresh_token = auth_params(req)['refresh_token']
+    Digest::SHA256.hexdigest(refresh_token) if refresh_token.is_a?(String) && refresh_token.present?
+  end
+
   throttle('mcp/ip', limit: 30, period: 1.minute) do |req|
     req.ip if auth_path(req) == MCP_PATH && req.post?
   end

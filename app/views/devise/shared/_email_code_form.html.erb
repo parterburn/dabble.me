@@ -21,48 +21,76 @@
     <p id="email-typo-hint" class="mt-1.5 text-sm text-muted" aria-live="polite" hidden></p>
   </div>
 
-  <label class="flex items-center gap-2 cursor-pointer">
-    <% remember = params.dig(:user, :remember_me).nil? || ActiveModel::Type::Boolean.new.cast(params.dig(:user, :remember_me)) %>
-    <%= hidden_field_tag "user[remember_me]", "0", id: nil %>
-    <%= check_box_tag "user[remember_me]", "1", remember, id: "user_remember_me", class: "w-4 h-4 rounded border-subtle text-accent focus:ring-accent cursor-pointer" %>
-    <span class="text-sm text-muted">Stay logged in</span>
-  </label>
 
   <%# Turnstile on the web's send step (sign-in and sign-up both email a code from here);
       EmailCodesController#create checks it. The app's API relies on rate limits instead. %>
-  <% if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present? %>
-    <div class="flex justify-center">
-      <%= captcha_tags action: (intent == "sign_up" ? "sign-up" : "sign-in"), data: {
-        callback: "dabbleCaptchaSolved",
-        "expired-callback": "dabbleCaptchaExpired",
-        "error-callback": "dabbleCaptchaError"
-      } %>
-    </div>
-    <p id="captcha-error" class="hidden text-center text-sm text-red-600" role="alert">
-      Captcha failed to load. Please disable any ad/privacy blockers for this site and reload the page.
-    </p>
-    <script>
-      (function () {
-        var script = document.currentScript;
-        var form = script && script.closest('form');
-        var submit = form && form.querySelector('[type="submit"]');
-        var errEl = document.getElementById('captcha-error');
-        if (!submit) return;
-        submit.disabled = true;
-        window.dabbleCaptchaSolved  = function () { submit.disabled = false; if (errEl) errEl.classList.add('hidden'); };
-        window.dabbleCaptchaExpired = function () { submit.disabled = true;  if (window.turnstile) window.turnstile.reset(); };
-        window.dabbleCaptchaError   = function () { submit.disabled = true;  if (errEl) errEl.classList.remove('hidden'); };
-        // Safety net: if the Turnstile script never loads within 10s, surface the error.
-        setTimeout(function () {
-          if (submit.disabled && window.dabbleCaptchaSolved && !window.turnstile) {
-            if (errEl) errEl.classList.remove('hidden');
-          }
-        }, 10000);
-      })();
-    </script>
-  <% end %>
-
+  <%# appearance "interaction-only" keeps the widget invisible unless Cloudflare needs the visitor
+      to click it. It sits inside the button's block with no margin, so while hidden it takes no
+      space. When Cloudflare does show it, the before-interactive callback adds the gap below it
+      (the widget stays visible, showing "Success", after the visitor clicks). %>
   <div>
+    <% if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present? %>
+      <div id="captcha-widget" class="flex justify-center">
+        <%= captcha_tags action: (intent == "sign_up" ? "sign-up" : "sign-in"), data: {
+          appearance: "interaction-only",
+          callback: "dabbleCaptchaSolved",
+          "expired-callback": "dabbleCaptchaExpired",
+          "error-callback": "dabbleCaptchaError",
+          "before-interactive-callback": "dabbleCaptchaShown"
+        } %>
+      </div>
+      <p id="captcha-error" class="hidden mb-4 text-center text-sm text-red-600" role="alert">
+        Captcha failed to load. Please disable any ad/privacy blockers for this site and reload the page.
+      </p>
+      <script>
+        (function () {
+          // The button stays enabled while the invisible check runs. A submit before the token
+          // arrives is held (button shows "Checking…") and goes through once Turnstile returns one.
+          // Stopping propagation keeps rails-ujs from disabling the button on the held submit.
+          // The button is rendered after this script, so look it up when it's needed.
+          var script = document.currentScript;
+          var form = script && script.closest('form');
+          var widget = document.getElementById('captcha-widget');
+          var errEl = document.getElementById('captcha-error');
+          if (!form) return;
+          var solved = false, waiting = false, label = null;
+
+          function button() { return form.querySelector('[type="submit"]'); }
+          function hold() {
+            var b = button(); waiting = true;
+            if (b) { label = label || b.value; b.disabled = true; b.value = 'Checking…'; }
+          }
+          function release() {
+            var b = button(); waiting = false;
+            if (b) { b.disabled = false; if (label) b.value = label; }
+          }
+          function showError() { if (errEl) errEl.classList.remove('hidden'); }
+
+          form.addEventListener('submit', function (e) {
+            if (solved) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (!waiting) hold();
+          });
+
+          window.dabbleCaptchaSolved = function () {
+            solved = true;
+            if (errEl) errEl.classList.add('hidden');
+            if (waiting) {
+              release();
+              form.requestSubmit ? form.requestSubmit() : form.submit();
+            }
+          };
+          window.dabbleCaptchaExpired = function () { solved = false; if (window.turnstile) window.turnstile.reset(); };
+          window.dabbleCaptchaError   = function () { solved = false; release(); showError(); };
+          window.dabbleCaptchaShown = function () { if (widget) widget.style.marginBottom = '1rem'; };
+          // Safety net: if the Turnstile script never loads within 10s, surface the error.
+          setTimeout(function () {
+            if (!solved && !window.turnstile) { release(); showError(); }
+          }, 10000);
+        })();
+      </script>
+    <% end %>
     <%= submit_tag submit_label, class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
     <p class="mt-2 text-center text-xs text-muted">We'll email you a 6-digit code. No password needed.</p>
   </div>
@@ -97,11 +125,7 @@
     DABBLE.emailTypo.watch(document.getElementById("user_email"), document.getElementById("email-typo-hint"));
     DABBLE.webauthn.setupSignIn({
       buttonId: "login-passkey",
-      autofill: true,
-      rememberMe: function() {
-        var box = document.getElementById("user_remember_me");
-        return !!(box && box.checked);
-      }
+      autofill: true
     });
   </script>
 <% end %>

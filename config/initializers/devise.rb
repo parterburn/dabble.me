@@ -128,7 +128,7 @@ Devise.setup do |config|
   config.remember_for = 30.days
 
   # Invalidates all the remember me tokens when the user signs out.
-  # Off: Sign Out ends this browser only. Its "Stay logged in" cookie is deleted, and copies of it
+  # Off: Sign Out ends this browser only. Its remember cookie is deleted, and copies of it
   # stop working because its UserSession row goes (WebSessions). Sign out of all devices on
   # Account Security ends every browser (User#sign_out_everywhere!).
   config.expire_all_remember_me_on_sign_out = false
@@ -302,11 +302,12 @@ Devise.setup do |config|
 
 end
 
-# Password sign-in goes through a Warden strategy, which sets event :authentication.
-# Email-code sign-in, passkey sign-in, and the authenticator page after either one call
-# sign_in directly, and that sets event :set_user. after_authentication never runs for
-# those, so a pending deletion (DeleteUserJob) would still destroy the account.
-# :fetch is a request loading the session, not a sign-in.
+# Signing back in keeps an account that was set to be deleted (DeleteUserJob checks
+# deleted_at again before it deletes anything). after_set_user, not after_authentication:
+# Devise's sign_in (the emailed code, a passkey, the 2FA step after a password or a code)
+# sets the user with Warden's :set_user event, which after_authentication never sees. Only
+# the password form and the remember cookie go through a Warden strategy (:authentication).
+# A session read back on a later request (:fetch) is not a sign-in.
 Warden::Manager.after_set_user except: :fetch do |user, auth, _opts|
   next unless user.is_a?(User) && user.cancel_pending_deletion!
 

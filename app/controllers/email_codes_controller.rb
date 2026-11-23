@@ -10,15 +10,11 @@ class EmailCodesController < ApplicationController
   layout 'marketing'
 
   EMAIL_CODE_SESSION = :email_code_sign_in
-  # After signing in with a code, adding a passkey on Account Security needs nothing more for
-  # this long (Passkeys::RegistrationsController), as the app's setup token does.
-  SIGNED_IN_SESSION = :email_code_signed_in_at
-  FRESH_FOR = 15.minutes
 
   before_action :redirect_signed_in, only: %i[create show verify resend]
   before_action :require_pending_email, only: %i[show verify resend]
 
-  # POST /users/sign_in/code {email, remember_me, gift_code}
+  # POST /users/sign_in/code {email, gift_code}
   def create
     email = EmailSignIn.normalize(params.dig(:user, :email).presence || params[:email])
     intent = params[:intent] == 'sign_up' ? 'sign_up' : 'sign_in'
@@ -42,7 +38,6 @@ class EmailCodesController < ApplicationController
     session[EMAIL_CODE_SESSION] = {
       'email' => email,
       'intent' => intent,
-      'remember_me' => ActiveModel::Type::Boolean.new.cast(params.dig(:user, :remember_me) || params[:remember_me]) || false,
       'gift_code' => params[:gift_code].presence
     }.compact
     # :too_soon: a code went out moments ago, so the code page is still the right place.
@@ -86,25 +81,24 @@ class EmailCodesController < ApplicationController
     end
 
     session.delete(EMAIL_CODE_SESSION)
-    finish_sign_in(result.user, created: result.created, remember: pending['remember_me'])
+    finish_sign_in(result.user, created: result.created)
   end
 
   private
 
-  def finish_sign_in(user, created:, remember:)
+  def finish_sign_in(user, created:)
     # 2FA: the authenticator code still comes after the emailed one, on devise-otp's page, as
     # after a password.
     if user.otp_enabled?
       challenge = user.generate_otp_challenge!
-      redirect_to user_otp_credential_path(challenge: challenge, remember_me: remember)
+      redirect_to user_otp_credential_path(challenge: challenge)
       return
     end
 
-    user.remember_me = remember
     sign_in(:user, user)
-    session[SIGNED_IN_SESSION] = Time.current.to_i
 
     if created
+      skip_passkey_offer!
       redirect_to after_sign_in_path_for(user), **sign_up_flash(user)
     elsif current_gift
       # An existing account with a gift link: the gift page has the redeem button.

@@ -13,7 +13,7 @@ RSpec.describe UserSessionCleanupWorker do
     row
   end
 
-  it "deletes browsers unseen past Stay logged in and apps with no live token, and keeps the rest" do
+  it "deletes browsers unseen for 30 days and apps with no live token, and keeps the rest" do
     old_browser = user.user_sessions.create!(kind: "web", last_active_at: 31.days.ago)
     recent_browser = user.user_sessions.create!(kind: "web", last_active_at: 29.days.ago)
     signed_out_app = app_row(token_revoked: true)

@@ -42,10 +42,10 @@ module Mcp
                       'Do not use these tools for fictional writing, scholarly journals, another journal product, or ' \
                       'general advice that does not require the user’s stored Dabble Me data. ' \
                       'When attaching one image to create_entry, choose the simplest path: ' \
-                      'if you already have a publicly reachable https image URL (including a URL the AI client hosted for the user), ' \
+                      'if your AI app already hosts the image for the user on its own file service (such as a ChatGPT file link), ' \
                       'pass it as image_url so Dabble Me fetches and attaches the image server-side—this avoids client sandbox ' \
-                      'egress allowlists and large base64 payloads. ' \
-                      'Only for local bytes without a public URL, call get_image_upload_url, PUT the bytes to the returned upload URL, ' \
+                      'egress allowlists and large base64 payloads. Dabble Me refuses image_url links on any other site. ' \
+                      'For any other image, call get_image_upload_url, PUT the bytes to the returned upload URL, ' \
                       'then pass uploaded_image_key to create_entry. Use image_base64 only as a last-resort small-image fallback. ' \
                       'Never combine image_url, uploaded_image_key, and image_base64 in the same create_entry call. ' \
                       'Entries that list_entries and search_entries return include image_url when they have a photo: ' \

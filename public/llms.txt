@@ -49,7 +49,7 @@ In a signed-in browser tab, WebMCP also registers session tools against the curr
 - `list_entries`: Read entries from an inclusive date range, newest first.
 - `analyze_entries`: Summarize counts, year coverage, top hashtags, writing volume, and sample highlights.
 - `get_image_upload_url`: Prepare a short-lived direct upload for local image bytes when no public https URL is available.
-- `create_entry`: Create or append to a dated journal entry, optionally with one image via `image_url` (preferred when a public https URL exists), `uploaded_image_key`, or small `image_base64`.
+- `create_entry`: Create or append to a dated journal entry, optionally with one image via `image_url` (only for images an AI app hosts on its own file service, such as ChatGPT file links), `uploaded_image_key`, or small `image_base64`.
 
 All tools are scoped to the OAuth-authenticated Dabble Me account. The server has no delete-entry tool.
 
