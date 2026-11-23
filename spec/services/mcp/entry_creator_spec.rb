@@ -106,23 +106,68 @@ RSpec.describe Mcp::EntryCreator do
 
     it "rejects redirects from https to http in production" do
       allow(Rails.env).to receive(:production?).and_return(true)
-      allow(Resolv).to receive(:getaddresses).with("public.example.com").and_return(["93.184.216.34"])
+      allow(Resolv).to receive(:getaddresses).with("files.oaiusercontent.com").and_return(["93.184.216.34"])
 
-      stub_request(:get, "https://public.example.com/start.png")
-        .to_return(status: 302, headers: { "Location" => "http://public.example.com/insecure.png" })
+      stub_request(:get, "https://files.oaiusercontent.com/start.png")
+        .to_return(status: 302, headers: { "Location" => "http://files.oaiusercontent.com/insecure.png" })
 
       result = Mcp::EntryCreator.new(user: paid_user).create(
         date_string: "2099-01-04",
         body_text: "hello",
-        image_url: "https://public.example.com/start.png"
+        image_url: "https://files.oaiusercontent.com/start.png"
       )
 
       expect(result[:success]).to eq(false)
       expect(result[:errors].first).to include("https in production")
     end
 
+    it "refuses image_url on a host that isn't an AI app's file service, without fetching it" do
+      result = Mcp::EntryCreator.new(user: paid_user).create(
+        date_string: "2099-01-05",
+        body_text: "hello",
+        image_url: "https://attacker.example/pixel.png?q=my+journal+text"
+      )
+
+      expect(result[:success]).to eq(false)
+      expect(result[:errors].first).to include("not allowed", "get_image_upload_url")
+      expect(a_request(:get, /attacker\.example/)).not_to have_been_made
+    end
+
+    it "refuses a redirect from an allowed file host to any other host" do
+      allow(Resolv).to receive(:getaddresses).with("files.oaiusercontent.com").and_return(["93.184.216.34"])
+      stub_request(:get, "https://files.oaiusercontent.com/start.png")
+        .to_return(status: 302, headers: { "Location" => "https://attacker.example/pixel.png?q=secret" })
+
+      result = Mcp::EntryCreator.new(user: paid_user).create(
+        date_string: "2099-01-06",
+        body_text: "hello",
+        image_url: "https://files.oaiusercontent.com/start.png"
+      )
+
+      expect(result[:success]).to eq(false)
+      expect(result[:errors].first).to include("not allowed")
+      expect(a_request(:get, /attacker\.example/)).not_to have_been_made
+    end
+
+    it "fetches from a host added with MCP_IMAGE_URL_HOSTS" do
+      stub_const("ENV", ENV.to_h.merge("MCP_IMAGE_URL_HOSTS" => " Files.NewAssistant.example. ,other.example"))
+      allow(Resolv).to receive(:getaddresses).with("cdn.files.newassistant.example").and_return(["93.184.216.34"])
+      stub_request(:get, "https://cdn.files.newassistant.example/a.png")
+        .to_return(status: 200, body: png_bytes, headers: { "Content-Type" => "image/png" })
+      clear_calendar_day!(paid_user, Date.new(2099, 1, 7))
+
+      result = Mcp::EntryCreator.new(user: paid_user).create(
+        date_string: "2099-01-07",
+        body_text: "with photo",
+        image_url: "https://cdn.files.newassistant.example/a.png"
+      )
+
+      expect(result[:success]).to eq(true)
+    end
+
     it "downloads image_url and saves an entry with an image", :aggregate_failures do
-      stub_request(:get, "https://example.com/mcp-face.png")
+      allow(Resolv).to receive(:getaddresses).with("files.oaiusercontent.com").and_return(["93.184.216.34"])
+      stub_request(:get, "https://files.oaiusercontent.com/mcp-face.png")
         .to_return(status: 200, body: png_bytes, headers: { "Content-Type" => "image/png" })
 
       clear_calendar_day!(paid_user, Date.new(2099, 1, 10))
@@ -130,7 +175,7 @@ RSpec.describe Mcp::EntryCreator do
       result = Mcp::EntryCreator.new(user: paid_user).create(
         date_string: "2099-01-10",
         body_text: "with photo",
-        image_url: "https://example.com/mcp-face.png"
+        image_url: "https://files.oaiusercontent.com/mcp-face.png"
       )
 
       expect(result[:success]).to eq(true)

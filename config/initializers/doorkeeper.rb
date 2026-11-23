@@ -46,10 +46,8 @@ Doorkeeper.configure do
   optional_scopes 'app:journal'
   enforce_configured_scopes
 
-  # Our own iOS app doesn't need a consent screen for access to its own account.
-  skip_authorization do |_resource_owner, client|
-    MobileApp.client?(client.application)
-  end
+  # No client skips the consent screen. The iOS app signs in natively (MobileApp) and never
+  # comes through /oauth/authorize, which refuses its client (Oauth::AuthorizationsController).
 
   force_ssl_in_redirect_uri do |uri|
     loopback_hosts = %w[localhost 127.0.0.1 ::1]

@@ -22,19 +22,15 @@ class User
     end
 
     # Sign out of all devices: every browser (sessions and "Stay logged in" cookies, including
-    # ones from before sessions were listed), and the iOS app. Connected apps (Claude, ChatGPT)
-    # keep their access: they're listed and removed on their own. Pass keep: to leave the
-    # browser asking signed in; its controller then stores the new salt (bypass_sign_in).
+    # ones from before sessions were listed), the iOS app, and every connected app (Claude,
+    # ChatGPT), which have to connect again. Pass keep: to leave the browser asking signed in;
+    # its controller then stores the new salt (bypass_sign_in).
     def sign_out_everywhere!(keep: nil)
       now = Time.current
       transaction do
         update_columns(session_salt: SecureRandom.hex(16), remember_created_at: nil, updated_at: now)
-        if (app_id = MobileApp.application_id)
-          Doorkeeper::AccessToken.where(resource_owner_id: id, application_id: app_id, revoked_at: nil)
-                                 .update_all(revoked_at: now)
-          Doorkeeper::AccessGrant.where(resource_owner_id: id, application_id: app_id, revoked_at: nil)
-                                 .update_all(revoked_at: now)
-        end
+        Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
+        Doorkeeper::AccessGrant.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
         sessions = user_sessions
         sessions = sessions.where.not(id: keep.id) if keep
         sessions.delete_all

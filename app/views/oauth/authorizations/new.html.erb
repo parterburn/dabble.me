@@ -4,6 +4,10 @@
 <% client_initials = oauth_application_initials(client_name) %>
 <% redirect_host = oauth_redirect_host(@pre_auth.redirect_uri) %>
 <% mcp_access = @pre_auth.scopes.map(&:to_s).include?("mcp:access") %>
+<% redirect_loopback = Mcp::OauthRules.loopback?(URI.parse(@pre_auth.redirect_uri.to_s)) rescue false %>
+<% unverified_host = redirect_host if client_logo.nil? && redirect_host.present? && !redirect_loopback %>
+<%# Registered before OauthClientNames refused lookalike names, or made by hand. %>
+<% impersonated_brand = OauthClientNames.impersonated_brand(client_name, extract_oauth_redirect_uris(@pre_auth.client, @pre_auth.redirect_uri)) %>
 
 <div class="row oauth-consent" id="oauth-consent-root">
   <div class="col-xs-12 oauth-consent__column" style="max-width: 800px;">
@@ -32,9 +36,20 @@
             <div class="oauth-consent__avatar" style="font-size: 35px; background: #fff; color: #1D1D16;line-height: 59px;align-items: baseline;"><%= client_initials.downcase %></div>
           <% end %>
           <span class="oauth-consent__flow-name"><%= client_name %></span>
-          <span class="oauth-consent__flow-caption"><%= t("doorkeeper.authorizations.new.flow_app_label") %></span>
+          <span class="oauth-consent__flow-caption"><%= unverified_host || t("doorkeeper.authorizations.new.flow_app_label") %></span>
         </div>
       </div>
+
+      <% if impersonated_brand %>
+        <p class="oauth-consent__warning" role="alert">
+          <strong>This app calls itself “<%= client_name %>” but isn’t from <%= impersonated_brand %>.</strong>
+          It signs in through <strong><%= redirect_host %></strong>, not <%= impersonated_brand %>’s website. Don’t continue unless you know who runs it.
+        </p>
+      <% elsif unverified_host %>
+        <p class="oauth-consent__warning">
+          After you allow access, you go to <strong><%= unverified_host %></strong>. Dabble Me hasn’t checked who runs this app, so only continue if you trust that site.
+        </p>
+      <% end %>
 
       <div class="oauth-consent__identity">
         <p class="oauth-consent__identity-text">
@@ -50,9 +65,9 @@
 
       <p class="oauth-consent__trust-note">
         <%= t("doorkeeper.authorizations.new.trust_note") %>
-        <% if redirect_host.present? %>
+        <% if redirect_host.present? && unverified_host.nil? && impersonated_brand.nil? %>
           <br>
-          <span>After approval, you will be redirected to <strong><%= redirect_host %></strong><%= " (unverified app)" unless client_logo %>.</span>
+          <span>After approval, you will be redirected to <strong><%= redirect_host %></strong>.</span>
         <% end %>
       </p>
 

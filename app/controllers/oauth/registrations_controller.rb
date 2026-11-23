@@ -23,10 +23,18 @@ module Oauth
         }, status: :bad_request
       end
 
+      client_name = OauthClientNames.clean(registration_params[:client_name])
+      if (brand = OauthClientNames.impersonated_brand(client_name, uris))
+        return render json: {
+          error: 'invalid_client_metadata',
+          error_description: "client_name uses the name #{brand}, but redirect_uris are not on #{brand}'s domains"
+        }, status: :bad_request
+      end
+
       redirect_uri = uris.join("\n")
 
       application = Doorkeeper::Application.new(
-        name: registration_params[:client_name].presence || 'MCP client',
+        name: client_name,
         redirect_uri: redirect_uri,
         confidential: false,
         scopes: 'mcp:access'
