@@ -86,10 +86,11 @@ class EmailCode < ActiveRecord::Base
 
     # Emails a "new_email" code to the account's pending_email. Returns send_status.
     def send_new_email_code(user)
-      status = send_status(user.pending_email, purpose: 'new_email')
+      address = user.pending_email
+      status = send_status(address, purpose: 'new_email')
       return status unless status == :ok
 
-      UserMailer.new_email_code(user, issue!(user.pending_email, purpose: 'new_email', user: user)).deliver_later
+      UserMailer.new_email_code(user, issue!(address, purpose: 'new_email', user: user), address).deliver_later
       :ok
     end
 

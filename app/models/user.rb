@@ -163,12 +163,6 @@ class User < ActiveRecord::Base
     "#{first_name} #{last_name&.first&.upcase}".strip
   end
 
-  # Where a code for a pending email change goes: the new address, not the current one.
-  def pending_to_address
-    name = full_name.to_s.gsub(/[^\w\s-]/i, '').squish
-    name.present? ? "#{name} <#{pending_email}>" : pending_email
-  end
-
   def cleaned_to_address
     name = full_name.to_s.gsub(/[^\w\s-]/i, '').squish
     name.present? ? "#{name} <#{email}>" : email

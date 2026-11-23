@@ -123,10 +123,13 @@ class UserMailer < ActionMailer::Base
   end
 
   # To the address an account asked to move to, before it moves (EmailCode.send_new_email_code).
-  def new_email_code(user, code)
+  # The address comes in with the code, fixed when the code was made: the mail job loads the user
+  # again later, by when pending_email may name another inbox.
+  def new_email_code(user, code, address)
     @user = user
     @code = code
-    email = mail(to: user.pending_to_address, subject: "#{code} is your Dabble Me code to confirm this email")
+    @address = address
+    email = mail(to: address, subject: "#{code} is your Dabble Me code to confirm this email")
     email.mailgun_options = { tag: "Security" }
   end
 

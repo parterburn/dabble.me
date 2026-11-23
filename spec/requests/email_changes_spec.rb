@@ -77,6 +77,21 @@ RSpec.describe "Changing the account email", type: :request do
     expect(user.user_key).to eq(old_key)
   end
 
+  it "doesn't send a victim-bound code to an inbox swapped in before the mail job runs" do
+    queued = nil
+    allow(UserMailer).to receive(:new_email_code).and_wrap_original do |original, *args|
+      queued = args
+      original.call(*args)
+    end
+    ask_for("victim@example.com")
+    user.reload.update_column(:pending_email, "attacker@example.com")
+
+    # The mail job loads the user again when it runs, so build the mail from a fresh copy.
+    _, code, address = queued
+    mail = UserMailer.new_email_code(User.find(user.id), code, address)
+    expect(mail.to).to eq(["victim@example.com"])
+  end
+
   it "stays on the old address after a wrong code" do
     ask_for(new_email)
     post email_change_path, params: { code: "000000" }
