@@ -1,4 +1,4 @@
-Dictation: quicker to start and finish, a haptic tap at start and stop, and centered loading dots. (Earlier builds of these didn't compile; this one should, with no change in behavior.)
+Dictation: quicker to start and finish, a haptic tap at start and stop, and centered loading dots. (Earlier builds of these didn't compile; this one should, with no change in behavior. With Fix Misheard Words on, check a dictation still comes back fixed, or as heard if it takes too long.)
 
 Starting
 - Open the composer: it should open and type exactly as fast as before (the model loads a moment after the keyboard is up). Wait a second, then tap the mic. The waveform should show almost at once, with only a blink of the dots first.
