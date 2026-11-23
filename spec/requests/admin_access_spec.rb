@@ -108,13 +108,14 @@ RSpec.describe "Admin access", type: :request do
       expect(response).to redirect_to(root_path)
     end
 
-    it "keeps the admin's last passkey" do
+    it "keeps the admin's passkeys, even with another on file" do
+      register_passkey(admin, client: WebAuthn::FakeClient.new(WebAuthn.configuration.allowed_origins.first))
       verify_passkey
       delete passkeys_registration_path(credential)
 
       expect(response).to redirect_to(security_path)
-      expect(flash[:alert]).to include("at least one passkey")
-      expect(admin.webauthn_credentials.count).to eq(1)
+      expect(flash[:alert]).to include("Rails console")
+      expect(admin.webauthn_credentials.count).to eq(2)
     end
   end
 

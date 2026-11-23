@@ -59,7 +59,12 @@
                 <p class="truncate font-medium text-primary"><%= credential.nickname %></p>
                 <p class="text-sm text-muted">Added <%= credential.created_at.strftime("%b %d, %Y") %></p>
               </div>
-              <%= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "shrink-0 text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+              <% if current_user.admin? %>
+                <%# AdminAccounts: an admin's passkeys are removed from the Rails console only. %>
+                <span class="shrink-0 text-sm text-muted">Admin passkey</span>
+              <% else %>
+                <%= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "shrink-0 text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+              <% end %>
             </li>
           <% end %>
         </ul>
@@ -76,8 +81,10 @@
     <%= render "oauth_connected_apps" %>
   <% end %>
 
-  <p class="mt-8 text-center text-sm text-muted">
-    To permanently delete your account and <%= pluralize(current_user.entries.count, "entry") %>,
-    <%= link_to "use the delete account page", delete_account_path, class: "font-medium text-red-700 underline underline-offset-2 hover:text-red-800" %>.
-  </p>
+  <% unless current_user.admin? %>
+    <p class="mt-8 text-center text-sm text-muted">
+      To permanently delete your account and <%= pluralize(current_user.entries.count, "entry") %>,
+      <%= link_to "use the delete account page", delete_account_path, class: "font-medium text-red-700 underline underline-offset-2 hover:text-red-800" %>.
+    </p>
+  <% end %>
 </div>

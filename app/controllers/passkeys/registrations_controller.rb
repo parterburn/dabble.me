@@ -60,12 +60,11 @@ class Passkeys::RegistrationsController < ApplicationController
 
   def destroy
     credential = current_user.webauthn_credentials.find(params[:id])
-    if current_user.admin? && current_user.webauthn_credentials.count <= 1
-      redirect_to security_path, alert: "Admin accounts must keep at least one passkey. Add another before removing this one."
-      return
+    # An admin's passkeys stay (AdminAccounts): only the Rails console removes one.
+    if credential.destroy
+      redirect_to security_path, notice: "Passkey removed."
+    else
+      redirect_to security_path, alert: credential.errors.full_messages.to_sentence
     end
-
-    credential.destroy
-    redirect_to security_path, notice: "Passkey removed."
   end
 end

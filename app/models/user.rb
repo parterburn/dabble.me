@@ -288,6 +288,9 @@ class User < ActiveRecord::Base
   # its password, passkeys, 2FA or sign-ins may not own the address, so all of them go. Clearing
   # the password changes the salt, which ends its web sessions and "Stay logged in" cookies.
   def clear_credentials_for_email_claim!
+    # EmailSignIn.unclaimed? never holds for an admin, whose passkeys only the console removes.
+    raise AdminAccounts::Refused, 'Admin accounts keep their credentials' if AdminAccounts.protected?(self)
+
     transaction do
       webauthn_credentials.destroy_all
       disable_otp! if otp_enabled?

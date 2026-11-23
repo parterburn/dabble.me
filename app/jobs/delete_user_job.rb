@@ -10,6 +10,12 @@ class DeleteUserJob < ActiveJob::Base
     return unless user # Already deleted
     return unless user.deleted_at.present? # Deletion was cancelled
     return if requested_at && user.deleted_at.to_i != requested_at # Cancelled, then asked for again
+    # Admins keep their passkeys (AdminAccounts), so the app never deletes one. A deletion
+    # queued before they were made admin stops here; the console deletes an admin.
+    if AdminAccounts.protected?(user)
+      user.update_column(:deleted_at, nil)
+      return
+    end
 
     # Capture user info before deletion for logging
     user_email = user.email
