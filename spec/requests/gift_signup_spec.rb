@@ -23,9 +23,10 @@ RSpec.describe 'Gift links', type: :request do
       get gift_path('FAMILY2026')
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("You've been given a year of Dabble Me PRO")
+      expect(response.body).to include("You've been given a year of PRO</h1>")
       expect(response.body).to include('$40 value')
       expect(response.body).to include('name="gift_code"')
+      expect(response.body).to include('your entries stay yours (export included). You can subscribe at any time to restart PRO.')
       expect(response.body).to include('Claim my year of PRO')
     end
 
@@ -132,7 +133,7 @@ RSpec.describe 'Gift links', type: :request do
       }
 
       expect(User.find_by(email: 'mismatch@example.com')).to be_nil
-      expect(response.body).to include("You've been given a year of Dabble Me PRO")
+      expect(response.body).to include("You've been given a year of PRO</h1>")
     end
   end
 
