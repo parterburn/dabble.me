@@ -49,6 +49,11 @@ email_code_cleanup:
   class: "EmailCodeCleanupWorker"
   description: "Daily at 4:40 AM UTC. Deletes emailed sign-in codes older than two days."
 
+oauth_idle_tokens:
+  cron: "45 4 * * *"
+  class: "OauthIdleTokenWorker"
+  description: "Daily at 4:45 AM UTC, before session cleanup. Revokes connected-app tokens unused for 30 days (iOS app: 1 year)."
+
 user_session_cleanup:
   cron: "50 4 * * *"
   class: "UserSessionCleanupWorker"

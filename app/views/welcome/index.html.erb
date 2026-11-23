@@ -443,20 +443,22 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
 <!-- Founder Note -->
 <section class="pt-20 pb-4">
   <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-    <figure class="card p-6 sm:p-8 flex flex-col sm:flex-row gap-5 sm:gap-6 items-start">
-      <a href="https://x.com/parterburn" target="_blank" rel="noopener" class="shrink-0" aria-label="Paul Arterburn on X">
-        <%= image_tag "paul-arterburn.jpg", alt: "Paul Arterburn, founder of Dabble Me", width: 64, height: 64, loading: "lazy", decoding: "async", class: "w-16 h-16 rounded-full object-cover" %>
-      </a>
-      <div>
-        <blockquote class="text-primary leading-relaxed">
+    <figure class="card p-6 sm:p-8">
+      <blockquote class="text-primary leading-relaxed">
           I built Dabble Me over <%= years_running %> years ago because I wanted the clarity of daily reflection without another complicated app to maintain. It’s not a venture-backed growth experiment or a rushed AI side project. It’s independently run, funded entirely by paying users, and private by design. No selling your data, no lock-in, just a simple habit that sticks.
-        </blockquote>
-        <figcaption class="mt-4 text-sm text-muted">
-          <a href="https://x.com/parterburn" target="_blank" rel="noopener" class="font-medium text-primary no-underline">Paul Arterburn</a>, Founder
-          · <a href="https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">Why I built it</a>
-          · <a href="https://github.com/parterburn/dabble.me" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">Open source on GitHub</a>
-        </figcaption>
-      </div>
+      </blockquote>
+      <figcaption class="mt-5 flex items-center gap-3 text-sm text-muted">
+        <a href="https://paularterburn.com" target="_blank" rel="noopener" class="shrink-0" tabindex="-1" aria-hidden="true">
+          <%= image_tag "paul-arterburn.jpg", alt: "", width: 40, height: 40, loading: "lazy", decoding: "async", class: "w-10 h-10 rounded-full object-cover" %>
+        </a>
+        <div class="leading-snug">
+          <a href="https://paularterburn.com" target="_blank" rel="noopener" class="font-medium text-primary no-underline">Paul Arterburn</a>, Founder<span class="hidden sm:inline" aria-hidden="true"> · </span>
+          <span class="block sm:inline mt-0.5 sm:mt-0">
+            <a href="https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">Why I built it</a>
+            · <a href="https://github.com/parterburn/dabble.me" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">Open source on GitHub</a>
+          </span>
+        </div>
+      </figcaption>
     </figure>
   </div>
 </section>

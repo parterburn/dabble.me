@@ -49,8 +49,11 @@ class SafeRemoteFetch
     IPAddr.new("ff00::/8")
   ].freeze
 
-  def self.fetch(url, https_only: false, max_bytes: MAX_BYTES, open_timeout: OPEN_TIMEOUT, read_timeout: READ_TIMEOUT, redirects_left: MAX_REDIRECTS)
+  # allowed_host: optional ->(host) { true/false }, checked on the first URL and on every
+  # redirect, so an allowed host can't bounce the request somewhere else.
+  def self.fetch(url, https_only: false, max_bytes: MAX_BYTES, open_timeout: OPEN_TIMEOUT, read_timeout: READ_TIMEOUT, redirects_left: MAX_REDIRECTS, allowed_host: nil)
     new(
+      allowed_host: allowed_host,
       https_only: https_only,
       max_bytes: max_bytes,
       open_timeout: open_timeout,
@@ -137,7 +140,8 @@ class SafeRemoteFetch
     host.split(".").any? { |octet| octet.length > 1 && octet.start_with?("0") }
   end
 
-  def initialize(https_only:, max_bytes:, open_timeout:, read_timeout:)
+  def initialize(https_only:, max_bytes:, open_timeout:, read_timeout:, allowed_host: nil)
+    @allowed_host = allowed_host
     @https_only = https_only
     @max_bytes = max_bytes
     @open_timeout = open_timeout
@@ -153,6 +157,7 @@ class SafeRemoteFetch
     return failure(:invalid_url) unless uri
     return failure(:credentials) if uri.userinfo.present?
     return failure(:https_required) if @https_only && !uri.is_a?(URI::HTTPS)
+    return failure(:host_not_allowed) if @allowed_host && !@allowed_host.call(uri.host)
 
     status, addresses = self.class.lookup(uri.host)
     return failure(status) if addresses.empty?

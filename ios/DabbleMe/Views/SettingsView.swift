@@ -143,7 +143,7 @@ struct SettingsView: View {
                             // Every browser and app on the account, this one included.
                             Button("Sign Out of All Devices", role: .destructive) { Task { await model.signOutEverywhere() } }
                         } message: {
-                            Text("Sign Out signs out this device only. Sign Out of All Devices signs out every browser and app signed in to your account.")
+                            Text("Sign Out signs out this device only. Sign Out of All Devices signs out every browser and app signed in to your account, and disconnects connected apps like Claude.")
                         }
                     // Deleting happens here: the password, then one last confirmation, in a sheet.
                     Button("Delete Account…", role: .destructive) { deletingAccount = true }

@@ -136,7 +136,7 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
   end
 
   describe "Sign out of all other devices" do
-    it "ends every other browser and the app, keeps this browser and connected apps" do
+    it "ends every other browser, the app and connected apps, and keeps this browser" do
       browser = other_browser
       sign_in_with_password
       app = app_token(user)
@@ -146,14 +146,15 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
       mcp = app_token(user, application: claude, scopes: "mcp:access")
 
       get security_path
-      expect(response.body).to include("Sign out of all other devices", "Dabble Me app on iPhone")
+      expect(response.body).to include("Sign out of all other devices", "Dabble Me app on iPhone", "disconnect connected apps like Claude")
       delete signed_in_devices_path
 
       expect(response).to redirect_to(security_path(anchor: "sessions"))
       expect(signed_in?).to be(true)
       expect(user.user_sessions.pluck(:browser)).to eq(["Safari"])
       expect(app.reload).to be_revoked
-      expect(mcp.reload).not_to be_revoked
+      expect(mcp.reload).to be_revoked
+      expect(flash[:notice]).to include("disconnected your connected apps")
       expect(signed_in?(browser)).to be(false)
     end
 

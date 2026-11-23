@@ -160,4 +160,14 @@ class UserMailer < ActionMailer::Base
     email = mail(to: user.cleaned_to_address, subject: "New app connected to your Dabble Me account")
     email.mailgun_options = { tag: "Security" }
   end
+
+  # A connected app's old refresh token came back after it had been replaced
+  # (OauthRefreshReuse): the app was disconnected in case someone copied it.
+  def oauth_refresh_token_reused(user, app_name)
+    @user = user
+    @app_name = app_name
+    @user.increment!(:emails_sent)
+    email = mail(to: user.cleaned_to_address, subject: "We disconnected #{app_name} from your Dabble Me account")
+    email.mailgun_options = { tag: "Security" }
+  end
 end

@@ -7,7 +7,7 @@ module Mcp
 
       tool_name 'get_image_upload_url'
       title 'Prepare a journal image upload'
-      description 'Prepare one local image for a new Dabble Me journal entry when you do not already have a public https URL. Returns a short-lived presigned PUT URL, required headers, and an uploaded_image_key. PUT the user-provided bytes to that URL, then pass the key to create_entry. If you already have a public https image URL, skip this tool and pass image_url to create_entry instead. Prefer this flow over base64 for local images.'
+      description 'Prepare one image for a new Dabble Me journal entry when your AI app does not host it on its own file service. Returns a short-lived presigned PUT URL, required headers, and an uploaded_image_key. PUT the user-provided bytes to that URL, then pass the key to create_entry. If your AI app already hosts the image on its own file service (such as a ChatGPT file link), skip this tool and pass image_url to create_entry instead; create_entry refuses image_url links on other sites. Prefer this flow over base64 for local images.'
       annotations(
         title: 'Prepare a journal image upload',
         read_only_hint: false,
