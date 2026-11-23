@@ -1,5 +1,19 @@
-Writing ideas spacing: no sparkle on the prompt, a little more room above it, and tighter event times.
+Dictation's row is simpler, your entry template shows on a new entry's empty page, and Writing ideas has tidier spacing.
 
-- Tap the lightbulb. The prompt has no icon in front of it now, and sits a little further below the "Writing ideas" heading.
-- Calendar events: the event names start closer to their times. Check an event at 12:00 PM, an all-day one, and a larger text size (Settings → Accessibility → Larger Text): the times shouldn't cut off.
-- "Add a moment from your iPhone" still has its photo icon.
+Dictation row
+- Tap the mic in the composer. The small olive title above the row says "Dictation" the whole time.
+- While it gets ready, and again after Done while it writes your words down, the row shows only the moving dots.
+- The first time, while it downloads what it needs, the dots have "Downloading 42%" next to them.
+- Problems show as a toast over the bar instead of filling the row. Try staying quiet for 10 seconds after tapping the mic, or turning the microphone off for Dabble Me in iOS Settings (the toast then has a Settings button).
+- Tap the toast to close it, or wait: it closes on its own after a few seconds.
+
+Entry template on the empty page
+- With a template (Settings → Entry Template), a new entry's empty page shows it, faint, under "Start writing or [Swipe →] to use template:".
+- Swipe right across the page, or tap the Swipe badge: the template goes in. Just start typing to write without it.
+- A long template shows its first lines and fades out at the bottom.
+- The "Start New Entries with It" switch is gone. If you had it on, new entries open empty with the template one swipe away, and Today and the widget show the day's prompt again.
+- Holding a Write button on Today still opens an entry with the template already in.
+
+Writing ideas spacing
+- Tap the lightbulb. The prompt has no sparkle icon in front of it now, and sits a little further below the "Writing ideas" heading.
+- Calendar event names start closer to their times. Check an event at 12:00 PM, an all-day one, and a larger text size: the times shouldn't cut off.
