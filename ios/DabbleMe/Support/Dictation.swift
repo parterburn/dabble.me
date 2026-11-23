@@ -188,6 +188,10 @@ final class Dictation {
     /// Loads the transcriber's model, so the next tap records at once and its words come back
     /// right after Done (the composer opening, and after each dictation). Only once the model's
     /// on the phone: the first download waits for a tap, where its progress shows.
+    ///
+    /// Off the main thread but for two small objects: the checks and the loading are calls to
+    /// iOS's speech service that are awaited, not waited on. No audio session, no microphone (so
+    /// no orange dot), and nothing when dictation is off or the phone can't do it.
     func prewarm() {
         guard !Self.isDebugFake, !isClosed, warm == nil, warming == nil, state == .idle,
               Self.isSupported, DictationSettings.isEnabled else { return }
@@ -205,7 +209,7 @@ final class Dictation {
             Task {
                 await speech.loading.value
                 let loaded = Self.milliseconds(since: began)
-                Self.log.notice("Dictation model loaded in \(loaded, privacy: .public) ms")
+                Self.log.notice("Dictation model loaded in \(loaded, privacy: .public) ms after the composer asked")
             }
         }
     }
@@ -624,7 +628,12 @@ private final class WarmSpeech {
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: requested) else { return nil }
         let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
         guard await AssetInventory.status(forModules: [transcriber]) == .installed, !Task.isCancelled else { return nil }
-        return WarmSpeech(requested: requested.identifier, transcriber: transcriber, wasWarm: true)
+        // The only part on the main thread: making the analyzer. Logged, to keep it honest.
+        let began = ContinuousClock.now
+        let speech = WarmSpeech(requested: requested.identifier, transcriber: transcriber, wasWarm: true)
+        let onMain = (ContinuousClock.now - began) / .milliseconds(1)
+        Dictation.log.notice("Dictation prewarm: \(onMain, format: .fixed(precision: 1), privacy: .public) ms on the main thread")
+        return speech
     }
 }
 

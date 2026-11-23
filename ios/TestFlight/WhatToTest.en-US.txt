@@ -1,7 +1,7 @@
 Dictation: quicker to start and quicker to write your words in.
 
 Starting
-- Open the composer, wait a second, then tap the mic. The waveform should show almost at once, with only a blink of the dots first.
+- Open the composer: it should open and type exactly as fast as before (the model loads a moment after the keyboard is up). Wait a second, then tap the mic. The waveform should show almost at once, with only a blink of the dots first.
 - Tap the mic straight away as the composer opens: it should still start promptly.
 - After one dictation, start another in the same entry: it should be just as quick.
 

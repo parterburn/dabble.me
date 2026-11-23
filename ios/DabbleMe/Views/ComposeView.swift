@@ -433,11 +433,14 @@ struct ComposeView: View {
                 }
             }
             .task {
-                // The speech model loads now, so the mic records at its tap.
-                dictation.prewarm()
                 // Give the sheet a moment to settle so the keyboard animates in with it.
                 try? await Task.sleep(for: .milliseconds(350))
                 editor.focus()
+                // Then, once the keyboard's up, the speech model loads, so the mic records at its
+                // tap. Nothing that slows the composer: no microphone, and the loading is iOS's.
+                try? await Task.sleep(for: .milliseconds(400))
+                guard !Task.isCancelled else { return }
+                dictation.prewarm()
             }
         }
     }
