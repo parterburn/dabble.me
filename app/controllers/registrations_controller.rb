@@ -4,7 +4,9 @@ class RegistrationsController < Devise::RegistrationsController
   before_action :require_user, only: [:security, :delete_account, :update, :edit, :posting_address, :reset_posting_address]
   prepend_before_action :check_captcha, only: [:create]
   # No new accounts once a closing is announced. Prepended last, so it runs first.
-  prepend_before_action :refuse_when_closing, only: [:new, :create]
+  prepend_before_action :refuse_when_closing, only: [:new, :create, :gift, :redeem_gift]
+  before_action :require_gift, only: [:gift, :redeem_gift]
+  before_action :refuse_admin_deletion, only: [:destroy, :delete_account]
 
   def edit
     cookies.permanent[:viewed_settings] = true
@@ -12,9 +14,52 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def create
+    gift_redeemed = false
     super do
       resource.referrer = request.env['affiliate.tag']
       resource.save
+      if resource.persisted? && resource.welcome_email_after_gift
+        gift_redeemed = current_gift.redeem!(resource)
+        UserMailer.welcome_email(resource).deliver_later
+      end
+    end
+    return unless resource.persisted?
+
+    if gift_redeemed
+      flash[:notice] = "Welcome to Dabble Me! Your gift of PRO runs until #{resource.gift_expires_on}."
+    elsif params[:gift_code].present?
+      flash[:alert] = "That gift code is no longer valid, so your account is on the Free plan."
+    end
+  end
+
+  # dabble.me/gift/<code>. Signed out: the sign-up form, dressed as a gift.
+  # Signed in: a button that puts this account on the gift, if it can take one.
+  def gift
+    if user_signed_in?
+      return unless gift_redeemable_by_current_user
+      render 'devise/registrations/redeem_gift'
+    elsif params[:login].present?
+      # "Log in to add the gift to it": come back here after signing in.
+      store_location_for(:user, gift_path(current_gift.code))
+      redirect_to new_user_session_path
+    else
+      build_resource
+      render :new
+    end
+  end
+
+  def redeem_gift
+    unless user_signed_in?
+      redirect_to gift_path(params[:code])
+      return
+    end
+    return unless gift_redeemable_by_current_user
+
+    if current_gift.redeem!(current_user)
+      redirect_to edit_user_registration_path,
+                  notice: "Enjoy! Your gift of PRO runs until #{current_user.gift_expires_on}."
+    else
+      redirect_to root_path, alert: "This account can't take this gift."
     end
   end
 
@@ -35,14 +80,29 @@ class RegistrationsController < Devise::RegistrationsController
         params[:user].parse_time_select! :send_time
       end
 
-      successfully_updated = if needs_password?
-        user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
+      successfully_updated = if needs_password? && !user.has_password?
+        # No password yet (made by email code): an emailed code confirms the change instead,
+        # and may set the first password.
+        if EmailCode.confirm(user, params[:user][:email_code])
+          changes = hold_email_change(devise_parameter_sanitizer.sanitize(:account_update).except(:current_password))
+          changes = changes.except(:password, :password_confirmation) if changes[:password].blank?
+          user.update(changes)
+        else
+          user.errors.add(:base, "That code didn't work. Send a new one and try again.")
+          false
+        end
+      elsif needs_password?
+        user.update_with_password(hold_email_change(devise_parameter_sanitizer.sanitize(:account_update)))
       else
         params[:user].delete(:current_password)
         user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
       end
 
-      if successfully_updated
+      if successfully_updated && email_change_requested?
+        bypass_sign_in user
+        send_email_change_code
+        return redirect_to(email_change_path)
+      elsif successfully_updated
         set_flash_message :notice, :updated
         bypass_sign_in user
       else
@@ -67,12 +127,12 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def destroy
-    if current_user.valid_password?(params[:user][:current_password])
+    if current_password_or_code_valid?(params[:user][:current_password], params[:user][:email_code])
       schedule_user_deletion
       sign_out current_user
       redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Sign back in before then to cancel deletion."
     else
-      flash[:alert] = "Incorrect current password."
+      flash[:alert] = current_user.has_password? ? "Incorrect current password." : "That code didn't work. Send a new one and try again."
       redirect_to delete_account_path
     end
   end
@@ -82,7 +142,14 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def security
+    # The iOS app is listed under Sessions, one row per device, rather than as a connected app,
+    # once every sign-in it holds has a row there. Until then (an app sign-in from before Sessions
+    # that hasn't been back since) it stays under Connected apps too, so a lost device can still
+    # be cut off.
     @oauth_applications = Doorkeeper::Application.authorized_for(current_user)
+    @oauth_applications = @oauth_applications.where.not(uid: MobileApp::CLIENT_ID) unless unlisted_app_sign_ins?
+    @oauth_last_used = ConnectedAppUsage.last_used(current_user.id, @oauth_applications.map(&:id))
+    @user_sessions = current_user.user_sessions.listable.most_recent_first
     render 'devise/registrations/security'
   end
 
@@ -128,7 +195,8 @@ class RegistrationsController < Devise::RegistrationsController
       params[:user].parse_time_select! :send_time
     end
 
-    prefs = devise_parameter_sanitizer.sanitize(:preferences).except(:email, :password, :password_confirmation, :current_password)
+    # The email-link page shows no profile fields, so it can't change the name either.
+    prefs = devise_parameter_sanitizer.sanitize(:preferences).except(:first_name, :last_name, :email, :password, :password_confirmation, :current_password)
     prefs = prefs.except(:send_updates) if params[:unsub_all].present?
     if user.update_without_password(prefs)
       if user.frequency.present?
@@ -145,17 +213,67 @@ class RegistrationsController < Devise::RegistrationsController
 
   private
 
+  # Live iOS app tokens not yet tied to a Sessions row (AppSessions links them on first use).
+  def unlisted_app_sign_ins?
+    app_id = MobileApp.application_id
+    app_id.present? && Doorkeeper::AccessToken.where(resource_owner_id: current_user.id, application_id: app_id,
+                                                     revoked_at: nil, user_session_id: nil).exists?
+  end
+
+  # A gift sign-up holds the welcome email until the gift is on the account (see create).
+  def build_resource(hash = {})
+    super
+    resource.signup_platform ||= 'web'
+    resource.welcome_email_after_gift = true if current_gift
+  end
+
+  # The gift on this page: from the link's code, or the code the gift sign-up form posts.
+  def current_gift
+    return @current_gift if defined?(@current_gift)
+
+    @current_gift = Gift.find(params[:code].presence || params[:gift_code])
+  end
+  helper_method :current_gift
+
+  def require_gift
+    return if current_gift
+
+    if user_signed_in?
+      redirect_to root_path, alert: 'That gift code is no longer valid.'
+    else
+      redirect_to new_user_registration_path, alert: 'That gift code is no longer valid.'
+    end
+  end
+
+  def gift_redeemable_by_current_user
+    return true if current_gift.redeemable_by?(current_user)
+
+    if current_user.is_pro?
+      redirect_to root_path, notice: 'You already have Dabble Me PRO, so this gift is for someone else.'
+    else
+      redirect_to root_path, alert: 'This account has already used a gift of PRO.'
+    end
+    false
+  end
+
   def choose_layout
-    if action_name == 'new' || action_name == 'create'
+    if %w[new create gift redeem_gift].include?(action_name)
       'marketing'
     else
       'application'
     end
   end
 
+  # Deleting the account would delete its passkeys, which admins keep (AdminAccounts).
+  def refuse_admin_deletion
+    return unless AdminAccounts.protected?(current_user)
+
+    redirect_to security_path, alert: "Admin accounts can only be deleted from the Rails console."
+  end
+
   def schedule_user_deletion
     current_user.update_column(:deleted_at, Time.current)
-    DeleteUserJob.set(wait: 1.hour).perform_later(current_user.id)
+    DeleteUserJob.set(wait: 1.hour).perform_later(current_user.id, current_user.deleted_at.to_i)
   end
 
   def check_captcha
@@ -177,6 +295,30 @@ class RegistrationsController < Devise::RegistrationsController
     params[:submit_method] == "security" ||
       (user_params[:email].present? && user.email != user_params[:email]) ||
       (user_params[:password].present? || user_params[:password_confirmation].present?)
+  end
+
+  # Settings never moves the account straight to a new address: it holds it in pending_email and
+  # emails a code there (EmailChangesController), so nobody can move an account onto an inbox they
+  # don't read. The rest of the form (a new password, say) still saves now.
+  def hold_email_change(changes)
+    new_email = changes[:email]
+    changes = changes.except(:email)
+    return changes unless new_email.present? && EmailCode.normalize(new_email) != user.email.to_s.downcase
+
+    changes.merge(pending_email: new_email)
+  end
+
+  def email_change_requested?
+    user_params[:email].present? && EmailCode.normalize(user_params[:email]) != user.email.to_s.downcase &&
+      user.pending_email.present?
+  end
+
+  def send_email_change_code
+    case EmailCode.send_new_email_code(user)
+    when :ok then flash[:notice] = "We emailed a code to #{user.pending_email}. Enter it to finish changing your email."
+    when :too_soon then flash[:alert] = 'We just sent a code. Give it a minute to arrive.'
+    else flash[:alert] = 'Too many codes. Try again in an hour.'
+    end
   end
 
   def user_params

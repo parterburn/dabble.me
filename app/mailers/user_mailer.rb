@@ -32,10 +32,13 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'Thanks'}
   end
 
-  def downgraded(user)
+  # gift: true when the year of PRO that ended was a gift (Gift), not a subscription.
+  def downgraded(user, gift: false)
     @user = user
+    @gift = gift
     @user.increment!(:emails_sent)
-    email = mail(to: user.cleaned_to_address, subject: '[ACTION REQUIRED] Account Downgraded')
+    subject = gift ? 'Your gift year of Dabble Me PRO has ended' : '[ACTION REQUIRED] Account Downgraded'
+    email = mail(to: user.cleaned_to_address, subject: subject)
     email.mailgun_options = {tag: 'Downgraded'}
   end
 
@@ -47,6 +50,14 @@ class UserMailer < ActionMailer::Base
     @reason = reason
     @user = User.find_by(id: user_id) if user_id
     mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User')
+  end
+
+  # Apple charged an account that's already PRO through the web (Stripe, Gumroad, PayPal or
+  # Forever). AppStore::Subscriptions sends it once per Apple charge.
+  def apple_double_billing(user, transaction_id)
+    @user = user
+    @transaction_id = transaction_id
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Apple charged a web subscriber')
   end
 
   def failed_entry(user, errors, date, body)
@@ -90,6 +101,43 @@ class UserMailer < ActionMailer::Base
     @user = user
     @user.increment!(:emails_sent)
     email = mail(from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: "Your new Dabble Me posting address")
+    email.mailgun_options = { tag: "Security" }
+  end
+
+  # The code for passwordless sign-in or sign-up (EmailSignIn). Sent to the address as typed,
+  # which may have no account yet. The code leads the subject so it shows in the notification
+  # and iOS can offer it above the keyboard.
+  def sign_in_code(email, code, new_account:)
+    @code = code
+    @new_account = new_account
+    email = mail(to: email, subject: "#{code} is your Dabble Me code")
+    email.mailgun_options = { tag: "Security" }
+  end
+
+  # Confirms an account change on an account with no password (EmailCode purpose "confirm").
+  def confirmation_code(user, code)
+    @user = user
+    @code = code
+    email = mail(to: user.cleaned_to_address, subject: "#{code} is your Dabble Me confirmation code")
+    email.mailgun_options = { tag: "Security" }
+  end
+
+  # To the address an account asked to move to, before it moves (EmailCode.send_new_email_code).
+  # The address comes in with the code, fixed when the code was made: the mail job loads the user
+  # again later, by when pending_email may name another inbox.
+  def new_email_code(user, code, address)
+    @user = user
+    @code = code
+    @address = address
+    email = mail(to: address, subject: "#{code} is your Dabble Me code to confirm this email")
+    email.mailgun_options = { tag: "Security" }
+  end
+
+  # To the old address once the account has moved to a new one.
+  def email_changed(user, old_email)
+    @user = user
+    @old_email = old_email
+    email = mail(to: old_email, subject: "Your Dabble Me email was changed")
     email.mailgun_options = { tag: "Security" }
   end
 

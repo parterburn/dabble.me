@@ -330,47 +330,40 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Discard"].tap()
     }
 
-    /// With a template (Settings → Entry Template), the lightbulb row offers it beside a prompt that's
-    /// written only when asked for, and holding the lightbulb puts it straight in.
-    func testTheTemplateIsOfferedInThePromptRow() throws {
-        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO", "-tips.shown.lightbulb", "NO"])
+    /// With a template (Settings → Entry Template), the empty page shows it under "Start writing
+    /// or [Swipe →] to use template:": a tap on the badge or a swipe right puts it in, and the
+    /// placeholder goes once there's writing. The lightbulb row doesn't offer it.
+    func testTheTemplateIsOfferedOnTheEmptyPage() throws {
+        let app = launch(["-DabbleDebugTemplate", "What went well today?"])
         let editor = openComposer(app)
-        editor.typeText("Morning.")
-        app.buttons["Prompt"].tap()
         let use = app.buttons["Use Template"]
         XCTAssertTrue(use.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["AskMeQuestion"].exists, "No prompt until it's asked for")
-        snap("template-offer")
+        snap("template-hint")
         use.tap()
-        // The first time, a word about the quicker way.
-        let tip = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "touch and hold the lightbulb")).firstMatch
-        XCTAssertTrue(tip.waitForExistence(timeout: 5))
-        snap("template-tip")
-        app.buttons["OK"].tap()
-        XCTAssertEqual(editor.value as? String, "Morning.\nWhat went well today?")
-        XCTAssertFalse(use.exists, "The row closes")
+        XCTAssertEqual(editor.value as? String, "What went well today?")
+        XCTAssertTrue(use.waitForNonExistence(timeout: 2), "Gone once there's writing")
 
-        // Held, the lightbulb button adds it without opening the row.
-        app.buttons["Prompt"].press(forDuration: 0.9)
-        XCTAssertEqual(editor.value as? String, "Morning.\nWhat went well today?\nWhat went well today?")
-        XCTAssertFalse(use.exists)
-
-        // Asked for, the prompt takes the row and the template's button goes.
+        // Not in the lightbulb row.
         app.buttons["Prompt"].tap()
-        let ask = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Tap '")).firstMatch
-        XCTAssertTrue(ask.waitForExistence(timeout: 5))
-        ask.tap()
-        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Writing ideas")).firstMatch.waitForExistence(timeout: 5))
         XCTAssertFalse(use.exists)
-        snap("template-prompt-asked")
+        app.buttons["Prompt"].tap()
+
+        // Emptied again, a swipe right across the page puts it in.
         app.buttons["Cancel"].tap()
         app.buttons["Discard"].tap()
+        let again = openComposer(app)
+        XCTAssertTrue(use.waitForExistence(timeout: 5))
+        again.swipeRight()
+        XCTAssertEqual(again.value as? String, "What went well today?")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// Today's Write button held, with a template: the entry starts from it, whatever the
-    /// setting says. A tap writes a blank one, as ever.
+    /// Today's Write button held, with a template: the entry starts from it. A tap writes a
+    /// blank one, as ever.
     func testHoldingWriteStartsFromTheTemplate() throws {
-        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
+        let app = launch(["-DabbleDebugTemplate", "What went well today?"])
         let write = app.buttons["Write Today's Entry"]
         XCTAssertTrue(write.waitForExistence(timeout: 15))
         write.press(forDuration: 0.9)
@@ -380,7 +373,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertEqual(editor.value as? String, "What went well today?")
         XCTAssertFalse(app.buttons["Save"].isEnabled, "Nothing of the writer's own to save yet")
         snap("today-held-write")
-        // It's in already: the lightbulb row doesn't offer it again.
+        // It's in already: nothing offers it again.
         app.buttons["Prompt"].tap()
         XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
         XCTAssertFalse(app.buttons["Use Template"].exists)
@@ -394,23 +387,16 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Cancel"].tap()
     }
 
-    /// Set to start new entries, the template is there when the composer opens, and there's
-    /// nothing to save until something's written.
-    func testNewEntriesStartWithTheTemplate() throws {
+    /// The "Start New Entries with It" setting is gone: one left on by an earlier build doesn't
+    /// put the template in a new entry, or on Today in place of the prompt. The empty page shows it.
+    func testAnOldAutoTemplateSettingDoesNothing() throws {
         let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "YES"])
+        XCTAssertTrue(app.buttons["Write Today's Entry"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["TodayTemplate"].exists)
         let editor = openComposer(app)
-        XCTAssertEqual(editor.value as? String, "What went well today?")
-        XCTAssertFalse(app.buttons["Save"].isEnabled)
-        snap("template-auto")
-        // The lightbulb row is as it is without a template: a prompt, and no button for the template.
-        app.buttons["Prompt"].tap()
-        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
-        XCTAssertFalse(app.buttons["Use Template"].exists)
-        app.buttons["Prompt"].tap()
-        editor.typeText(" The walk.")
-        XCTAssertTrue(app.buttons["Save"].isEnabled)
+        XCTAssertEqual(editor.value as? String ?? "", "")
+        XCTAssertTrue(app.buttons["Use Template"].waitForExistence(timeout: 5))
         app.buttons["Cancel"].tap()
-        app.buttons["Discard"].tap()
     }
 
     /// Settings → Entry Template: written like an entry, kept as it's typed (blank lines and
@@ -423,7 +409,7 @@ final class JournalViewsTests: XCTestCase {
         row.tap()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.switches["Start New Entries with It"].exists)
+        XCTAssertFalse(app.switches["Start New Entries with It"].exists)
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
         // (Whatever an earlier run left behind goes first.)
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "One Win\n- ")
@@ -439,6 +425,50 @@ final class JournalViewsTests: XCTestCase {
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30))
         XCTAssertEqual(editor.value as? String, "")
         app.navigationBars.buttons.firstMatch.tap()
+    }
+
+    /// The bar's microphone: recorded, then written in at the cursor once Done is tapped, with the
+    /// cleanup's ums and correction taken out. (A made-up recording here: the simulator has no
+    /// transcriber.)
+    func testSpeakingAnEntry() throws {
+        let app = launch(["-DabbleDebugDictation", "YES"])
+        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+            app.buttons["Write Today's Entry"].tap()
+        } else {
+            tab(app, "Journal").tap()
+            app.buttons["New Entry"].tap()
+        }
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
+        editor.typeText("A slow evening.")
+        app.buttons["Speak Your Entry"].tap()
+        // An X to drop it on the left, Done on the right.
+        XCTAssertTrue(app.buttons["Cancel Recording"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Done"].exists)
+        sleep(1)
+        snap("compose-dictation")
+        // Nothing goes in while it's said.
+        XCTAssertFalse((editor.value as? String ?? "").contains("river"))
+        app.buttons["Done"].tap()
+        // After what was typed, spaced as if typed, and without the "um".
+        let heard = NSPredicate(format: "value CONTAINS %@", "A slow evening. We walked along the river after")
+        wait(for: [expectation(for: heard, evaluatedWith: editor)], timeout: 15)
+        XCTAssertFalse((editor.value as? String ?? "").contains("um,"))
+        XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
+        snap("compose-dictation-done")
+        // The X drops a recording: nothing more goes in.
+        let before = editor.value as? String ?? ""
+        app.buttons["Speak Your Entry"].tap()
+        XCTAssertTrue(app.buttons["Cancel Recording"].waitForExistence(timeout: 5))
+        app.buttons["Cancel Recording"].tap()
+        XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
+        sleep(1)
+        XCTAssertEqual(editor.value as? String ?? "", before)
+        app.buttons["Cancel"].tap()
+        app.buttons["Discard"].tap()
     }
 
     func testTodayPromptEntrySummaryAndSettings() throws {
@@ -493,7 +523,7 @@ final class JournalViewsTests: XCTestCase {
         close.tap()
 
         tab(app, "Settings").tap()
-        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Account'")).firstMatch.waitForExistence(timeout: 5))
         snap("settings-top")
         app.swipeUp()
         snap("settings-privacy")
@@ -676,8 +706,8 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
 
         tab(app, "Settings").tap()
-        if !app.staticTexts["Email"].waitForExistence(timeout: 5) { tab(app, "Settings").tap() }
-        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 10))
+        if !app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Account'")).firstMatch.waitForExistence(timeout: 5) { tab(app, "Settings").tap() }
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Account'")).firstMatch.waitForExistence(timeout: 10))
         print("PLAN_LINK=\(app.links.matching(NSPredicate(format: "label CONTAINS 'Plan'")).firstMatch.exists)")
         snap("settings-plan")
     }
@@ -963,7 +993,8 @@ final class JournalViewsTests: XCTestCase {
         let pushRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch
         let widgetRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Home Screen Widget'")).firstMatch
         XCTAssertTrue(emailRow.waitForExistence(timeout: 10))
-        let show = app.switches["Show Past Entry"]
+        let show = app.switches["Include Past Entry"]
+        let pushShow = app.switches["Show Entry Previews"]
         func set(_ toggle: XCUIElement, _ on: Bool) {
             if (toggle.value as? String == "1") != on { toggle.switches.firstMatch.tap() }
         }
@@ -985,8 +1016,8 @@ final class JournalViewsTests: XCTestCase {
             let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
             if allow.waitForExistence(timeout: 3) { allow.tap() }
         }
-        if show.waitForExistence(timeout: 5) {
-            XCTAssertEqual(show.value as? String, "1", "The push reminder keeps its own")
+        if pushShow.waitForExistence(timeout: 5) {
+            XCTAssertEqual(pushShow.value as? String, "1", "The push reminder keeps its own")
             snap("push-show-past-entry")
         }
         if !pushWasOn, pushSwitch.value as? String == "1" { pushSwitch.switches.firstMatch.tap() }
@@ -1051,7 +1082,7 @@ final class JournalViewsTests: XCTestCase {
         snap("past-entries")
         XCTAssertEqual(words.value as? String, "waffles")
         // (Whether each shows the entry itself is on its own page, not here.)
-        XCTAssertFalse(app.switches["Show Past Entry"].exists)
+        XCTAssertFalse(app.switches["Include Past Entry"].exists)
 
         // Put the demo account back.
         words.tap()
@@ -1061,7 +1092,7 @@ final class JournalViewsTests: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Email Notifications"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.switches["Show Past Entry"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["Include Past Entry"].waitForExistence(timeout: 5))
     }
 
     /// Settings → Manage Hashtags: dated tags, adding one by name, and removing it.
@@ -2487,12 +2518,21 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.exists, "Dots, not the number")
         snap("today-corner-count")
         count.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH %@", "of the last 5 days have entries.")).firstMatch.waitForExistence(timeout: 15),
-                      "Stats spells the dots out")
+        let dots = app.buttons["StatsLastFiveDays"]
+        XCTAssertTrue(dots.waitForExistence(timeout: 15))
+        XCTAssertTrue(dots.label.hasSuffix("of the last 5 days have entries."), "Stats spells the dots out: \(dots.label)")
         snap("stats-last-five-days")
+        // Tapped: this year's grid, zoomed in on the last five days.
+        dots.tap()
+        let grid = app.otherElements["Writing days in \(year)"]
+        XCTAssertTrue(grid.waitForExistence(timeout: 10))
+        sleep(1) // the scroll and zoom settle
+        XCTAssertTrue(grid.isHittable, "Scrolled to this year's grid")
+        snap("stats-last-five-days-zoomed")
         app.terminate()
 
-        app = launch(["-DabbleDebugRewindYear", String(year), "-DabbleDebugForgetRewindTap", "YES"])
+        // (The tap above kept the biggest squares; this launch shows the grid at its own size.)
+        app = launch(["-DabbleDebugRewindYear", String(year), "-DabbleDebugForgetRewindTap", "YES", "-stats.heatmapCell", "13"])
         let rewind = app.buttons["\(year) Rewind"]
         XCTAssertTrue(rewind.waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.exists)
@@ -2614,11 +2654,10 @@ final class JournalViewsTests: XCTestCase {
         previews.switches.firstMatch.tap() // back to the default: no previews
     }
 
-    /// Settings → Delete Account: says what's about to happen, then signs the app out and opens
-    /// the deletion page in the browser (it's finished on dabble.me).
-    /// TEST_RUNNER_DABBLE_DELETION_TOKEN: a token of its own, since signing out spends it (the
-    /// free demo account's will do).
-    func testDeletingTheAccountSignsOutAndOpensTheBrowser() throws {
+    /// Settings → Delete Account: an in-app page with the entry count, an export, and the
+    /// password; a wrong password is refused, and nothing is deleted (the test stops before the
+    /// right one). TEST_RUNNER_DABBLE_DELETION_TOKEN: the free demo account's token will do.
+    func testDeletingTheAccountAsksForThePasswordInTheApp() throws {
         guard let spare = ProcessInfo.processInfo.environment["DABBLE_DELETION_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_DELETION_TOKEN") }
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", spare, "-DabbleServerOverride", testServer]
@@ -2629,17 +2668,24 @@ final class JournalViewsTests: XCTestCase {
         for _ in 0..<6 where !(delete.exists && delete.isHittable) { app.swipeUp() }
         snap("delete-account-row")
         delete.tap()
-        let go = app.buttons["Sign Out and Continue"]
-        XCTAssertTrue(go.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Email Me a Deletion Link"].exists)
+        XCTAssertTrue(app.buttons["Export My Entries"].waitForExistence(timeout: 10), "The page offers an export first")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'for good'")).firstMatch.exists)
+        let confirm = app.buttons["Delete Account"].firstMatch
+        XCTAssertFalse(confirm.isEnabled, "Nothing to confirm without the password")
+        snap("delete-account-page")
+
+        let password = app.secureTextFields["Password"]
+        password.tap()
+        password.typeText("not-the-password")
+        confirm.tap()
+        let last = app.sheets.buttons["Delete Account"].exists ? app.sheets.buttons["Delete Account"] : app.buttons.matching(identifier: "Delete Account").element(boundBy: 1)
+        XCTAssertTrue(last.waitForExistence(timeout: 5), "One last confirmation")
         snap("delete-account-confirm")
-        go.tap()
-        let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
-        XCTAssertTrue(safari.wait(for: .runningForeground, timeout: 15), "The deletion page opens in the browser")
-        sleep(2)
-        snap("delete-account-browser")
-        app.activate()
-        XCTAssertTrue(app.buttons["I Already Have an Account"].waitForExistence(timeout: 10), "Signed out, back at the first page")
+        last.tap()
+        XCTAssertTrue(app.staticTexts["Incorrect password."].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Export My Entries"].exists, "Still on the page, still signed in")
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
     }
 
     /// A free account writes without photos or links, can delete but not edit, and has no Stats.
@@ -2680,9 +2726,10 @@ final class JournalViewsTests: XCTestCase {
         editor.tap()
         XCTAssertTrue(app.buttons["Add Photos"].waitForExistence(timeout: 5))
         app.buttons["Add Photos"].tap()
-        XCTAssertTrue(app.alerts["Photos are a PRO feature"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Photos are a PRO feature"].waitForExistence(timeout: 5))
         snap("free-photos-pro")
-        app.alerts.buttons["OK"].tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Add Photos"].waitForExistence(timeout: 5))
         snap("free-compose-bar")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard Changes"].waitForExistence(timeout: 2) { app.buttons["Discard Changes"].tap() }
@@ -2739,7 +2786,7 @@ final class JournalViewsTests: XCTestCase {
         row.tap()
         XCTAssertTrue(app.navigationBars["Email Notifications"].waitForExistence(timeout: 5))
         if app.switches["Email Notifications"].value as? String == "1" {
-            XCTAssertTrue(app.switches["Show Past Entry"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.switches["Include Past Entry"].waitForExistence(timeout: 5))
         }
         snap("email-schedule-free")
     }

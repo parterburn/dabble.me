@@ -13,9 +13,9 @@ RSpec.describe WelcomeController, type: :controller do
     it 'calls past entries Rewind, with the Slab backward icon and a sample heading like the real email' do
       get :index
 
-      expect(response.body).to have_css('h3', text: 'Rewind')
+      expect(response.body).to have_css('h3', text: 'On This Day & Year in Review')
       expect(response.body).to have_css('.slab-icon.slab-icon--backward', count: 2)
-      expect(response.body).to have_content('Rewind past entries')
+      expect(response.body).to have_content('Rewind years back')
       expect(response.body).not_to match(/blasts? from the past|Remember this\?/i)
       # The sample entry is picked at random: 6 months back or this day years ago.
       expect(response.body).to match(/(Rewind 6 months|On this day (3|10) years ago) • \w{3}, \w{3} \d{1,2}, \d{4} you wrote\.\.\./)
@@ -32,11 +32,12 @@ RSpec.describe WelcomeController, type: :controller do
   end
 
   describe 'subscribe' do
-    it 'calls the yearly stats page Writing Stats by Year, not Year in Review' do
+    it 'keeps yearly stats apart from the Year in Review' do
       get :subscribe
 
-      expect(response.body).to have_css('h3', text: 'Writing Stats by Year')
-      expect(response.body).not_to match(/Year in Review/i)
+      expect(response.body).to have_css('h3', text: 'Yearly stats & Spotify')
+      stats_card = Capybara.string(response.body).find('h3', text: 'Yearly stats & Spotify').find(:xpath, '..')
+      expect(stats_card).not_to have_content(/Year in Review/i)
     end
   end
 

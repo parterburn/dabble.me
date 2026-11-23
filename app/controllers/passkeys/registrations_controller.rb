@@ -22,8 +22,16 @@ class Passkeys::RegistrationsController < ApplicationController
   end
 
   def create
-    unless current_user.valid_password?(params[:current_password])
-      render json: { errors: ["Incorrect current password."] }, status: :unprocessable_content
+    # The password (or the emailed code on an account with none), unless this session just
+    # signed in with an emailed code.
+    if admin_adding_first_passkey?
+      unless admin_first_passkey_proof_valid?(params[:current_password])
+        render json: { errors: ["Admin accounts add their first passkey with their password."] }, status: :unprocessable_content
+        return
+      end
+    elsif passkey_proof_needed? && !current_password_or_code_valid?(params[:current_password], params[:email_code])
+      message = current_user.has_password? ? "Incorrect current password." : "That code didn't work. Send a new one and try again."
+      render json: { errors: [message] }, status: :unprocessable_content
       return
     end
 
@@ -57,12 +65,11 @@ class Passkeys::RegistrationsController < ApplicationController
 
   def destroy
     credential = current_user.webauthn_credentials.find(params[:id])
-    if current_user.admin? && current_user.webauthn_credentials.count <= 1
-      redirect_to security_path, alert: "Admin accounts must keep at least one passkey. Add another before removing this one."
-      return
+    # An admin's passkeys stay (AdminAccounts): only the Rails console removes one.
+    if credential.destroy
+      redirect_to security_path, notice: "Passkey removed."
+    else
+      redirect_to security_path, alert: credential.errors.full_messages.to_sentence
     end
-
-    credential.destroy
-    redirect_to security_path, notice: "Passkey removed."
   end
 end

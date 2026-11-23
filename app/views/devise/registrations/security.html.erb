@@ -4,7 +4,7 @@
 <div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
   <header class="mb-8">
     <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Account security</h1>
-    <p class="mt-2 text-muted">Your email, password, passkeys, two-factor authentication, and connected apps.</p>
+    <p class="mt-2 text-muted">Your email, password, passkeys, two-factor authentication, where you're signed in, and connected apps.</p>
   </header>
 
   <%= form_for(user, url: registration_path(user), html: { method: :put, class: "space-y-6" }) do |f| %>
@@ -15,12 +15,17 @@
         <div class="sm:col-span-2">
           <%= f.label :email, class: "field-label" %>
           <%= f.email_field :email, autocomplete: "email", class: "field-input" %>
-          <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-            <p class="field-help">Currently waiting confirmation for: <%= resource.unconfirmed_email %></p>
+          <% if current_user.pending_email.present? %>
+            <p class="field-help">
+              Waiting for the code sent to <strong class="break-all"><%= current_user.pending_email %></strong>.
+              <%= link_to "Enter it", email_change_path, class: "text-accent underline hover:text-primary" %>
+            </p>
+          <% else %>
+            <p class="field-help">A change takes effect once you enter a code we email to the new address.</p>
           <% end %>
         </div>
         <div>
-          <%= f.label :password, "New password", class: "field-label" %>
+          <%= f.label :password, current_user.has_password? ? "New password" : "Set a password (optional)", class: "field-label" %>
           <%= f.password_field :password, autocomplete: "new-password", class: "field-input" %>
         </div>
         <div>
@@ -30,12 +35,12 @@
       </div>
     </section>
 
-    <section class="card p-6 sm:p-8">
+    <section class="card p-6 sm:p-8" id="passkeys">
       <h2 class="font-serif text-2xl text-primary">Passkeys and two-factor</h2>
       <p class="mt-1 text-sm text-muted">More ways to keep your journal safe when you log in.</p>
 
       <div class="mt-5 flex flex-wrap gap-3">
-        <button class="button-secondary" id="add-passkey" type="button">Add Passkey</button>
+        <button class="button-secondary" id="add-passkey" type="button" data-proof-needed="<%= passkey_proof_needed? %>">Add Passkey</button>
         <%= link_to user_otp_token_path, id: "add-two-factor", class: "button-secondary" do %>
           <% if current_user.otp_enabled? %>
             <span class="slab-icon slab-icon--check text-green-700" aria-hidden="true"></span>
@@ -54,7 +59,12 @@
                 <p class="truncate font-medium text-primary"><%= credential.nickname %></p>
                 <p class="text-sm text-muted">Added <%= credential.created_at.strftime("%b %d, %Y") %></p>
               </div>
-              <%= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "shrink-0 text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+              <% if current_user.admin? %>
+                <%# AdminAccounts: an admin's passkeys are removed from the Rails console only. %>
+                <span class="shrink-0 text-sm text-muted">Admin passkey</span>
+              <% else %>
+                <%= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "shrink-0 text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+              <% end %>
             </li>
           <% end %>
         </ul>
@@ -62,17 +72,19 @@
     </section>
 
     <section class="card p-6 sm:p-8">
-      <%= f.label :current_password, class: "field-label" %>
-      <%= f.password_field :current_password, autocomplete: "current-password", class: "field-input" %>
-      <p class="field-help">Needed to change your email or password, or to add a passkey.</p>
+      <%= render "devise/shared/password_or_code", f: f, label: "Current password",
+                 help: (current_user.has_password? ? "Needed to change your email or password, or to add a passkey." : "Needed to change your email, set a password, or add a passkey.") %>
       <%= f.submit "Save Security Changes", class: "button-primary mt-5 w-full sm:w-auto j-edit-security", name: "submit_method", type: :submit %>
     </section>
 
+    <%= render "signed_in_devices" %>
     <%= render "oauth_connected_apps" %>
   <% end %>
 
-  <p class="mt-8 text-center text-sm text-muted">
-    To permanently delete your account and <%= pluralize(current_user.entries.count, "entry") %>,
-    <%= link_to "use the delete account page", delete_account_path, class: "font-medium text-red-700 underline underline-offset-2 hover:text-red-800" %>.
-  </p>
+  <% unless current_user.admin? %>
+    <p class="mt-8 text-center text-sm text-muted">
+      To permanently delete your account and <%= pluralize(current_user.entries.count, "entry") %>,
+      <%= link_to "use the delete account page", delete_account_path, class: "font-medium text-red-700 underline underline-offset-2 hover:text-red-800" %>.
+    </p>
+  <% end %>
 </div>

@@ -40,6 +40,19 @@ enum AppConfig {
     }
     #endif
 
+    /// "iPhone", "iPad" or "Mac", sent as X-Dabble-Device so the Sessions list on dabble.me can
+    /// name this device. Read from hw.machine (e.g. "iPad14,1"); no name or identifier leaves it.
+    static let deviceFamily: String = {
+        if ProcessInfo.processInfo.isiOSAppOnMac { return "Mac" }
+        var size = 0
+        sysctlbyname("hw.machine", nil, &size, nil, 0)
+        guard size > 0 else { return "iPhone" }
+        var machine = [CChar](repeating: 0, count: size)
+        sysctlbyname("hw.machine", &machine, &size, nil, 0)
+        let model = machine.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
+        return model.hasPrefix("iPad") ? "iPad" : "iPhone"
+    }()
+
     static func webURL(_ path: String) -> URL {
         baseURL.appending(path: path)
     }

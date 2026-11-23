@@ -1,0 +1,12 @@
+Hey <%= @user.first_name_or_fallback %>,
+
+Someone asked to move a Dabble Me account to this address (<%= @address %>). Here's the code to confirm it:
+
+<%= @code %>
+
+It works once, for the next <%= EmailCode::LIFETIME.in_minutes.to_i %> minutes.
+
+If that wasn't you, ignore this email. Nothing changes unless the code is entered.
+
+Thanks,
+Dabble Me

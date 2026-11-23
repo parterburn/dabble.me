@@ -7,7 +7,7 @@ module Api
     class BaseController < ActionController::API
       include Doorkeeper::Rails::Helpers
 
-      before_action -> { doorkeeper_authorize! MobileApp::SCOPE }
+      before_action :authorize_app_token!
       before_action :ensure_account_active
 
       rescue_from ActiveRecord::RecordNotFound do
@@ -15,6 +15,25 @@ module Api
       end
 
       private
+
+      # Sign-in and sign-up skip this: they're how the app gets a token.
+      def authorize_app_token!
+        doorkeeper_authorize! MobileApp::SCOPE
+        track_app_session! unless performed?
+      end
+
+      # The device's row in the Sessions list (AppSessions). A token whose device was signed out
+      # on dabble.me (or by Sign out of all devices) stops here.
+      def track_app_session!
+        return unless AppSessions.app_token?(doorkeeper_token)
+
+        if (session = AppSessions.for_token(doorkeeper_token, current_user, request))
+          Current.user_session = session
+        else
+          doorkeeper_token.revoke
+          render json: { error: 'unauthorized', message: 'Sign in again to continue.' }, status: :unauthorized
+        end
+      end
 
       def current_user
         @current_user ||= User.find(doorkeeper_token.resource_owner_id).tap do |user|
@@ -27,7 +46,7 @@ module Api
         return unless current_user.deletion_pending?
 
         render_error(:forbidden, 'account_pending_deletion',
-                     'This account is scheduled for deletion. Sign in at dabble.me to keep it.')
+                     'This account is scheduled for deletion. Sign in again to keep it.')
       end
 
       # PRO-only features (see each controller for which). Free accounts read and write

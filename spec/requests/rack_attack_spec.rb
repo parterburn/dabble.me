@@ -16,6 +16,32 @@ RSpec.describe 'Rack::Attack', type: :request do
     Rack::Attack.cache.store = original
   end
 
+  it "doesn't count Account Security saves, which always carry the current email, as email changes" do
+    user = create(:user, password: 'correct-horse-battery')
+    sign_in user
+
+    statuses = Array.new(12) do
+      put '/users', params: { user: { email: user.email, current_password: 'wrong' } },
+                    env: { 'REMOTE_ADDR' => '203.0.113.201' }
+      response.status
+    end
+
+    expect(statuses).to all(be < 429)
+  end
+
+  it 'throttles resending email-change codes from one IP' do
+    user = create(:user, password: 'correct-horse-battery')
+    sign_in user
+
+    statuses = Array.new(11) do
+      post '/security/email/resend', env: { 'REMOTE_ADDR' => '203.0.113.202' }
+      response.status
+    end
+
+    expect(statuses.first(10)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
   it 'throttles sign-in attempts against the same email across IP addresses' do
     email = 'throttle-target@example.com'
 
@@ -27,6 +53,71 @@ RSpec.describe 'Rack::Attack', type: :request do
     end
 
     expect(statuses.first(5)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
+  it "throttles the iOS app's native sign-in against the same email across IP addresses" do
+    statuses = Array.new(6) do |index|
+      post '/api/v1/session',
+        params: { email: 'app-target@example.com', password: 'wrong-password' }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => "203.0.113.#{index + 140}" }
+      response.status
+    end
+
+    expect(statuses.first(5)).to all(eq(401))
+    expect(statuses.last).to eq(429)
+  end
+
+  it "counts the app's sign-in against the email it signs in, not a decoy user[email]" do
+    statuses = Array.new(6) do |index|
+      post '/api/v1/session',
+        params: { user: { email: "decoy-#{index}@example.com" }, email: 'app-victim@example.com', password: 'wrong-password' }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => "203.0.113.#{index + 170}" }
+      response.status
+    end
+
+    expect(statuses.first(5)).to all(eq(401))
+    expect(statuses.last).to eq(429)
+  end
+
+  it "throttles the iOS app's native sign-ups by IP" do
+    statuses = Array.new(6) do |index|
+      post '/api/v1/registration',
+        params: { email: "signup-#{index}@example.com", password: 'short' }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => '203.0.113.160' }
+      response.status
+    end
+
+    expect(statuses.first(5)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
+  it "throttles emailed sign-in codes from one IP, whatever the address" do
+    statuses = Array.new(4) do |index|
+      post '/api/v1/session/code',
+        params: { email: "code-#{index}@example.com" }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => '203.0.113.200' }
+      response.status
+    end
+
+    expect(statuses.first(3)).to all(eq(202))
+    expect(statuses.last).to eq(429)
+  end
+
+  it "throttles guesses at emailed codes from one IP" do
+    statuses = Array.new(21) do |index|
+      post '/api/v1/session/code/verify',
+        params: { email: "guess-#{index}@example.com", code: '123456' }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => '203.0.113.201' }
+      response.status
+    end
+
+    expect(statuses.first(20)).to all(eq(401))
     expect(statuses.last).to eq(429)
   end
 
@@ -115,6 +206,16 @@ RSpec.describe 'Rack::Attack', type: :request do
     end
 
     expect(statuses.first(10)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
+  it "throttles App Store notifications from one IP past Apple's bursts" do
+    statuses = Array.new(301) do
+      post '/app_store/notifications', params: { signedPayload: 'x.y.z' }, as: :json, env: { 'REMOTE_ADDR' => '203.0.113.41' }
+      response.status
+    end
+
+    expect(statuses.first(300)).to all(be < 429)
     expect(statuses.last).to eq(429)
   end
 

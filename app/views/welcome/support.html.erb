@@ -1,16 +1,17 @@
-<% content_for :title, "Support and FAQs" %>
-<% content_for :description, "Answers to common Dabble Me questions: how email journaling works, free vs. PRO, importing entries, photos, privacy, and connecting ChatGPT or Claude." %>
+<% content_for :full_title, "Support & FAQs — Dabble Me Private Journal" %>
+<% content_for :description, "Answers on Dabble Me privacy, the iOS app, email journaling, Apple Intelligence, Claude & ChatGPT, exporting your data, and importing from Day One or OhLife." %>
 
 <%
 
 faq_sections = ApplicationHelper.faqs
+content_for :head, json_ld_script_tag(faq_page_json_ld(faq_sections))
 
 # Generate plain text for LLM copying
 llm_text = "I will ask you questions about Dabble Me (https://dabble.me), a private journaling service. Answer questions based on the terms of service (https://dabble.me/terms), privacy policy (https://dabble.me/privacy), and these FAQs:\n\n"
 faq_sections.each do |key, section|
   llm_text += "## #{section[:title]}\n\n"
   section[:questions].each do |qa|
-    plain_answer = ActionController::Base.helpers.strip_tags(qa[:a].to_s).squish
+    plain_answer = ApplicationHelper.faq_plain_text(qa[:a])
     llm_text += "Q: #{qa[:q]}\nA: #{plain_answer}\n\n"
   end
 end
@@ -21,7 +22,7 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="text-center mb-12">
-      <h1 class="font-serif text-4xl sm:text-5xl tracking-tight">Support</h1>
+      <h1 class="font-serif text-4xl sm:text-5xl tracking-tight">Support &amp; FAQs</h1>
       <div class="mt-4 text-lg leading-relaxed text-muted max-w-2xl mx-auto">
         <button 
           type="button"
@@ -29,7 +30,7 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
           onclick="copyFaqForLlm()"
           id="copy-llm-btn"
         ><span id="copy-llm-text">Copy these FAQs</span></button>
-        to ask questions in your favorite AI chat tool. If your question isn't answered below, email us at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex", class: "text-accent hover:text-primary font-medium underline") %>.
+        into your favorite AI chat tool, or browse by topic below. Still have a question? Email us anytime at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex", class: "text-accent hover:text-primary font-medium underline") %>.
       </div>      
     </div>
 

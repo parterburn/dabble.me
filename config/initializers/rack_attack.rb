@@ -6,8 +6,23 @@ class Rack::Attack
   PROBE_BAN_TIME = 1.hour
 
   # Throttle high volumes of requests by IP address
+  # App Store notifications can come in bursts from one Apple address; each is verified by its
+  # signature, and one that's throttled is only redelivered hours later.
+  APP_STORE_NOTIFICATIONS_PATH = '/app_store/notifications'.freeze
   throttle('req/ip', limit: 20, period: 20.seconds) do |req|
-    req.ip unless req.path.starts_with?('/assets')
+    req.ip unless req.path.starts_with?('/assets') || auth_path(req) == APP_STORE_NOTIFICATIONS_PATH
+  end
+
+  # The notifications' own limit, high enough for Apple's bursts: each one costs a signature
+  # check, and it's the one unauthenticated POST.
+  throttle('app_store_notifications/ip', limit: 300, period: 1.minute) do |req|
+    req.ip if req.post? && auth_path(req) == APP_STORE_NOTIFICATIONS_PATH
+  end
+
+  # Purchases and restores from the app: a handful at once is normal (a restore sends each
+  # transaction), hundreds is not.
+  throttle('apple_subscriptions/ip', limit: 30, period: 1.minute) do |req|
+    req.ip if req.post? && auth_path(req) == '/api/v1/apple_subscriptions'
   end
 
   # Throttle OTP second-factor challenge attempts per challenge token and per IP
@@ -61,6 +76,120 @@ class Rack::Attack
 
   throttle('signups/email', limit: 5, period: 1.hour) do |req|
     submitted_email(req) if auth_path(req) == '/users' && req.post?
+  end
+
+  # Gift links (/gift/<code>): enough for someone retyping a code, too few to guess one.
+  throttle('gifts/ip', limit: 20, period: 1.hour) do |req|
+    req.ip if auth_path(req).start_with?('/gift/')
+  end
+
+  # The iOS app's native sign-in, sign-up and account deletion: the same limits as the
+  # web's forms. Each 2FA code tried is a sign-in attempt too, so these cover codes.
+  APP_SIGN_IN_PATH = '/api/v1/session'.freeze
+  APP_SIGN_UP_PATH = '/api/v1/registration'.freeze
+  APP_DELETION_PATH = '/api/v1/account_deletion'.freeze
+  APP_PASSKEYS_PATH = '/api/v1/passkeys'.freeze
+
+  throttle('app/logins/ip', limit: 5, period: 20.seconds) do |req|
+    req.ip if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+  end
+
+  throttle('app/logins/ip/hour', limit: 20, period: 1.hour) do |req|
+    req.ip if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+  end
+
+  throttle('app/logins/email', limit: 5, period: 20.seconds) do |req|
+    submitted_app_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+  end
+
+  throttle('app/logins/email/hour', limit: 20, period: 1.hour) do |req|
+    submitted_app_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+  end
+
+  # The app's passkey sign-in: the same limits as the web's /passkeys/sessions.
+  throttle('app/passkeys/challenge/ip', limit: 30, period: 1.minute) do |req|
+    req.ip if auth_path(req) == "#{APP_SIGN_IN_PATH}/passkey" && req.get?
+  end
+
+  throttle('app/passkeys/sign-in/ip', limit: 10, period: 1.minute) do |req|
+    req.ip if auth_path(req) == "#{APP_SIGN_IN_PATH}/passkey" && req.post?
+  end
+
+  # Adding a passkey from the app can take the password: as many guesses as Delete Account.
+  # Each add is two calls (options, then the passkey), each checking the password.
+  APP_PASSKEY_PATHS = [APP_PASSKEYS_PATH, "#{APP_PASSKEYS_PATH}/options"].freeze
+
+  throttle('app/passkeys/add/ip', limit: 10, period: 10.minutes) do |req|
+    req.ip if APP_PASSKEY_PATHS.include?(auth_path(req)) && req.post?
+  end
+
+  throttle('app/passkeys/add/token', limit: 10, period: 10.minutes) do |req|
+    next unless APP_PASSKEY_PATHS.include?(auth_path(req)) && req.post?
+
+    token = req.env['HTTP_AUTHORIZATION'].to_s[/\ABearer\s+(\S+)/i, 1]
+    Digest::SHA256.hexdigest(token) if token
+  end
+
+  throttle('app/signups/ip', limit: 5, period: 1.hour) do |req|
+    req.ip if auth_path(req) == APP_SIGN_UP_PATH && req.post?
+  end
+
+  throttle('app/signups/email', limit: 5, period: 1.hour) do |req|
+    submitted_app_email(req) if auth_path(req) == APP_SIGN_UP_PATH && req.post?
+  end
+
+  throttle('app/deletions/ip', limit: 5, period: 10.minutes) do |req|
+    req.ip if auth_path(req) == APP_DELETION_PATH && req.post?
+  end
+
+  # Per token too, so a stolen token can't guess the password from many addresses.
+  throttle('app/deletions/token', limit: 5, period: 10.minutes) do |req|
+    next unless auth_path(req) == APP_DELETION_PATH && req.post?
+
+    token = req.env['HTTP_AUTHORIZATION'].to_s[/\ABearer\s+(\S+)/i, 1]
+    Digest::SHA256.hexdigest(token) if token
+  end
+
+  # Emailed sign-in codes (EmailSignIn), web and app. EmailCode also caps codes per address
+  # (SENDS_PER_HOUR) and guesses per code and per day, whatever the IP; these keep one address
+  # from mailing many inboxes, or guessing at many.
+  EMAIL_CODE_SEND_PATHS = ['/users/sign_in/code', '/users/sign_in/code/resend', '/api/v1/session/code'].freeze
+  EMAIL_CODE_VERIFY_PATHS = ['/users/sign_in/code/verify', '/api/v1/session/code/verify'].freeze
+  CONFIRMATION_CODE_PATHS = ['/users/confirmation_code', '/api/v1/confirmation_code'].freeze
+
+  throttle('email_codes/send/ip', limit: 10, period: 1.hour) do |req|
+    req.ip if req.post? && EMAIL_CODE_SEND_PATHS.include?(auth_path(req))
+  end
+
+  throttle('email_codes/send/ip/minute', limit: 3, period: 1.minute) do |req|
+    req.ip if req.post? && EMAIL_CODE_SEND_PATHS.include?(auth_path(req))
+  end
+
+  # The app's endpoint reads only a top-level email; the web's reads user[email] first.
+  throttle('email_codes/send/email', limit: 5, period: 1.hour) do |req|
+    next unless req.post? && EMAIL_CODE_SEND_PATHS.include?(auth_path(req))
+
+    auth_path(req).start_with?('/api/') ? submitted_app_email(req) : submitted_email(req)
+  end
+
+  throttle('email_codes/verify/ip', limit: 20, period: 10.minutes) do |req|
+    req.ip if req.post? && EMAIL_CODE_VERIFY_PATHS.include?(auth_path(req))
+  end
+
+  throttle('email_codes/confirm/ip', limit: 10, period: 1.hour) do |req|
+    req.ip if !req.get? && CONFIRMATION_CODE_PATHS.include?(auth_path(req))
+  end
+
+  # Changing the email on Account Security mails a code to the new address
+  # (EmailChangesController). The first code goes out from PUT /users, which the Account
+  # Security form also uses for every other save, so EmailCode.send_new_email_code caps those
+  # per account (whatever the address or IP) rather than counting every save here.
+  throttle('email_changes/send/ip', limit: 10, period: 1.hour) do |req|
+    req.ip if req.post? && auth_path(req) == '/security/email/resend'
+  end
+
+  throttle('email_changes/verify/ip', limit: 20, period: 10.minutes) do |req|
+    req.ip if req.post? && auth_path(req) == '/security/email'
   end
 
   throttle('checkout/ip', limit: 10, period: 10.minutes) do |req|
@@ -121,6 +250,15 @@ class Rack::Attack
     user_params = params['user']
     email = user_params['email'] if user_params.is_a?(Hash)
     email = params['email'] unless email.is_a?(String)
+    return unless email.is_a?(String)
+
+    email.strip.downcase.presence
+  end
+
+  # The app's endpoints read only a top-level email, so count that one: a decoy user[email]
+  # must not let guesses at the real address go uncounted.
+  def self.submitted_app_email(req)
+    email = auth_params(req)['email']
     return unless email.is_a?(String)
 
     email.strip.downcase.presence

@@ -17,7 +17,8 @@ class WelcomeController < ApplicationController
   end
 
   def subscribe
-    if user_signed_in? && current_user.is_pro?
+    # A gifted year (Gift) is PRO without a subscription, so it gets the checkout buttons.
+    if user_signed_in? && current_user.is_pro? && !current_user.gifted_pro?
       render "pro_subscribed", layout: 'application'
     else
       render "subscribe", layout: "marketing"

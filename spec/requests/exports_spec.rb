@@ -260,4 +260,75 @@ RSpec.describe 'Exports', type: :request do
       expect(flash[:alert]).to include('try again later')
     end
   end
+
+  describe 'POST /api/v1/exports, from the app' do
+    let!(:mobile_app) { MobileApp.ensure_application! }
+    let(:headers) { { 'Authorization' => "Bearer #{MobileApp.issue_token!(user).plaintext_token}" } }
+
+    def json
+      JSON.parse(response.body)
+    end
+
+    it 'starts the same export as the web, with no web sign-in, and says where the email goes' do
+      expect { post '/api/v1/exports', headers: headers, as: :json }
+        .to have_enqueued_job(ExportEntriesJob).with(kind_of(Integer))
+
+      expect(response).to have_http_status(:accepted)
+      expect(json).to eq('status' => 'started', 'email' => user.email)
+      expect(user.exports.last.scope).to eq('all')
+    end
+
+    it "doesn't start a second while one is being prepared" do
+      user.exports.create!(scope: 'all')
+
+      expect { post '/api/v1/exports', headers: headers, as: :json }.not_to(change { Export.count })
+      expect(json['status']).to eq('preparing')
+    end
+
+    it 'starts over when the one being prepared was lost with its worker' do
+      lost = user.exports.create!(scope: 'all')
+      lost.update_columns(created_at: (Export::PREPARING_TIMEOUT + 1.minute).ago)
+
+      expect { post '/api/v1/exports', headers: headers, as: :json }
+        .to have_enqueued_job(ExportEntriesJob).with(kind_of(Integer))
+      expect(json['status']).to eq('started')
+      expect(lost.reload.status).to eq('failed')
+    end
+
+    it 'emails the link again for one that is ready' do
+      export.update!(scope: 'all')
+
+      expect { post '/api/v1/exports', headers: headers, as: :json }
+        .to have_enqueued_mail(UserMailer, :export_ready).with(export)
+      expect(json['status']).to eq('sent')
+      expect(Export.count).to eq(1)
+    end
+
+    it 're-sends a ready export only a few times an hour, across every token' do
+      export.update!(scope: 'all')
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+
+      Api::V1::ExportsController::RESEND_LIMIT.times do
+        post '/api/v1/exports', headers: headers, as: :json
+        expect(json['status']).to eq('sent')
+      end
+      other = { 'Authorization' => "Bearer #{MobileApp.issue_token!(user).plaintext_token}" }
+      expect { post '/api/v1/exports', headers: other, as: :json }.not_to have_enqueued_mail(UserMailer, :export_ready)
+      expect(response).to have_http_status(:too_many_requests)
+      expect(json['error']).to eq('export_limit')
+    end
+
+    it 'stops at the hourly limit' do
+      Export::HOURLY_LIMIT.times { |i| user.exports.create!(scope: "year:#{2000 + i}", status: 'failed') }
+
+      expect { post '/api/v1/exports', headers: headers, as: :json }.not_to(change { Export.count })
+      expect(response).to have_http_status(:too_many_requests)
+      expect(json['error']).to eq('export_limit')
+    end
+
+    it 'needs an app token' do
+      post '/api/v1/exports', as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
 end

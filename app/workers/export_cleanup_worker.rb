@@ -5,8 +5,7 @@ class ExportCleanupWorker
 
   sidekiq_options retry: false, queue: :default
 
-  # An export still "preparing" after this long was lost with its worker.
-  STUCK_AFTER = 6.hours
+  STUCK_AFTER = Export::PREPARING_TIMEOUT
 
   def perform
     Export.with_file.past_expiry.find_each do |export|

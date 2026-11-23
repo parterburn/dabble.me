@@ -3,6 +3,29 @@ require "rails_helper"
 RSpec.describe UserMailer do
   let(:user) { create(:user, email: "mcp-test@example.com", first_name: "Ada") }
 
+  describe "#export_ready" do
+    let(:export) do
+      user.exports.create!.tap do |export|
+        export.update_columns(status: "ready", storage_key: "exports/x.zip", entry_count: 3, image_count: 0,
+                              expires_at: 7.days.from_now)
+      end
+    end
+
+    it "says to download it before deleting the account" do
+      body = described_class.export_ready(export).text_part.body.decoded
+
+      expect(body).to include("If you delete your account, the export is deleted with it")
+    end
+
+    it "says the export goes with an account that's being deleted" do
+      user.update_column(:deleted_at, Time.current)
+      email = described_class.export_ready(export)
+
+      expect(email.text_part.body.decoded).to include("Your account is being deleted, and this export goes with it.")
+      expect(email.html_part.body.decoded).to include("Your account is being deleted, and this export goes with it.")
+    end
+  end
+
   describe "#posting_address_changed" do
     it "comes from the new posting address and shows it" do
       email = described_class.posting_address_changed(user)
@@ -39,6 +62,34 @@ RSpec.describe UserMailer do
   end
 
   describe "#welcome_email" do
+    def welcome_text(user)
+      email = described_class.welcome_email(user)
+      [email.html_part.body.decoded, email.text_part.body.decoded]
+    end
+
+    it "asks a web sign-up to reply with their first entry" do
+      user.update!(signup_platform: "web")
+
+      welcome_text(user).each do |body|
+        expect(body).to include("Just reply to this email with your answer")
+        expect(body).not_to include("Open the Dabble Me app")
+      end
+    end
+
+    it "leads an app sign-up to the app, with replying by email as the aside" do
+      user.update!(signup_platform: "ios_app")
+
+      welcome_text(user).each do |body|
+        expect(body).to include("Open the Dabble Me app and write a sentence or two")
+        expect(body).to include("Settings → Reminders")
+        expect(body).to include("Prefer email? Reply to this one")
+        expect(body).not_to include("Just reply to this email with your answer")
+      end
+      text = described_class.welcome_email(user).text_part.body.decoded
+      expect(text).to match(/^4\. Turn on a daily reminder/)
+      expect(text).to match(/^6\. Unlock premium features/)
+    end
+
     it "links to settings with a token instead of the posting address" do
       email = described_class.welcome_email(user)
       body = email.html_part.body.decoded + email.text_part.body.decoded
@@ -47,11 +98,34 @@ RSpec.describe UserMailer do
       expect(body).not_to include("/settings/#{user.user_key}")
     end
 
-    it "points to the iOS app's beta, in both parts" do
+    it "doesn't send a new (free) account the iOS beta: a TestFlight purchase is free" do
       email = described_class.welcome_email(user)
+
+      expect(email.html_part.body.decoded + email.text_part.body.decoded).not_to include(ApplicationHelper.ios_testflight_url)
+    end
+
+    it "gives a new PRO member the iOS beta, in both parts, and never an account that isn't PRO" do
+      user.update!(plan: "PRO Monthly PayHere")
+      email = described_class.thanks_for_paying(user)
 
       expect(email.html_part.body.decoded).to include(%(href="#{ApplicationHelper.ios_testflight_url}"))
       expect(email.text_part.body.decoded).to include(ApplicationHelper.ios_testflight_url)
+
+      user.update!(plan: "Free")
+      email = described_class.thanks_for_paying(user)
+      expect(email.html_part.body.decoded + email.text_part.body.decoded).not_to include(ApplicationHelper.ios_testflight_url)
+    end
+
+    it "skips the iPhone app pitch for an Apple plan, which was bought in the app" do
+      ["PRO Monthly Apple", "PRO Yearly Apple"].each do |plan|
+        user.update!(plan: plan)
+        email = described_class.thanks_for_paying(user)
+        body = email.html_part.body.decoded + email.text_part.body.decoded
+
+        expect(body).to include("Thanks for subscribing to")
+        expect(body).not_to include(ApplicationHelper.ios_testflight_url)
+        expect(body).not_to include("On an iPhone or iPad?")
+      end
     end
   end
 
@@ -109,3 +183,4 @@ RSpec.describe UserMailer do
     end
   end
 end
+

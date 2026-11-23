@@ -1,6 +1,9 @@
 import AVFoundation
 import PhotosUI
 import SwiftUI
+#if canImport(JournalingSuggestions)
+import JournalingSuggestions
+#endif
 
 struct ComposeView: View {
     enum Mode {
@@ -25,6 +28,8 @@ struct ComposeView: View {
     @State private var askRowHeight: CGFloat = 0
     /// The row's heading, which stays put over what scrolls.
     @State private var askHeadingHeight: CGFloat = 30
+    /// "Moments from your iPhone", the row's foot, which stays put under what scrolls too.
+    @State private var momentsFootHeight: CGFloat = 0
     /// The most the row ever takes, whatever's in it (a long prompt with no events under it).
     private static let askRowMaxHeight: CGFloat = 212
     /// On a busy day: the prompt, two events and the top half of a third, which says there's more
@@ -47,6 +52,8 @@ struct ComposeView: View {
     @State private var showsFormatBar = false
     @State private var boldHeldAt: Date?
     @State private var autoTagNotice: String?
+    /// Space between a notice floating over the text and the bar's buttons under it.
+    private static let noticeGap: CGFloat = 12
     @State private var photoItems: [PhotosPickerItem] = []
     /// Prepared photos keyed by picker item, so re-selecting doesn't redo the work.
     @State private var prepared: [PhotosPickerItem: PreparedPhoto] = [:]
@@ -67,6 +74,8 @@ struct ComposeView: View {
     /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
     /// and opening it again asks a new one.
     @State private var showsAskRow = false
+    /// Speaking the entry (the bar's microphone): recorded, then written in where the cursor is.
+    @State private var dictation = Dictation()
 
     @State private var question: String?
     @State private var askedQuestions: [String] = []
@@ -86,6 +95,11 @@ struct ComposeView: View {
     @State private var pickingPhotos = false
     /// A free account tapped Photos: a note that they're part of PRO.
     @State private var explainingProPhotos = false
+    /// Apple's Journaling Suggestions sheet is open ("Moments from your iPhone", iPhone only).
+    @State private var pickingMoment = false
+    /// A moment picked from another day than the entry's, with that day: which one it goes on
+    /// is asked first.
+    @State private var momentFromAnotherDay: (moment: Moment, day: Date)?
     /// A one-time tip about a touch-and-hold shortcut (`showTipOnce`).
     @State private var tip: String?
     @State private var takingPhoto = false
@@ -109,16 +123,18 @@ struct ComposeView: View {
     private let originalBlocks: [DocumentBlock]
     /// The writer's template (Settings → Entry Template), as it was when this opened.
     private let template: [DocumentRun]
-    /// A new entry set to start with the template.
+    /// The template as the empty page shows it: its words, without the blank lines left for writing.
+    private let templatePreview: AttributedString
+    /// A new entry started from the template (a held Write button).
     private let startsWithTemplate: Bool
-    /// The editor holds the template and nothing else yet (a new entry set to start with it):
+    /// The editor holds the template and nothing else yet (a new entry started from it):
     /// there's nothing to save until something's written.
     @State private var isUntouchedTemplate: Bool
     /// The lightbulb button was held (so the tap that ends the hold doesn't also open its row).
     @State private var heldAskIcon = false
 
     /// `day`: a new entry for that day (Stats' grid), not today. `withTemplate`: a new entry
-    /// that starts from the writer's template whatever the setting says (a held Write button).
+    /// that starts from the writer's template (a held Write button).
     init(mode: Mode, day: JournalDay? = nil, withTemplate: Bool = false, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
         self.mode = mode
         self.onSaved = onSaved
@@ -134,11 +150,12 @@ struct ComposeView: View {
             DraftStore.clear(key)
         }
         draftKey = key
-        // A new entry set to start with the template has it from the outset, and again after
-        // Start Over. A draft, as ever, comes first.
+        // A new entry started from the template (a held Write button) has it from the outset,
+        // and again after Start Over. A draft, as ever, comes first.
         let template = EntryTemplate.runs
         self.template = template
-        let startsWithTemplate = entry == nil && !template.isEmpty && (EntryTemplate.addsToNewEntries || withTemplate)
+        templatePreview = EntryTemplate.preview(template)
+        let startsWithTemplate = entry == nil && !template.isEmpty && withTemplate
         self.startsWithTemplate = startsWithTemplate
         originalBlocks = original
         _isUntouchedTemplate = State(initialValue: startsWithTemplate && draft == nil)
@@ -161,7 +178,8 @@ struct ComposeView: View {
         let picked = JournalDay(localDate: date)
         return picked.iso == entry.date ? nil : picked
     }
-    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
+    /// (Speech still being recorded or written counts: closing would drop it.)
+    private var hasChanges: Bool { dictation.isActive || editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
     private var canSave: Bool {
         guard !isSaving, !isLoadingPhotos else { return false }
         return isNew ? ((!editor.isEmpty && !isUntouchedTemplate) || !photos.isEmpty)
@@ -170,8 +188,9 @@ struct ComposeView: View {
 
     /// There's something to keep as a draft: words, photos, or a removed photo.
     private var canSaveDraft: Bool {
-        (!editor.isEmpty || !photoItems.isEmpty || removesExistingPhoto)
-            && (editor.isDirty || restoredDraft != nil || !photoItems.isEmpty || removesExistingPhoto)
+        dictation.isActive
+            || ((!editor.isEmpty || !photoItems.isEmpty || removesExistingPhoto)
+                && (editor.isDirty || restoredDraft != nil || !photoItems.isEmpty || removesExistingPhoto))
     }
 
     /// Editing: the entry's photo (or collage) as it is now, unless removed. New photos join it in a collage.
@@ -189,88 +208,15 @@ struct ComposeView: View {
                 if restoredDraft != nil { draftBanner }
                 if isSimplified { simplifiedBanner }
                 Divider()
-                // The bar's icons are olive, not black: there are a lot of them, next to the writing.
-                RichTextEditor(model: editor,
-                               leading: isFormattingSelection ? linkButtons.map { AnyView($0.foregroundStyle(.tint)) }
-                                   : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
-                               trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
-                               trailingEnd: isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil,
-                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
-                               row: openRow)
-                    // Low in the page, over the bar: clear of the entry's first lines.
-                    .overlay(alignment: .bottom) {
-                        if let autoTagNotice {
-                            Text(autoTagNotice)
-                                .font(.subheadline.weight(.medium))
-                                .lineLimit(2)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(.regularMaterial, in: .capsule)
-                                .padding(.bottom, 68)
-                                .padding(.horizontal, 24)
-                                .transition(.opacity)
-                                .allowsHitTesting(false)
-                                .accessibilityAddTraits(.updatesFrequently)
-                        }
-                    }
-                    .overlay(alignment: .topLeading) {
-                        if editor.isEmpty {
-                            // About the day being written: today, yesterday, or another by name.
-                            Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
-                                .font(Font(RichText.Style.journal.baseFont))
-                                .foregroundStyle(.tertiary)
-                                .padding(.top, 16)
-                                .padding(.leading, 17)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                        }
-                    }
+                // (Its own property: in one expression with the rest, it was too much for the compiler to type-check.)
+                editorPage
             }
             .overlay {
                 if isSaving { savingOverlay }
             }
             .navigationTitle(isNew ? "New Entry" : "Edit Entry")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // The date is the title, which leaves more room to write.
-                ToolbarItem(placement: .principal) { dateTitle }
-                ToolbarItem(placement: .cancellationAction) {
-                    // With something to lose, Cancel drops down Save Draft and Discard, no
-                    // question around them: a tap outside it is Keep Writing.
-                    if hasChanges {
-                        Menu("Cancel") {
-                            // A draft is kept on this device and comes back the next time this is opened.
-                            if canSaveDraft {
-                                Button("Save Draft") {
-                                    draftSave?.cancel()
-                                    saveDraftNow()
-                                    dismiss()
-                                }
-                            }
-                            Button("Discard", role: .destructive) {
-                                discardDraft()
-                                dismiss()
-                            }
-                        }
-                    } else {
-                        Button("Cancel") {
-                            discardDraft()
-                            dismiss()
-                        }
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isSaving {
-                        TypingDots(size: .small)
-                            .accessibilityLabel("Saving")
-                            .padding(.horizontal, 8)
-                    } else {
-                        Button("Save") { Task { await save() } }
-                            .disabled(!canSave)
-                    }
-                }
-            }
+            .toolbar { composerToolbar }
             .interactiveDismissDisabled(hasChanges || isSaving)
             // An alert, for its Cancel button (a confirmation dialog shows none here): Cancel puts
             // the date back to the entry's own day.
@@ -291,14 +237,61 @@ struct ComposeView: View {
                 CameraPicker { image in Task { await addCameraPhoto(image) } }
                     .ignoresSafeArea()
             }
-            // Held open, the format buttons go when the cursor's put somewhere else, and a
-            // selection (which shows them itself) takes over from the hold.
-            .onChange(of: editor.caretMoves) { showsFormatBar = false }
-            .onChange(of: editor.hasSelection) { showsFormatBar = false }
-            .onChange(of: editor.isEditingLink) { _, editing in
-                // One row at a time (the link row also opens by selecting a link).
-                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
+            // (In a function of its own: one chain this long was too much for the compiler to type-check.)
+            .composed { rowsAndDictation($0) }
+            .composed { photosMomentsAndDrafts($0) }
+        }
+    }
+
+    /// The date as the title, Cancel (or Save Draft and Discard), and Save.
+    @ToolbarContentBuilder private var composerToolbar: some ToolbarContent {
+        // The date is the title, which leaves more room to write.
+        ToolbarItem(placement: .principal) { dateTitle }
+        ToolbarItem(placement: .cancellationAction) {
+            // With something to lose, Cancel drops down Save Draft and Discard, no
+            // question around them: a tap outside it is Keep Writing.
+            if hasChanges {
+                Menu("Cancel") {
+                    // A draft is kept on this device and comes back the next time this is opened.
+                    if canSaveDraft {
+                        Button("Save Draft") {
+                            // What's still being said goes in first.
+                            Task {
+                                await dictation.finish()
+                                draftSave?.cancel()
+                                saveDraftNow()
+                                dismiss()
+                            }
+                        }
+                    }
+                    Button("Discard", role: .destructive) {
+                        discardDraft()
+                        dismiss()
+                    }
+                }
+            } else {
+                Button("Cancel") {
+                    discardDraft()
+                    dismiss()
+                }
             }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            if isSaving {
+                TypingDots(size: .small)
+                    .accessibilityLabel("Saving")
+                    .padding(.horizontal, 8)
+            } else {
+                Button("Save") { Task { await save() } }
+                    .disabled(!canSave)
+            }
+        }
+    }
+
+    /// Photos, hashtags, moments and the draft: the rest of the composer's modifiers, apart from
+    /// `body` so the compiler type-checks them on their own.
+    private func photosMomentsAndDrafts<Content: View>(_ content: Content) -> some View {
+        content
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .onChange(of: photoItems) { old, new in
@@ -321,10 +314,25 @@ struct ComposeView: View {
             } message: {
                 Text(tip ?? "")
             }
-            .alert("Photos are a PRO feature", isPresented: $explainingProPhotos) {
-                Button("OK", role: .cancel) {}
+            // Photos are PRO: what PRO adds, with the plans to subscribe right there.
+            .sheet(isPresented: $explainingProPhotos) { ProInfoView(feature: .photos) }
+            #if canImport(JournalingSuggestions)
+            .journalingSuggestionsPicker(isPresented: $pickingMoment) { suggestion in
+                await addMoment(suggestion)
+            }
+            #endif
+            .confirmationDialog(momentFromAnotherDay.map { "This moment is from \(Self.momentDayName($0.day, weekday: true))." } ?? "",
+                                isPresented: .present($momentFromAnotherDay), titleVisibility: .visible) {
+                if let pending = momentFromAnotherDay {
+                    Button("Add to \(Self.momentDayName(pending.day))") {
+                        date = pending.day
+                        insertMoment(pending.moment)
+                    }
+                    Button("Add Here") { insertMoment(pending.moment) }
+                    Button("Cancel", role: .cancel) {}
+                }
             } message: {
-                Text("With Dabble Me PRO you can add up to \(photoLimit) photos to an entry.")
+                Text("Adding it to that day moves this entry there.")
             }
             .onChange(of: editor.revision) {
                 isUntouchedTemplate = false
@@ -333,22 +341,170 @@ struct ComposeView: View {
             .onChange(of: date) { scheduleDraftSave() }
             .onChange(of: removesExistingPhoto) { scheduleDraftSave() }
             .task { await restoreDraftPhotos() }
-            .onChange(of: scenePhase) { _, phase in
-                if phase != .active { saveDraftNow() }
-            }
-            .onAppear {
-                editor.allowsLinks = model.me?.mayAddLinks == true
-                // Today's date in the journal's time zone, preferring the freshest source.
-                if isNew, !startsOnDay, restoredDraft?.date == nil, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
-                    date = today.localDate
-                }
-            }
-            .task {
-                // Give the sheet a moment to settle so the keyboard animates in with it.
-                try? await Task.sleep(for: .milliseconds(350))
+            .onChange(of: scenePhase) { _, phase in scenePhaseChanged(to: phase) }
+            .onAppear { prepareOnAppear() }
+            .task { await focusThenPrewarm() }
+    }
+
+    /// On opening: links allowed or not, the swipe that adds the template, and the day to write.
+    private func prepareOnAppear() {
+        editor.allowsLinks = model.me?.mayAddLinks == true
+        // A swipe right across the empty page puts the template in.
+        if !template.isEmpty {
+            editor.onSwipeRightWhenEmpty = { [editor, template] in
+                HoldHaptic.play()
+                editor.addTemplate(template)
                 editor.focus()
             }
         }
+        // Today's date in the journal's time zone, preferring the freshest source.
+        guard isNew, !startsOnDay, restoredDraft?.date == nil else { return }
+        let fromAccount: JournalDay? = model.me.flatMap { JournalDay($0.today) }
+        if let today = model.today?.day ?? fromAccount {
+            date = today.localDate
+        }
+    }
+
+    /// The keyboard up once the sheet's settled, then the speech model loaded.
+    private func focusThenPrewarm() async {
+        // Give the sheet a moment to settle so the keyboard animates in with it.
+        try? await Task.sleep(for: .milliseconds(350))
+        editor.focus()
+        // Then, once the keyboard's up, the speech model loads, so the mic records at its
+        // tap. Nothing that slows the composer: no microphone, and the loading is iOS's.
+        try? await Task.sleep(for: .milliseconds(400))
+        guard !Task.isCancelled else { return }
+        dictation.prewarm()
+    }
+
+    private func scenePhaseChanged(to phase: ScenePhase) {
+        if phase != .active { saveDraftNow() }
+        // Leaving mid-recording: what was said is written in, then the draft saved again
+        // (if iOS suspends the app first, that finishes when it's back).
+        if phase == .background, dictation.isActive {
+            Task {
+                await dictation.finish()
+                saveDraftNow()
+            }
+        }
+    }
+
+    /// The editor and what floats over it: notices low over the bar, and the empty page's
+    /// question or template.
+    private var editorPage: some View {
+        // The bar's icons are olive, not black: there are a lot of them, next to the writing.
+        RichTextEditor(model: editor, leading: barLeading, trailing: barTrailing, trailingEnd: barTrailingEnd,
+                       barKey: barKey,
+                       row: openRow)
+            // Low in the page, over the bar: clear of the entry's first lines.
+            .overlay(alignment: .bottom) {
+                if let autoTagNotice {
+                    Text(autoTagNotice)
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(.regularMaterial, in: .capsule)
+                        .padding(.bottom, noticeBottom)
+                        .padding(.horizontal, 24)
+                        .transition(.opacity)
+                        .allowsHitTesting(false)
+                        .accessibilityAddTraits(.updatesFrequently)
+                }
+            }
+            // Why dictation couldn't listen: a toast over the bar, not in the row.
+            .overlay(alignment: .bottom) {
+                if let problem = dictation.problem {
+                    DictationProblemToast(problem: problem) { dictation.clearProblem() }
+                        .padding(.bottom, noticeBottom)
+                        .padding(.horizontal, 24)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: dictation.problem)
+            .animation(.easeOut(duration: 0.2), value: editor.barCover)
+            .overlay(alignment: .topLeading) {
+                if editor.isEmpty {
+                    Group {
+                        // With a template, the empty page is the template itself, under a
+                        // line that says how to use it. Without, a question about the day
+                        // being written: today, yesterday, or another by name.
+                        if !template.isEmpty {
+                            templatePlaceholder
+                        } else {
+                            Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
+                                .font(Font(RichText.Style.journal.baseFont))
+                                .foregroundStyle(.tertiary)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .padding(.top, 16)
+                    .padding(.leading, 17)
+                    .padding(.trailing, 17)
+                }
+            }
+    }
+
+    /// The bar's left end: a selection's link buttons, or photos.
+    private var barLeading: AnyView? {
+        if isFormattingSelection { return linkButtons.map { AnyView($0.foregroundStyle(.tint)) } }
+        let photos = model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)
+        return AnyView(photos.foregroundStyle(.tint))
+    }
+
+    /// The bar's right side: a selection's format buttons, or tags and links.
+    private var barTrailing: AnyView {
+        let buttons = isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)
+        return AnyView(buttons.foregroundStyle(.tint))
+    }
+
+    /// With a selection, the button that closes its formats.
+    private var barTrailingEnd: AnyView? {
+        isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil
+    }
+
+    /// What the bar shows depends on: when it changes, the bar's rebuilt.
+    private var barKey: String {
+        "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)"
+    }
+
+    /// How far up a notice floats: just over the bar's buttons.
+    private var noticeBottom: CGFloat { editor.barCover + Self.noticeGap }
+
+    /// The rows over the keyboard taking turns, and dictation's hooks into the composer: what
+    /// ends a recording, its haptics, and how long a problem shows.
+    private func rowsAndDictation<Content: View>(_ content: Content) -> some View {
+        content
+            // Held open, the format buttons go when the cursor's put somewhere else, and a
+            // selection (which shows them itself) takes over from the hold.
+            .onChange(of: editor.caretMoves) { showsFormatBar = false }
+            .onChange(of: editor.hasSelection) { showsFormatBar = false }
+            .onChange(of: editor.isEditingLink) { _, editing in
+                // One row at a time (the link row also opens by selecting a link).
+                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
+            }
+            // One row at a time: another one opening ends the recording (what was said is still
+            // written in), as does the keyboard (and the bar with it) going away, or the app.
+            .onChange(of: showsHashtagBar || showsAskRow || showsPhotoDrawer || editor.isEditingLink) { _, open in
+                if open { dictation.stop(); dictation.clearProblem() }
+            }
+            .onChange(of: editor.isFocused) { _, focused in
+                if !focused, dictation.state == .listening { dictation.stop() }
+            }
+            .onDisappear { dictation.cancel() }
+            // A tap in the hand as the recording starts, and another as it stops (Done, a held mic
+            // let go, the X, or the silence limit).
+            // (`.start` and `.stop` only play on watchOS: impacts, firmer to start, lighter to stop.)
+            .sensoryFeedback(.impact(weight: .medium), trigger: dictation.state) { (_: Dictation.State, now: Dictation.State) in now == .listening }
+            .sensoryFeedback(.impact(weight: .light), trigger: dictation.state) { (was: Dictation.State, now: Dictation.State) in was == .listening && now != .listening }
+            // Why it couldn't listen is said for a while, then the row closes.
+            .task(id: dictation.problem) {
+                guard dictation.problem != nil else { return }
+                try? await Task.sleep(for: .seconds(8))
+                if !Task.isCancelled { dictation.clearProblem() }
+            }
     }
 
     /// The entry's date, which can be changed: for a new entry, and to move one being edited to
@@ -381,6 +537,8 @@ struct ComposeView: View {
     private var openRow: AnyView? {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
+        } else if dictation.isActive {
+            AnyView(DictationRow(dictation: dictation))
         } else if let typed = editor.typedHashtag, !hashtagCompletions(for: typed).isEmpty {
             // A hashtag being typed: the writer's tags that start that way, whatever row was open.
             AnyView(hashtagCompletionRow(hashtagCompletions(for: typed)))
@@ -506,7 +664,7 @@ struct ComposeView: View {
                 Image(systemName: "link")
                     .font(.system(size: 17, weight: .medium))
                     .frame(width: 40, height: 36)
-                    .background(editor.isEditingLink ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(editor.isEditingLink ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -566,8 +724,8 @@ struct ComposeView: View {
     /// held: the bar shows `linkButtons` and `selectionButtons`, and nothing else.
     private var isFormattingSelection: Bool { editor.hasSelection || editor.isEditingLink || showsFormatBar }
 
-    /// The bar's right, with nothing selected: Bold (for what's typed next), Tags (the hashtag row), then Prompt
-    /// (the lightbulb) at the far edge. Each row button is selected while its row is open; one row at a time.
+    /// The bar's right, with nothing selected: Bold (for what's typed next), Tags (the hashtag row), Prompt
+    /// (the lightbulb), then the microphone (speak the entry, iOS 26) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
             // Bold, always: for what's typed next (lit while that's bold; a tap turns it off).
@@ -597,7 +755,7 @@ struct ComposeView: View {
             } label: {
                 appIcon("slab-tag")
                     .frame(width: 40, height: 36)
-                    .background(showsHashtagBar ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(showsHashtagBar ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
             // Held: tags the entry's own words with the hashtags they match, in one go.
@@ -624,29 +782,59 @@ struct ComposeView: View {
                     editor.endLink()
                     question = nil
                     askError = nil
-                    // With a template to offer, a prompt is written when it's asked for.
-                    if canAsk, !offersTemplate { Task { await ask() } }
+                    if canAsk { Task { await ask() } }
                 }
             } label: {
                 appIcon("slab-lightbulb")
                     .frame(width: 40, height: 36)
-                    .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(showsAskRow ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
-            // Held: the template goes straight in.
+            // Held: Apple's moments open straight away (iPhone). (The template is on the empty page.)
             .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
-                guard !template.isEmpty else { return }
+                guard Moment.isAvailable else { return }
                 heldAskIcon = true
                 HoldHaptic.play()
-                useTemplate()
+                showsAskRow = false
+                pickingMoment = true
             })
+            // Moments opened mid-hold can cancel the tap that would clear the flag.
+            .onChange(of: pickingMoment) { _, picking in if !picking { heldAskIcon = false } }
             .accessibilityLabel("Prompt")
             .accessibilityHint("Shows what was on your calendar that day and a question to write about")
             .accessibilityAddTraits(showsAskRow ? .isSelected : [])
             .accessibilityActions {
-                if !template.isEmpty { Button("Use Template") { useTemplate() } }
+                if Moment.isAvailable { Button("Add a Moment from Your iPhone") { pickingMoment = true } }
             }
+            if Dictation.isSupported, DictationSettings.isEnabled { dictationButton }
         }
+    }
+
+    /// Speak the entry: starts the recording, and stops it to have it written in. Selected while on.
+    /// Its own view, watching the dictation itself: the bar isn't rebuilt when it starts, which
+    /// would take the button out from under a finger holding it.
+    private var dictationButton: some View {
+        DictationMicButton(dictation: dictation, start: startDictation, closeRows: closeRowsForDictation)
+    }
+
+    /// One row at a time: dictation's takes over. A hold closes them once it's let go instead,
+    /// since closing one rebuilds the bar, taking the mic out from under the finger.
+    private func closeRowsForDictation() {
+        showsHashtagBar = false
+        showsAskRow = false
+        showsPhotoDrawer = false
+        editor.endLink()
+    }
+
+    private func startDictation(closingRows: Bool) {
+        if closingRows { closeRowsForDictation() }
+        // The writer's hashtags, as names to expect (asked for again once it's said).
+        if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
+        if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
+        // Settings → Dictation's own words first, then the hashtags.
+        dictation.start(style: DictationSettings.style,
+                        hints: { Dictation.expected(words: DictationSettings.words, recentTags: recentTags, allTags: allTags) },
+                        canListen: { editor.isFocused }) { editor.insertDictated($0) }
     }
 
     /// The attached photos as a little stack; tap to show or hide the photo row. Held, it goes
@@ -680,7 +868,7 @@ struct ComposeView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 1)
-            .background(showsPhotoDrawer ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+            .background(showsPhotoDrawer ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -859,14 +1047,23 @@ struct ComposeView: View {
                 .accessibilityAddTraits(.isHeader)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { askHeadingHeight = $0 }
             askRowContent
+            // The last row, set like the events over it, and kept in view under them when a busy
+            // day scrolls. (No line when there's nothing over it.)
+            if Moment.isAvailable {
+                VStack(spacing: 0) {
+                    if askRowHeight > 1 { Divider().padding(.horizontal) }
+                    momentsLine
+                }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { momentsFootHeight = $0 }
+            }
         }
     }
 
     private var askRowContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if canAsk { askLine } else if offersTemplate { templateLine }
-                CalendarRow(day: date, hidesWhenEmpty: canAsk || offersTemplate, space: Self.askRowSpace, changed: { hasEvents in
+                if canAsk { askLine }
+                CalendarRow(day: date, hidesWhenEmpty: canAsk || Moment.isAvailable, space: Self.askRowSpace, changed: { hasEvents in
                     hasAgenda = hasEvents
                     if !hasEvents { firstEvent = nil }
                     calendarRowKey += 1
@@ -889,7 +1086,7 @@ struct ComposeView: View {
     /// prompt growing makes the row taller, so the events stay where they are), and never past
     /// `askRowMaxHeight`.
     private var askRowScrollHeight: CGFloat {
-        var most = max(Self.askRowMaxHeight - askHeadingHeight, 44)
+        var most = max(Self.askRowMaxHeight - askHeadingHeight - (Moment.isAvailable ? momentsFootHeight : 0), 44)
         if let firstEvent { most = min(most, firstEvent.minY + firstEvent.height * Self.visibleEvents) }
         return min(max(askRowHeight, 1), most)
     }
@@ -901,39 +1098,168 @@ struct ComposeView: View {
         showsAskRow = false
     }
 
-    /// The template alone, where there's no prompt to be had (an entry being edited, without
-    /// Apple Intelligence).
-    private var templateLine: some View {
-        HStack(spacing: 12) {
-            Text("Your template")
-                .font(.subheadline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            useTemplateButton
+    /// "Add a moment from your iPhone": Apple's Journaling Suggestions sheet (photos, places,
+    /// workouts, music, people), which hands over only the one moment picked. Its words go in on
+    /// every plan; its photos with PRO. A row like the prompt's and the events', with an icon, so
+    /// it reads as something to tap and not as a heading.
+    private var momentsLine: some View {
+        Button {
+            pickingMoment = true
+        } label: {
+            HStack(spacing: 12) {
+                ideaIcon("photo.stack")
+                Text("Add a moment from your iPhone")
+                    .font(.system(.subheadline, design: .serif))
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 11)
+            .contentShape(.rect)
         }
-        .padding(.horizontal)
-        .padding(.top, 2)
-        .padding(.bottom, 10)
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add a Moment from Your iPhone")
+        .accessibilityHint("Opens your iPhone's suggestions: photos, places, workouts and music to write about")
     }
 
-    /// The lightbulb row offers the template (there is one, and this entry didn't start with
-    /// it): a prompt is then written only when it's asked for.
-    private var offersTemplate: Bool { !template.isEmpty && !startsWithTemplate }
+    /// The icon at the start of a row in Writing ideas (a moment), in a column of its own.
+    private func ideaIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.subheadline)
+            .foregroundStyle(.tint)
+            .frame(width: 22)
+            .accessibilityHidden(true)
+    }
 
-    private func useTemplate() {
-        editor.addTemplate(template)
+    #if canImport(JournalingSuggestions)
+    /// The picked moment: its words where the cursor is, its photos with the others (PRO), or a
+    /// word about PRO when a free account picked one with photos.
+    private func addMoment(_ suggestion: JournalingSuggestion) async {
+        guard !isDiscarded else { return }
+        let canAddPhotos = model.me?.canAddPhotos == true
+        let room = canAddPhotos ? max(photoLimit - photoItems.count, 0) : 0
+        // Save waits for the moment's photos, from the first read to the last attached.
+        isLoadingPhotos = true
+        defer { isLoadingPhotos = false }
+        let moment = await Moment.from(suggestion, photoLimit: room)
+        guard !isDiscarded else { return }
         showsAskRow = false
+        // From another day than the entry's: asked which day it goes on. (Same day: no question.)
+        if let day = moment.day(otherThan: date) {
+            // After Apple's sheet has gone: a dialog asked for while it's still closing is dropped.
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !isDiscarded else { return }
+            momentFromAnotherDay = (moment, day)
+        } else {
+            insertMoment(moment)
+        }
+    }
+    #endif
+
+    /// "Tue, Nov 18" (`weekday`) or "Nov 18", with the year when it isn't this one.
+    private static func momentDayName(_ day: Date, weekday: Bool = false) -> String {
+        var style = Date.FormatStyle().month(.abbreviated).day()
+        if weekday { style = style.weekday(.abbreviated) }
+        if !Calendar.current.isDate(day, equalTo: .now, toGranularity: .year) { style = style.year() }
+        return day.formatted(style)
     }
 
-    /// "Use Template", at the right of the lightbulb row until a prompt's been asked for. The
-    /// first time it's used, a word about the quicker way.
-    private var useTemplateButton: some View {
-        rowButton("Use Template") {
-            useTemplate()
-            showTipOnce("lightbulb", "Next time, touch and hold the lightbulb button to add your template straight away.")
+    /// The moment's words where the cursor is, its photos with the others (PRO).
+    private func insertMoment(_ moment: Moment) {
+        let canAddPhotos = model.me?.canAddPhotos == true
+        editor.addMoment(heading: moment.heading, lines: moment.lines())
+        for reflection in moment.reflections { editor.addQuestion(reflection) }
+        var added = 0
+        for photo in moment.photos where photoItems.count < photoLimit {
+            attachPrepared(photo)
+            added += 1
+        }
+        if !canAddPhotos {
+            // (Not while the account is still loading: it may well be PRO.)
+            if moment.photoCount > 0, model.me != nil { explainingProPhotos = true }
+        } else if moment.photoCount > added {
+            let left = moment.photoCount - added
+            error = left == 1 ? "1 photo from that moment wasn't added (an entry holds \(photoLimit))."
+                : "\(left) photos from that moment weren't added (an entry holds \(photoLimit))."
         }
     }
 
-    /// A small filled button at the right of a row over the keyboard ("Use Template", "Insert").
+    /// The empty page, with a template (Settings → Entry Template): "Start writing or [Swipe →] to
+    /// use template:", and the template under it, faint, the way a placeholder is. A swipe right
+    /// across the page puts it in, as does a tap on the Swipe badge; a tap anywhere else is just
+    /// a tap into the page. A long template shows its first lines and fades out. Gone once
+    /// anything's written.
+    private var templatePlaceholder: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // On one line, or (large text) the badge on a line of its own.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) {
+                    Text("Start writing or").allowsHitTesting(false)
+                    templateBadge
+                    Text("to use template:").allowsHitTesting(false)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Start writing or").allowsHitTesting(false)
+                    HStack(spacing: 6) {
+                        templateBadge
+                        Text("to use template:").allowsHitTesting(false)
+                    }
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            // (A template of only empty list items has no words to show: just the line above.)
+            if !templatePreview.characters.isEmpty {
+                Text(templatePreview)
+                    .font(Font(RichText.Style.journal.baseFont))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .mask {
+                        // A long one fades out at the foot, so it reads as more to come.
+                        LinearGradient(stops: [.init(color: .black, location: templateIsLong ? 0.6 : 1),
+                                               .init(color: .black.opacity(templateIsLong ? 0.15 : 1), location: 1)],
+                                       startPoint: .top, endPoint: .bottom)
+                    }
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    /// "Swipe →", the way the swipe is learned: a tap on it puts the template in too.
+    private var templateBadge: some View {
+        Button {
+            editor.addTemplate(template)
+            editor.focus()
+        } label: {
+            HStack(spacing: 3) {
+                Text("Swipe")
+                Image(systemName: "arrow.right")
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.tint)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color("AccentColor").opacity(0.1), in: .rect(cornerRadius: 5))
+            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color("AccentColor").opacity(0.35)))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Use Template")
+        .accessibilityHint("Adds your entry template. You can also swipe right on the empty page.")
+    }
+
+    /// More than the placeholder's eight lines, or near enough once long lines wrap.
+    private var templateIsLong: Bool {
+        let text = String(templatePreview.characters)
+        return text.split(separator: "\n", omittingEmptySubsequences: false).count > 8 || text.count > 320
+    }
+
+    /// A small filled button at the right of a row over the keyboard ("Auto Tag").
     private func rowButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(title, action: action)
             .font(.footnote.weight(.semibold))
@@ -976,14 +1302,6 @@ struct ComposeView: View {
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                } else if offersTemplate, askError == nil {
-                    // (A tap on it, VoiceOver's too, is the row's.)
-                    Text(JournalIntelligence.isEnabled(for: model.me) ? "Tap to generate prompt" : "Tap for today's prompt")
-                        .fontWeight(.medium)
-                        .foregroundStyle(.tint)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityAddTraits(.isButton)
-                    useTemplateButton
                 } else {
                     Text(askError ?? "")
                         .foregroundStyle(.secondary)
@@ -996,14 +1314,12 @@ struct ComposeView: View {
             // the events under it stay where they are.
             .contentShape(.rect)
             .onTapGesture {
-                if question != nil {
-                    insertQuestion()
-                } else if offersTemplate, !isAsking {
-                    Task { await ask() }
-                }
+                if question != nil { insertQuestion() }
             }
         }
         .padding(.horizontal)
+        // A little room under the heading.
+        .padding(.top, 6)
         .padding(.bottom, hasAgenda ? 6 : 0)
         .animation(.easeOut(duration: 0.2), value: question)
     }
@@ -1193,7 +1509,12 @@ struct ComposeView: View {
             image.jpegData(compressionQuality: 0.95).flatMap { try? PhotoPreparer.prepare($0) }
         }.value
         guard let photo else { error = "The photo couldn't be added."; return }
-        let item = PhotosPickerItem(itemIdentifier: "camera-\(UUID().uuidString)")
+        attachPrepared(photo)
+    }
+
+    /// Outside the photo picker (camera, moments): under a made-up identifier it doesn't know.
+    private func attachPrepared(_ photo: PreparedPhoto) {
+        let item = PhotosPickerItem(itemIdentifier: "added-\(UUID().uuidString)")
         prepared[item] = photo
         previews[item] = UIImage(data: photo.thumbnail).map(Image.init(uiImage:))
         cameraItems.append(item)
@@ -1350,6 +1671,8 @@ struct ComposeView: View {
         guard !isSaving else { return }
         isSaving = true
         defer { isSaving = false }
+        // What's still being said goes in first.
+        await dictation.finish()
         do {
             switch mode {
             case .new:
@@ -1483,8 +1806,8 @@ private struct CalendarRow: View {
         changed(access == .allowed && events?.isEmpty == false)
     }
 
-    /// The width of the events' time column.
-    static let timeColumn: CGFloat = 72
+    /// The width of the events' time column: just past "12:00 PM", growing with the text size.
+    @ScaledMetric(relativeTo: .footnote) private var timeColumn: CGFloat = 62
 
     /// The whole day's events: the row shows the first few, up to its height, and scrolls to
     /// the rest. (Three at most left nothing to scroll to, so a busy day looked cut off.)
@@ -1498,7 +1821,7 @@ private struct CalendarRow: View {
                         Text(event.time)
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(.secondary)
-                            .frame(width: Self.timeColumn, alignment: .leading)
+                            .frame(width: timeColumn, alignment: .leading)
                         Text(event.title)
                             .font(.system(.subheadline, design: .serif))
                             .lineLimit(1)
@@ -1727,11 +2050,227 @@ struct FormatButton: View {
         Button(action: toggle) {
             letter.label
                 .frame(width: 40, height: 36)
-                .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                .background(isOn ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(name)
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
+}
+
+/// The row over the bar while speaking. Its own view, reading `Dictation` itself, so the waveform
+/// and clock update here without redrawing the whole composer.
+private struct DictationRow: View {
+    let dictation: Dictation
+
+    /// While speaking: while recording, an X on the left (drops it), the waveform
+    /// with the time so far, and Done on the right (writes it in). Nothing's written until Done:
+    /// it's heard in one go, then tidied.
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                if dictation.state == .listening {
+                    closeButton("Cancel Recording") { dictation.discard() }
+                        .accessibilityHint("Drops what you said")
+                    DictationWaveform(levels: dictation.levels)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityElement()
+                        .accessibilityLabel("Dictation")
+                        .accessibilityValue(dictationState)
+                    if let since = dictation.listeningSince {
+                        TimelineView(.periodic(from: since, by: 1)) { context in
+                            Text(Duration.seconds(context.date.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond)))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityIdentifier("DictationStatus")
+                    }
+                    Button { dictation.stop() } label: {
+                        Text("Done")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .frame(height: 36)
+                            .background(Color.accentColor, in: .capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Done")
+                    .accessibilityHint("Writes what you said into the entry")
+                } else {
+                    // Getting ready or writing it down: just the dots (and, the first time, how
+                    // much of the download is in), centered where the waveform sits while recording.
+                    Spacer(minLength: 0)
+                    TypingDots(size: .small)
+                        .accessibilityElement()
+                        .accessibilityLabel("Dictation")
+                        .accessibilityValue(dictationState)
+                    if let progress = dictation.downloadProgress {
+                        Text("Downloading \(Int(progress * 100))%")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+            .font(.subheadline)
+            .frame(minHeight: 36)
+        }
+        .padding(.horizontal)
+        .padding(.top, 10)
+    }
+
+    /// The X on the row's left: drops the recording.
+    private func closeButton(_ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            appIcon("slab-close")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 14, height: 14)
+                .frame(width: 36, height: 36)
+                .background(.tint.opacity(0.12), in: .circle)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.tint)
+        .accessibilityLabel(label)
+    }
+
+    /// What VoiceOver says it's doing (there's no title on the row).
+    private var dictationState: String {
+        switch dictation.state {
+        case .idle, .preparing: "Getting ready"
+        case .listening: "Listening"
+        case .writing: "Writing it down"
+        }
+    }
+
+}
+
+/// The bar's mic. Tapped: starts, or stops and writes it in. Held: records until the finger
+/// lifts, then writes it in. A press counts as a hold once it's lasted `holdToTalk`; anything
+/// shorter is a tap.
+private struct DictationMicButton: View {
+    let dictation: Dictation
+    let start: (_ closingRows: Bool) -> Void
+    let closeRows: () -> Void
+    static let holdToTalk: Duration = .milliseconds(300)
+
+    /// The finger's on it. Gesture state, so it's let go of even when the touch is cancelled.
+    @GestureState private var pressing = false
+    @State private var holding = false
+    @State private var holdTimer: Task<Void, Never>?
+
+    var body: some View {
+        appIcon("slab-microphone")
+            .frame(width: 40, height: 36)
+            .background(dictation.isActive || pressing ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
+            .contentShape(.capsule)
+            .gesture(DragGesture(minimumDistance: 0).updating($pressing) { _, pressing, _ in pressing = true })
+            .onChange(of: pressing) { _, down in down ? pressed() : released() }
+            .onDisappear { holdTimer?.cancel() }
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
+            .accessibilityHint("Records what you say, then writes it into the entry, on your phone")
+            .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
+            .accessibilityAction { tap() }
+    }
+
+    private func pressed() {
+        // Already recording: this press stops it, however long it lasts.
+        guard !dictation.isActive else { return }
+        holdTimer = Task {
+            try? await Task.sleep(for: Self.holdToTalk)
+            guard !Task.isCancelled, pressing, !dictation.isActive else { return }
+            holding = true
+            start(false)
+        }
+    }
+
+    private func released() {
+        holdTimer?.cancel()
+        holdTimer = nil
+        guard holding else { return tap() }
+        holding = false
+        // Still getting ready (the first download, the microphone prompt): it carries on as a
+        // tapped recording, stopped with Done.
+        if dictation.state == .listening { dictation.stop() }
+        closeRows()
+    }
+
+    private func tap() {
+        if dictation.isActive { dictation.stop() } else { start(true) }
+    }
+}
+
+/// Why dictation couldn't listen, as a toast over the bar. Tap to close; it also closes itself.
+/// Microphone turned off: a Settings button to turn it on.
+private struct DictationProblemToast: View {
+    let problem: Dictation.Problem
+    let close: () -> Void
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(problem.message)
+                .font(.subheadline.weight(.medium))
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+            if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
+                Button("Settings") { openURL(settings); close() }
+                    .font(.subheadline.weight(.semibold))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.regularMaterial, in: .capsule)
+        .contentShape(.capsule)
+        .onTapGesture(perform: close)
+        .accessibilityElement(children: .combine)
+        .accessibilityAction(named: "Close", close)
+        .accessibilityIdentifier("DictationProblem")
+        .onAppear { AccessibilityNotification.Announcement(problem.message).post() }
+        // Closes itself after a few seconds (longer with a Settings button to reach). Keyed to
+        // the problem so a new one gets its full time.
+        .task(id: problem) {
+            try? await Task.sleep(for: .seconds(problem == .microphoneDenied ? 8 : 4))
+            if !Task.isCancelled { close() }
+        }
+    }
+}
+
+/// How loud it's been while recording, newest on the right: bars that scroll left as you talk,
+/// so it's plain that it's hearing you.
+private struct DictationWaveform: View {
+    let levels: [Double]
+
+    var body: some View {
+        GeometryReader { geometry in
+            let spacing: CGFloat = 3
+            let width: CGFloat = 3
+            let count = max(1, Int((geometry.size.width + spacing) / (width + spacing)))
+            let shown = Array(levels.suffix(count))
+            HStack(alignment: .center, spacing: spacing) {
+                Spacer(minLength: 0)
+                // Quiet bars before the recording has filled the width.
+                ForEach(0..<max(0, count - shown.count), id: \.self) { _ in bar(0) }
+                ForEach(Array(shown.enumerated()), id: \.offset) { _, level in bar(level) }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+        .frame(height: 28)
+    }
+
+    private func bar(_ level: Double) -> some View {
+        Capsule()
+            .fill(.tint)
+            .frame(width: 3, height: 3 + 25 * min(1, max(0, level)))
+    }
+}
+
+private extension View {
+    /// `transform` applied to this view: splits a long modifier chain into pieces the compiler
+    /// type-checks one at a time.
+    func composed<V: View>(@ViewBuilder _ transform: (Self) -> V) -> V { transform(self) }
 }

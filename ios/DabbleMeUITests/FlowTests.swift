@@ -71,16 +71,27 @@ final class FlowTests: XCTestCase {
     func testAIConnectorsInSettings() throws {
         openJournal()
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 10))
+        let account = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Account'")).firstMatch
+        XCTAssertTrue(account.waitForExistence(timeout: 10))
         let connector = app.links["Claude/ChatGPT Connector"]
         for _ in 0..<4 where !connector.isHittable {
             app.collectionViews.firstMatch.swipeUp(velocity: .slow)
         }
         XCTAssertTrue(connector.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.links["Export Entries"].exists)
-        XCTAssertTrue(app.links["Account Security"].exists)
+        XCTAssertTrue(app.links["Help & Support"].exists, "The connector sits with Help")
+        XCTAssertFalse(app.staticTexts["ON DABBLE.ME"].exists)
         XCTAssertFalse(app.links["Email Preferences"].exists, "Email settings are in the app now")
         snap("settings-ai")
+        // Settings → Account: name, email, Account Security and Export Entries.
+        for _ in 0..<4 where !account.isHittable {
+            app.collectionViews.firstMatch.swipeDown(velocity: .slow)
+        }
+        account.tap()
+        XCTAssertTrue(app.navigationBars["Account"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Email"].exists)
+        XCTAssertTrue(app.links["Account Security"].exists)
+        XCTAssertTrue(app.links["Export Entries"].exists || app.buttons["Export Entries"].exists)
+        snap("settings-account")
     }
 
     func testTodayTab() throws {

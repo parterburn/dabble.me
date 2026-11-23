@@ -207,6 +207,35 @@
       </table>
     <% end %>
 
+    <%= render layout: "admin/section", locals: { title: "Sign-up platform", intro: "Where the account was made: the web sign-up form or the app's own. Accounts from before this was recorded show as Unknown." } do %>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Signups (30d)</th>
+            <th>Share (30d)</th>
+            <th>First entry (30d)</th>
+            <th>Activation</th>
+            <th>PRO (30d)</th>
+            <th>All time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% d.signup_platforms.each do |row| %>
+            <tr>
+              <td><%= row[:platform] %></td>
+              <td><%= number_with_delimiter(row[:signups_30d]) %></td>
+              <td><%= d.format_rate(row[:share_30d]) %></td>
+              <td><%= number_with_delimiter(row[:first_entries_30d]) %></td>
+              <td><%= d.format_rate(row[:activation_rate]) %></td>
+              <td><%= number_with_delimiter(row[:upgrades_30d]) %></td>
+              <td><%= number_with_delimiter(row[:all_time]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+
     <%= render layout: "admin/section", locals: { title: "Email health", intro: "Daily send/fail/reply figures come from the snapshot (Mailgun + inbound entries). Lifetime totals are live." } do %>
       <table class="data-table">
         <tbody>
@@ -396,9 +425,9 @@
             </td>
           </tr>
           <tr>
-            <th>Stripe / Gumroad / PayPal</th>
+            <th>Stripe / Gumroad / PayPal / App Store</th>
             <td>
-              <%= number_with_delimiter(inv[:stripe]) %> / <%= number_with_delimiter(inv[:gumroad]) %> / <%= number_with_delimiter(inv[:paypal]) %>
+              <%= number_with_delimiter(inv[:stripe]) %> / <%= number_with_delimiter(inv[:gumroad]) %> / <%= number_with_delimiter(inv[:paypal]) %> / <%= number_with_delimiter(inv[:apple]) %>
             </td>
           </tr>
         </tbody>

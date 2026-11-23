@@ -11,11 +11,27 @@ module Mcp
     ].freeze
 
     def self.build_for_user(user, oauth_application_id: nil)
+      build(server_context: { user_id: user.id, oauth_application_id: oauth_application_id })
+    end
+
+    # For requests without a token: answers discovery (initialize, tools/list, prompts/list) only.
+    # McpController never routes tools/call here, and with no user_id in the context a tool
+    # that somehow ran would raise in Tools::Helpers.scoped_user! before touching any data.
+    def self.build_public
+      build(server_context: nil)
+    end
+
+    def self.build(server_context:)
       site = ApplicationHelper.site_public_base_url
       MCP::Server.new(
         name: 'dabble-me',
         title: 'Dabble Me Journal',
         version: '1.0.0',
+        website_url: "#{site}/mcp-server",
+        icons: [
+          MCP::Icon.new(src: "#{site}/android-chrome-512x512.png", mime_type: 'image/png', sizes: ['512x512']),
+          MCP::Icon.new(src: "#{site}/favicon-96x96.png", mime_type: 'image/png', sizes: ['96x96'])
+        ],
         instructions: 'Dabble Me is a private personal journal MCP server. Use these tools only when the user clearly ' \
                       'intends to read, search, reflect on, analyze, or write their own Dabble Me journal after OAuth. ' \
                       'Users may call it their journal, diary, daily log, reflections, memories, notes, or entries. ' \
@@ -48,7 +64,8 @@ module Mcp
                       "When linking to a day in the web app, use #{site}/entries/YYYY/M/D with unpadded month and day " \
                       "(example: #{site}/entries/2026/4/21). The compose page for new entries is #{site}/write .",
         tools: TOOLS,
-        server_context: { user_id: user.id, oauth_application_id: oauth_application_id }
+        prompts: SuggestedPrompts::ALL,
+        server_context: server_context
       )
     end
   end

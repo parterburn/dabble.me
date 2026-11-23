@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,6 +22,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
     t.decimal "cost_usd", precision: 12, scale: 6
     t.datetime "created_at", null: false
     t.index ["user_id", "created_at"], name: "index_ai_usages_on_user_id_and_created_at"
+  end
+
+  create_table "app_store_notifications", force: :cascade do |t|
+    t.string "notification_uuid", null: false
+    t.string "notification_type", null: false
+    t.string "subtype"
+    t.string "environment"
+    t.string "original_transaction_id"
+    t.datetime "signed_at"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["notification_uuid"], name: "index_app_store_notifications_on_notification_uuid", unique: true
+    t.index ["original_transaction_id"], name: "index_app_store_notifications_on_original_transaction_id"
+  end
+
+  create_table "apple_subscriptions", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "original_transaction_id", null: false
+    t.string "environment", null: false
+    t.string "product_id", null: false
+    t.string "last_transaction_id"
+    t.uuid "app_account_token"
+    t.string "ownership_type"
+    t.integer "status"
+    t.datetime "expires_at"
+    t.datetime "grace_period_expires_at"
+    t.datetime "revoked_at"
+    t.boolean "auto_renew"
+    t.string "auto_renew_product_id"
+    t.datetime "state_signed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["original_transaction_id"], name: "index_apple_subscriptions_on_original_transaction_id", unique: true
+    t.index ["user_id"], name: "index_apple_subscriptions_on_user_id"
   end
 
   create_table "business_metric_snapshots", force: :cascade do |t|
@@ -66,6 +101,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
     t.integer "mcp_tool_calls", default: 0, null: false
     t.jsonb "mcp_tool_breakdown", default: {}, null: false
     t.index ["captured_on"], name: "index_business_metric_snapshots_on_captured_on", unique: true
+  end
+
+  create_table "email_codes", force: :cascade do |t|
+    t.string "purpose", null: false
+    t.string "email_digest", null: false
+    t.bigint "user_id"
+    t.string "code_digest", null: false
+    t.integer "attempts", default: 0, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "used_at"
+    t.datetime "created_at", null: false
+    t.index ["email_digest", "purpose", "created_at"], name: "index_email_codes_on_email_digest_and_purpose_and_created_at"
+    t.index ["expires_at"], name: "index_email_codes_on_expires_at"
+    t.index ["user_id"], name: "index_email_codes_on_user_id"
   end
 
   create_table "encryption_checks", force: :cascade do |t|
@@ -116,6 +165,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
     t.index ["expires_at"], name: "index_exports_on_expires_at"
     t.index ["token"], name: "index_exports_on_token", unique: true
     t.index ["user_id"], name: "index_exports_on_user_id"
+  end
+
+  create_table "gift_redemptions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "code", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_gift_redemptions_on_code"
+    t.index ["user_id"], name: "index_gift_redemptions_on_user_id", unique: true
   end
 
   create_table "hashtags", force: :cascade do |t|
@@ -197,10 +256,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
     t.string "scopes"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "revoked_at", precision: nil
+    t.bigint "user_session_id"
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
     t.index ["resource_owner_id"], name: "index_oauth_access_tokens_on_resource_owner_id"
     t.index ["token"], name: "index_oauth_access_tokens_on_token", unique: true
+    t.index ["user_session_id"], name: "index_oauth_access_tokens_on_user_session_id"
   end
 
   create_table "oauth_applications", force: :cascade do |t|
@@ -226,6 +287,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
     t.datetime "created_at", precision: nil
     t.datetime "updated_at", precision: nil
     t.string "stripe_invoice_id"
+    t.string "apple_transaction_id"
+    t.index ["apple_transaction_id"], name: "index_payments_on_apple_transaction_id", unique: true, where: "(apple_transaction_id IS NOT NULL)"
     t.index ["stripe_invoice_id"], name: "index_payments_on_stripe_invoice_id", unique: true, where: "(stripe_invoice_id IS NOT NULL)"
     t.index ["user_id"], name: "index_payments_on_user_id"
   end
@@ -255,6 +318,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["singleton"], name: "index_site_closures_on_singleton", unique: true
+  end
+
+  create_table "user_sessions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "kind", null: false
+    t.string "token_digest"
+    t.string "browser"
+    t.string "os"
+    t.string "city"
+    t.string "region"
+    t.string "country"
+    t.datetime "last_active_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["last_active_at"], name: "index_user_sessions_on_last_active_at"
+    t.index ["token_digest"], name: "index_user_sessions_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_user_sessions_on_user_id"
   end
 
   create_table "users", id: :serial, force: :cascade do |t|
@@ -309,6 +389,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
     t.string "image_key", null: false
     t.boolean "send_updates", default: true, null: false
     t.text "app_settings"
+    t.uuid "apple_account_token"
+    t.string "signup_platform"
+    t.datetime "email_verified_at"
+    t.datetime "email_changed_at"
+    t.string "session_salt"
+    t.string "pending_email"
+    t.index ["apple_account_token"], name: "index_users_on_apple_account_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["image_key"], name: "index_users_on_image_key", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
@@ -331,7 +418,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
   end
 
   add_foreign_key "ai_usages", "users", on_delete: :cascade
+  add_foreign_key "apple_subscriptions", "users", on_delete: :nullify
+  add_foreign_key "email_codes", "users", on_delete: :cascade
   add_foreign_key "exports", "users", on_delete: :cascade
+  add_foreign_key "gift_redemptions", "users", on_delete: :cascade
   add_foreign_key "ignored_email_images", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_invocations", "users", on_delete: :cascade
   add_foreign_key "newsletter_deliveries", "users", on_delete: :cascade
@@ -341,5 +431,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_230000) do
   add_foreign_key "oauth_access_tokens", "users", column: "resource_owner_id"
   add_foreign_key "service_notice_deliveries", "service_notices", on_delete: :cascade
   add_foreign_key "service_notice_deliveries", "users", on_delete: :cascade
+  add_foreign_key "user_sessions", "users", on_delete: :cascade
   add_foreign_key "webauthn_credentials", "users"
 end

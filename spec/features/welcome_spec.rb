@@ -5,7 +5,7 @@ describe 'Pages' do
 
   it 'has correct title for Root page' do
     visit root_path
-    expect(page).to have_title 'Dabble me. Private email journaling & daily reflection.'
+    expect(page).to have_title 'Dabble Me — Your Private Daily Journal & Life Timeline'
   end
 
   it 'groups Support beneath Pricing in the footer' do
@@ -18,14 +18,29 @@ describe 'Pages' do
 
   it 'has correct title for FAQs page' do
     visit support_path
-    expect(page).to have_title 'Support and FAQs — Dabble me.'
+    expect(page).to have_title 'Support & FAQs — Dabble Me Private Journal'
   end
 
-  it 'points to the iOS beta and to connecting Claude or ChatGPT, in plain words' do
+  it 'lists every visible support question in the FAQPage structured data, once' do
+    visit support_path
+
+    graph = all('script[type="application/ld+json"]', visible: false).map { |tag| JSON.parse(tag.text(:all)) }
+    faq = graph.find { |node| node['@type'] == 'FAQPage' }
+    names = faq['mainEntity'].map { |question| question['name'] }
+    visible = ApplicationHelper.faqs.values.flat_map { |section| section[:questions].map { |qa| qa[:q] } }
+
+    expect(names).to eq visible
+    expect(names).to include("How do On This Day, Year in Review and #hashtag dates work?")
+    expect(names.grep(/export/i).size).to eq 1
+    expect(faq['mainEntity'].map { |q| q.dig('acceptedAnswer', 'text') }).to all(satisfy { |text| text.present? && !text.match?(/<|&#39;|&quot;/) })
+  end
+
+  it 'points to the iOS app page and to connecting Claude or ChatGPT, in plain words' do
     visit support_path
 
     expect(page).to have_content 'Is there a mobile app?'
-    expect(page).to have_link('join the beta to install it', href: ApplicationHelper.ios_testflight_url, visible: :all)
+    expect(page).to have_link('See what the app does', href: journal_app_path, visible: :all)
+    expect(page).not_to have_link(href: ApplicationHelper.ios_testflight_url, visible: :all)
     expect(page).to have_link('connect Dabble Me to Claude or ChatGPT', href: mcp_server_docs_path, visible: :all)
 
     expect(page).to have_content 'How do I connect Dabble Me to Claude or ChatGPT?'
@@ -47,7 +62,8 @@ describe 'Pages' do
 
   it 'has correct content for Subscribe page (redirects to homepage for non-logged-in users)' do
     visit subscribe_path
-    expect(page).to have_content 'You\'ll have access to every premium feature.'
+    expect(page).to have_content 'Simple pricing for a journal you’ll actually keep.'
+    expect(page).to have_content '30-day refund on web purchases'
   end
 
   it 'publishes a plain-language AI Connector guide' do
@@ -75,6 +91,7 @@ describe 'Pages' do
     canonical = page.find('link[rel="canonical"]', visible: false)['href']
     expect(description).to include('ChatGPT or Claude')
     expect(canonical).to end_with('/mcp-server')
+    expect(page.first('#examples blockquote')).to have_text('Make a private Spotify Wrapped of my journal; use lots of photos.')
     expect(page).to have_css('link[rel="webmcp"]', visible: false)
     expect(page).to have_css('script#dabble-webmcp-config', visible: false)
   end
@@ -182,12 +199,13 @@ describe 'Pages' do
     expect(page.html).to include('"@type":"FAQPage"')
   end
 
-  it 'describes the iOS app with its screenshots and a way to get it' do
+  it 'describes the iOS app with its screenshots, coming soon, with no public beta link' do
     visit journal_app_path
 
     expect(page).to have_title 'Dabble Me Journal App for iPhone and iPad — Dabble me.'
     expect(page).to have_css 'h1', text: 'A daily journal app for iPhone and iPad'
-    expect(page).to have_link('Get the iOS app (beta)', href: ApplicationHelper.ios_testflight_url)
+    expect(page).to have_content 'Coming soon to the App Store'
+    expect(page).not_to have_link(href: ApplicationHelper.ios_testflight_url)
     # Seven screens, each with a description for people who can't see it and its size (no layout shift).
     shots = page.all('main img')
     expect(shots.size).to eq 7
@@ -200,6 +218,17 @@ describe 'Pages' do
     expect(page.html).to include('"@type":"MobileApplication"', '"@type":"FAQPage"')
   end
 
+
+  it 'gives a signed-in PRO member the iOS beta at the top of the app page, and nobody else' do
+    sign_in FactoryBot.create(:user, plan: 'PRO Monthly PayHere')
+    visit journal_app_path
+    expect(page).to have_link('Get the iOS app (beta)', href: ApplicationHelper.ios_testflight_url)
+
+    sign_in FactoryBot.create(:user, plan: 'Free')
+    visit journal_app_path
+    expect(page).not_to have_link(href: ApplicationHelper.ios_testflight_url)
+    expect(page).to have_link('Create a free account')
+  end
   it 'publishes a guide to starting a journal, with the prompts its title promises' do
     visit how_to_start_journaling_path
 
@@ -208,6 +237,12 @@ describe 'Pages' do
     expect(page).to have_css 'h2', text: '70 journal prompts'
     expect(page.all('#journal-prompts ol li').size).to eq 70
     expect(page).to have_css 'h3', text: 'Gratitude journal prompts'
+    expect(page).to have_css 'h1', count: 1
+    ['The One Framework', 'Travel Log', 'Relationship Time Capsule', 'Career Wins & Lessons', 'Gratitude Before Bed'].each do |name|
+      expect(page).to have_css 'h2', text: name
+    end
+    expect(page.all('#journaling-frameworks ~ section figure').size).to eq 5
+    expect(page).to have_link('Try this tonight', href: new_user_registration_path, count: 5)
     expect(page).to have_link('app for iPhone and iPad', href: journal_app_path)
     expect(page.find('main').text.split.size).to be >= 1200
     expect(page.html).to include('"@type":"FAQPage"')
@@ -256,7 +291,7 @@ describe 'Pages' do
       visit subscribe_path
 
       expect(json_ld_nodes.map { |node| node['@type'] }).to contain_exactly('Organization', 'WebApplication')
-      expect(meta_description).to include('$4/month or $40/year')
+      expect(meta_description).to include('$4/mo or $40/yr')
       expect(meta_description).not_to start_with(DEFAULT_DESCRIPTION)
     end
 
@@ -290,7 +325,7 @@ describe 'Pages' do
         expect(article).to be_present, "no Article schema on #{path}"
         expect(article['datePublished']).to match(/\A\d{4}-\d{2}-\d{2}\z/)
         expect(article['dateModified']).to match(/\A\d{4}-\d{2}-\d{2}\z/)
-        expect(article['image']).to end_with('/dabble_logo_ogimage.jpg')
+        expect(article['image']).to end_with('/og/dabble-og-3.jpg')
         expect(article.dig('publisher', 'name')).to eq 'Dabble Me'
         expect(article.dig('mainEntityOfPage', '@id')).to eq article['url']
       end

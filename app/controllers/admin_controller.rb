@@ -215,6 +215,9 @@ class AdminController < ApplicationController
   def admin_user_params
     params.require(:user).permit(:first_name, :last_name, :email, :send_time, :send_timezone, :send_updates, :plan).tap do |p|
       p.delete(:plan) if p[:plan].blank?
+      # An admin's address is the key to its emailed-code sign-in (AdminAccounts), so another
+      # admin can't move it; the admin changes it in Account Security, by code to the new inbox.
+      p.delete(:email) if AdminAccounts.protected?(@user)
     end
   end
 end

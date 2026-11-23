@@ -356,10 +356,13 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(paid_user.frequency.count).to eq 1
       old_password = paid_user.encrypted_password
       email = Faker::Internet.email
+      old_email = paid_user.email
       post :update, params: {user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: paid_user.password }}, as: :json
       expect(response.status).to eq 302
-      expect(response).to redirect_to(edit_user_registration_url)
-      expect(paid_user.reload.email).to eq email
+      # The new email waits for a code sent to it (EmailChangesController); the password saves now.
+      expect(response).to redirect_to(email_change_url)
+      expect(paid_user.reload.email).to eq old_email
+      expect(paid_user.pending_email).to eq email.downcase
       expect(paid_user.encrypted_password).not_to eq old_password
     end
 
@@ -456,7 +459,7 @@ RSpec.describe RegistrationsController, type: :controller do
       sign_in user
       expect do
         delete :destroy, params: { user: { current_password: user.password } }
-      end.to have_enqueued_job(DeleteUserJob).with(user.id)
+      end.to have_enqueued_job(DeleteUserJob).with(user.id, kind_of(Integer))
       expect(user.reload.deleted_at).to be_present
       expect(response).to redirect_to(root_path)
       expect(flash[:notice]).to include('Sign back in before then to cancel deletion')
@@ -464,11 +467,10 @@ RSpec.describe RegistrationsController, type: :controller do
   end
 
   describe 'creating a user' do
-    it 'should see create user form' do
+    it 'should see the email-first create user form, with no password' do
       get :new
       expect(response.body).to have_field('user_email')
-      expect(response.body).to have_field('user_password')
-      expect(response.body).to have_field('user_password_confirmation')
+      expect(response.body).not_to have_field('user_password')
       expect(response.status).to eq 200
     end
 

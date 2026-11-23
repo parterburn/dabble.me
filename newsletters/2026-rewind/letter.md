@@ -33,7 +33,12 @@ See it for yourself: **[write a line about today]({{write_url}})**. One sentence
 {{/whats_new,whats_new_free}}
 ## 📱 iPhone app
 
-Dabble Me now has an app for iPhone and iPad. **[Get the app](https://testflight.apple.com/join/mYj4vrFZ)**
+{{#rewind,whats_new}}
+Dabble Me now has an app for iPhone and iPad, and as a PRO member you can use it before it reaches the App Store. **[Get the app](https://testflight.apple.com/join/mYj4vrFZ)**
+{{/rewind,whats_new}}
+{{#rewind_free,whats_new_free}}
+Dabble Me is getting an app for iPhone and iPad, coming soon to the App Store. PRO members can use it now.
+{{/rewind_free,whats_new_free}}
 
 I write far more now. I often speak my entries instead of typing, and photos take a couple of taps.
 
@@ -53,8 +58,8 @@ You can now [export your whole journal]({{export_url}}): every entry and photo i
 
 ## ➕ Other updates
 
+- **Sign in with a passkey.** Use Face ID, Touch ID, or your device's own unlock instead of a password. There's nothing to guess, phish, or leak, so it's the safest way into your journal. **[Add a passkey]({{security_url}})**; it takes a minute.
 - **A fresh look.** A new logo, a cleaner design, and a site that's easier to find your way around.
-- **Sign in without a password.** Use Face ID, Touch ID, or your device's own unlock.
 - **A new address for sending entries.** If the email address you send entries to ever gets out, you can swap it for a new one in Settings.
 - **Day One import.** Users can now bring their Day One journal over, photos included.
 - **Work behind the scenes.** I moved Dabble Me onto updated infrastructure and added new security measures to protect your entries.

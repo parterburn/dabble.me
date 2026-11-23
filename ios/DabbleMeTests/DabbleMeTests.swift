@@ -5,28 +5,52 @@ import Testing
 import UniformTypeIdentifiers
 @testable import DabbleMe
 
-struct PKCETests {
-    @Test func s256ChallengeMatchesKnownVector() {
-        let pkce = PKCE(verifier: "M25iVXpKU3puUjFaYWg3T1NDTDQtcW1ROUY5YXlwalNoc0hhakxifmZHag")
-        #expect(pkce.challenge == "qjrzSW9gMiUgpUvqgEPE4_-8swvyCtfOVvg55o5S_es")
+struct NativeAuthTests {
+    @Test func base64URLRoundTripsWithoutPadding() throws {
+        let bytes = Data([0xfb, 0xff, 0xfe, 0x00, 0x01])
+        let encoded = NativeAuth.base64URL(bytes)
+        #expect(encoded == "-__-AAE")
+        #expect(NativeAuth.data(base64URL: encoded) == bytes)
     }
 
-    @Test func generatedVerifierIsURLSafeAndLongEnough() {
-        let verifier = PKCE().verifier
-        #expect(verifier.count >= 43) // RFC 7636 minimum
-        #expect(verifier.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" })
+    @Test func passkeyConfirmationKeepsWebAuthnKeys() throws {
+        let assertion = PasskeyAssertion(credentialID: Data([1]), clientDataJSON: Data([2]), authenticatorData: Data([3]),
+                                         signature: Data([4]), userID: Data("7".utf8))
+        let challenge = try APIClient.decoder.decode(NativeAuth.PasskeyChallenge.self,
+                                                     from: Data(#"{"challenge_token":"t","challenge":"c","rp_id":"dabble.me"}"#.utf8))
+        let json = try JSONEncoder().encode(NativeAuth.PasskeyConfirmation(assertion: assertion, challenge: challenge))
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["challenge_token"] as? String == "t")
+        let credential = try #require(object["credential"] as? [String: Any])
+        #expect(credential["rawId"] as? String == "AQ")
+        let response = try #require(credential["response"] as? [String: Any])
+        #expect(Set(response.keys) == ["clientDataJSON", "authenticatorData", "signature", "userHandle"])
+        #expect(response["userHandle"] as? String == "Nw")
     }
 
-    @Test func authorizeURLCarriesTheAppClient() throws {
-        let url = OAuthEndpoints.authorizeURL(pkce: PKCE(), state: "abc")
-        let items = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
-        let query = Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value ?? "") })
-        #expect(url.path() == "/oauth/authorize")
-        #expect(query["client_id"] == "dabble-me-ios")
-        #expect(query["scope"] == "app:journal")
-        #expect(query["redirect_uri"] == "me.dabble.app:/oauth/callback")
-        #expect(query["code_challenge_method"] == "S256")
-        #expect(query["state"] == "abc")
+    @Test func newPasskeyKeepsWebAuthnKeys() throws {
+        let registration = PasskeyRegistration(credentialID: Data([1]), clientDataJSON: Data([2]), attestationObject: Data([3]))
+        let creation = try APIClient.decoder.decode(NativeAuth.PasskeyCreation.self, from: Data(
+            #"{"challenge_token":"t","challenge":"c","rp_id":"dabble.me","user_id":"Nw","user_name":"a@b.c","exclude_credentials":[]}"#.utf8))
+        #expect(NativeAuth.data(base64URL: creation.userId) == Data("7".utf8))
+        let json = try JSONEncoder().encode(NativeAuth.NewPasskey(registration: registration, creation: creation,
+                                                                   nickname: "n", setupToken: "s", password: nil))
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["challenge_token"] as? String == "t")
+        #expect(object["setup_token"] as? String == "s")
+        #expect(object["current_password"] == nil)
+        let credential = try #require(object["credential"] as? [String: Any])
+        let response = try #require(credential["response"] as? [String: Any])
+        #expect(Set(response.keys) == ["clientDataJSON", "attestationObject"])
+    }
+
+    @Test func otpRequiredAsksForTheCode() {
+        let body = Data(#"{"error":"otp_required","message":"Enter the code."}"#.utf8)
+        #expect(NativeAuth.failure(status: 401, data: body) == .needsCode)
+    }
+
+    @Test func throttledSaysToWait() {
+        #expect(NativeAuth.failure(status: 429, data: Data("Retry later".utf8)) == .message("Too many tries. Wait a few minutes, then try again."))
     }
 }
 
@@ -78,7 +102,6 @@ struct PromptGroundingTests {
 }
 
 @MainActor
-@MainActor
 struct HashtagTypingTests {
     /// A "#" and a letter at the cursor is a hashtag being typed; a number first, or a "#" inside a word, isn't.
     @Test func findsTheHashtagBeingTyped() {
@@ -124,6 +147,7 @@ struct HashtagTypingTests {
     }
 }
 
+@MainActor
 struct HashtagMatchingTests {
     /// The writer's tags that are words in the entry come first in the composer's row, without a model.
     @Test func tagsMatchWholeWordsWhateverTheCase() {
@@ -464,6 +488,66 @@ struct DecodingTests {
         #expect(me.canAddPhotos == false)
         #expect(me.today == "2026-11-07")
         #expect(me.aiConnectors?.requiresPro == true)
+        // An older server: no in-app purchase, so nothing is offered.
+        #expect(me.appleAccountToken == nil)
+        #expect(me.isProThroughApple == false)
+    }
+
+    /// Settings → Name sends only the names it changed (PATCH /api/v1/me), and an emptied one as "".
+    @Test func encodesNameUpdate() throws {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        let first = try JSONSerialization.jsonObject(with: encoder.encode(NameUpdate(firstName: "Sam"))) as? [String: String]
+        #expect(first == ["first_name": "Sam"])
+        let cleared = try JSONSerialization.jsonObject(with: encoder.encode(NameUpdate(lastName: ""))) as? [String: String]
+        #expect(cleared == ["last_name": ""])
+
+        let json = """
+        {"id":1,"email":"a@b.c","first_name":"Sam","last_name":"Rivera","name":"Sam Rivera","plan":"free","is_pro":false,
+        "timezone":null,"today":"2026-11-07","entry_count":3,"can_write":true,"can_add_photos":false,"can_edit":false,
+        "can_search":false,"settings_url":"https://dabble.me/settings","security_url":"https://dabble.me/security","ai_connectors":null}
+        """
+        #expect(try APIClient.decoder.decode(Me.self, from: Data(json.utf8)).lastName == "Rivera")
+    }
+
+    /// What build 116's server adds for in-app purchase (Api::V1::AppleSubscriptionsController.status_json).
+    @Test func decodesMeWithAppleSubscription() throws {
+        let json = """
+        {"id":1,"email":"a@b.c","first_name":null,"plan":"pro","is_pro":true,"timezone":null,
+        "today":"2026-11-07","entry_count":3,"can_write":true,"can_add_photos":true,"can_edit":true,"can_search":true,
+        "settings_url":"https://dabble.me/settings","security_url":"https://dabble.me/security","ai_connectors":null,
+        "apple_account_token":"6f1c0c5e-3d5b-4b7a-9a43-2f0d1c3e9b11","pro_source":"apple",
+        "apple_subscription":{"product_id":"me.dabble.ios.pro.yearly","expires_at":"2027-11-07T20:00:00Z",
+        "will_renew":true,"in_grace_period":false,"sandbox":true}}
+        """
+        let me = try APIClient.decoder.decode(Me.self, from: Data(json.utf8))
+        #expect(UUID(uuidString: try #require(me.appleAccountToken)) != nil)
+        #expect(me.isProThroughApple)
+        #expect(!me.isProThroughWeb)
+        #expect(me.appleSubscription?.productId == SubscriptionStore.yearlyID)
+        #expect(me.appleSubscription?.willRenew == true)
+        #expect(me.sellsInApp) // No can_buy_in_app (build 114's first servers): selling is on.
+
+        let closing = json.replacingOccurrences(of: #""pro_source":"apple","#, with: #""pro_source":"apple","can_buy_in_app":false,"#)
+        #expect(try !APIClient.decoder.decode(Me.self, from: Data(closing.utf8)).sellsInApp)
+    }
+
+    /// Settings → Plan for an account that pays on dabble.me (Api::V1::PlansController).
+    @Test func decodesPlanWithWebRenewal() throws {
+        let json = """
+        {"plan":"pro","is_pro":true,"pro_source":"web","apple_subscription":null,
+        "web_subscription":{"provider":"Stripe","expires_at":"2026-12-21T18:00:00Z","will_renew":false}}
+        """
+        let plan = try APIClient.decoder.decode(PlanDetails.self, from: Data(json.utf8))
+        #expect(plan.webSubscription?.expiresAt == "2026-12-21T18:00:00Z")
+        #expect(plan.webSubscription?.willRenew == false)
+        let none = try APIClient.decoder.decode(PlanDetails.self, from: Data(#"{"plan":"free","web_subscription":null}"#.utf8))
+        #expect(none.webSubscription == nil)
+    }
+
+    /// The server only accepts these (AppStore::PRODUCT_IDS); App Store Connect must use them too.
+    @Test func sellsTheProductsTheServerAccepts() {
+        #expect(SubscriptionStore.productIDs == ["me.dabble.ios.pro.monthly", "me.dabble.ios.pro.yearly"])
     }
 }
 
@@ -999,6 +1083,19 @@ struct EntryTemplateTests {
         #expect(UserDefaults.standard.data(forKey: EntryTemplate.runsKey) == nil)
     }
 
+    /// The empty page's preview of the template keeps its words and formatting, but not the blank lines
+    /// and empty items left for writing.
+    @Test func todaysPreviewSkipsTheRoomToWrite() {
+        let template = [DocumentRun("One Win", bold: true), DocumentRun("\n\n• \n"), DocumentRun("One Point of Tension", bold: true), DocumentRun("\n1. \n\n"), DocumentRun("Grateful for "), DocumentRun("one thing", italic: true)]
+        let preview = EntryTemplate.preview(template)
+        #expect(String(preview.characters) == "One Win\nOne Point of Tension\nGrateful for one thing")
+        let win = preview.runs.first { String(preview[$0.range].characters) == "One Win" }
+        #expect(win?.inlinePresentationIntent == .stronglyEmphasized)
+        #expect(EntryTemplate.preview([DocumentRun("\n• \n\n")]).characters.isEmpty)
+        // Figures of the writer's own are words, not a list's marker.
+        #expect(String(EntryTemplate.preview([DocumentRun("Mood 1-10\n2025\n12. \n")]).characters) == "Mood 1-10\n2025")
+    }
+
     /// A draft is kept as typed too: a link in it keeps where it goes.
     @Test func typedTextKeepsItsLinks() {
         let typed = [DocumentRun("See "), DocumentRun("the trail", link: "https://example.com/trail"), DocumentRun(" soon")]
@@ -1114,5 +1211,214 @@ struct DraftPhotoTests {
         let draft = try JSONDecoder().decode(DraftStore.Draft.self, from: Data(old.utf8))
         #expect(draft.photos == nil)
         #expect(draft.removesPhoto == nil)
+    }
+}
+
+/// Speaking an entry: what's heard goes in at the cursor as if typed there.
+@MainActor
+struct DictationTests {
+    @Test func spokenWordsAreSpacedLikeTypedOnes() {
+        #expect(Dictation.insertion(of: "Today I walked.", before: "") == "Today I walked.")
+        #expect(Dictation.insertion(of: " It was quiet. ", before: "A long day.") == " It was quiet.")
+        #expect(Dictation.insertion(of: " It was quiet.", before: "A long day. ") == "It was quiet.")
+        #expect(Dictation.insertion(of: "  \n", before: "A long day.") == "")
+    }
+
+    /// Mid-sentence, a dictionary word starts in lowercase; "I", names and acronyms don't.
+    @Test func midSentenceWordsStartInLowercase() {
+        #expect(Dictation.insertion(of: "Then we left.", before: "We ate and") == " then we left.")
+        #expect(Dictation.insertion(of: "I left early.", before: "After dinner") == " I left early.")
+        #expect(Dictation.insertion(of: "NASA called.", before: "Then") == " NASA called.")
+        #expect(Dictation.insertion(of: "Then we left.", before: "We ate:") == " Then we left.")
+    }
+
+    @Test func hashtagsBecomeWordsToExpect() {
+        #expect(Dictation.hints(from: ["#Leo", "leo", "Kenji", " ", "#"]) == ["Leo", "Kenji"])
+        #expect(Dictation.hints(from: (1...150).map { "tag\($0)" }).count == Dictation.maxHints)
+    }
+
+    /// Custom Vocabulary comes first, so a long list of hashtags never pushes a word out, and
+    /// Settings lists only the hashtags that fit, without the writer's own words.
+    @Test func customVocabularyComesBeforeHashtags() {
+        let words = ["Ouray", "Dabble Me"]
+        let all = ["#ouray"] + (1...150).map { "tag\($0)" }
+        let expected = Dictation.expected(words: words, recentTags: ["Leo"], allTags: all)
+        #expect(Array(expected.prefix(3)) == ["Ouray", "Dabble Me", "Leo"])
+        #expect(expected.count == Dictation.maxHints)
+        let terms = Dictation.hashtagTerms(words: words, recentTags: ["Leo"], allTags: all)
+        #expect(terms.first == "Leo")
+        #expect(!terms.contains { $0.lowercased() == "ouray" })
+        #expect(terms.count == Dictation.maxHints - words.count)
+    }
+}
+
+/// Hex's cleanup model, from the app's bundle: spoken corrections and ums go, the rest stays.
+struct CleanupTaggerTests {
+    @Test func spokenCorrectionsAndFillersGo() throws {
+        let tagger = CleanupTagger()
+        #expect(try tagger.clean("Let's ship it Tuesday, no wait, Thursday.") == "Let's ship it Thursday.")
+        #expect(try tagger.clean("Can you send it to John, I mean Mike?") == "Can you send it to Mike?")
+        #expect(try tagger.clean("Test one two three.") == "Test one two three.")
+        #expect(tagger.isLoaded)
+    }
+
+    @Test func aLateCleanupKeepsWhatWasSaid() async {
+        let tagger = CleanupTagger()
+        let spoken = "Can you send it to John, I mean Mike?"
+        #expect(await tagger.clean(spoken, within: 0) == spoken)
+        #expect(await tagger.clean(spoken, within: 5) == "Can you send it to Mike?")
+    }
+}
+
+/// Settings → Dictation's words to expect: each once, trimmed, removable.
+struct DictationSettingsTests {
+    @Test func wordsAreAddedOnceAndRemoved() {
+        var stored = DictationSettings.adding(" Kenji ", to: "")
+        stored = DictationSettings.adding("kenji", to: stored)
+        stored = DictationSettings.adding("Ouray", to: stored)
+        stored = DictationSettings.adding("  ", to: stored)
+        #expect(DictationSettings.words(from: stored) == ["Kenji", "Ouray"])
+        #expect(DictationSettings.words(from: DictationSettings.removing("Kenji", from: stored)) == ["Ouray"])
+    }
+
+    /// The cleanup model only knows English.
+    @Test func onlyEnglishIsCleanedUp() {
+        #expect(DictationSettings.cleansUp(Locale(identifier: "en-US")))
+        #expect(DictationSettings.cleansUp(Locale(identifier: "en-GB")))
+        #expect(!DictationSettings.cleansUp(Locale(identifier: "es-MX")))
+    }
+}
+
+/// Apple Intelligence's fixes are kept only when they still look like what was said.
+struct TranscriptCleanupGuardTests {
+    @Test func aFixedWordIsKeptARewriteIsNot() {
+        let said = "We went to the beach and I got sun bird on my shoulders."
+        #expect(TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "We went to the beach and I got sunburnt on my shoulders."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "We didn't go to the beach and I got sunburnt on my shoulders."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "We left at 6.", cleaned: "We left at 7."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "A sunny beach day left my shoulders burnt, which taught me to bring sunscreen next time for sure."))
+    }
+
+    /// A question in an entry stays the question; the model never answers it or adds a preamble.
+    @Test func neverAnAnswerOrAPreamble() {
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "should I call my sister tonight or wait until sunday",
+                                                     cleaned: "Yes, you should call your sister tonight."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "would you say", cleaned: "Yes, I would say."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "the report needs a short summary before the meeting on monday",
+                                                     cleaned: "Sure, I can help with that. Here's the cleaned transcript: The report needs a short summary before the meeting on Monday."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "bring these to the meeting", cleaned: "Bring these: notes."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "i will call you tomorrow", cleaned: "I will definitely call you tomorrow."))
+    }
+
+    @Test func aSelfCorrectionOrStutterMayShortenIt() {
+        #expect(TranscriptCleanupGuard.isAcceptable(original: "i'll send it tomorrow, i mean, i'll send it today", cleaned: "I'll send it today."))
+        #expect(TranscriptCleanupGuard.isAcceptable(original: "send it on tuesday actually wednesday", cleaned: "Send it on Wednesday."))
+        #expect(TranscriptCleanupGuard.isAcceptable(original: "i i think we should go", cleaned: "I think we should go."))
+        #expect(TranscriptCleanupGuard.isAcceptable(original: "i am going home", cleaned: "I'm going home."))
+        // Without a correction, cutting most of it off is refused.
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "we drove to the coast and walked on the beach until the sun went down",
+                                                     cleaned: "We drove to the coast."))
+    }
+}
+
+/// "Moments from your iPhone" (Journaling Suggestions): what a picked moment adds to an entry.
+struct MomentTextTests {
+    private let us = Locale(identifier: "en_US")
+
+    @Test func aLineForEachThingInTheOrderADayIsRemembered() {
+        var moment = Moment(title: "Morning in Golden Gate Park")
+        moment.places = [.init(place: "Golden Gate Park", city: "San Francisco")]
+        moment.workouts = [.init(name: "Outdoor Walk", meters: 5_230, seconds: 3_720)]
+        moment.steps = 8_214
+        moment.people = ["Sam", "Alex"]
+        moment.songs = [.init(title: "Bloom", by: "The Paper Kites")]
+        moment.podcasts = [.init(title: "Episode 12", by: nil)]
+        moment.feelings = ["Pleasant"]
+        #expect(moment.heading == "Morning in Golden Gate Park")
+        #expect(moment.lines(locale: us) == [
+            "📍 Golden Gate Park, San Francisco",
+            "🏃 Outdoor Walk · 3.2 mi · 1 hr, 2 min",
+            "👣 8,214 steps",
+            "👥 With Sam and Alex",
+            "🎶 The Paper Kites – Bloom",
+            "🎧 Episode 12",
+            "💭 Felt pleasant"
+        ])
+    }
+
+    @Test func repeatsAndBlanksGoInOnce() {
+        var moment = Moment(title: "  ")
+        // A place offered both on its own and in a group, a city that's also the place's name,
+        // a workout with nothing to say but that it happened.
+        moment.places = [.init(place: "Home", city: "Denver"), .init(place: "Home", city: "Denver"), .init(place: "Denver", city: "Denver"), .init(place: " ", city: nil)]
+        moment.workouts = [.init(name: nil, meters: 0, seconds: 30)]
+        moment.songs = [.init(title: "", by: " ")]
+        #expect(moment.heading == nil)
+        #expect(moment.lines(locale: us) == ["📍 Home, Denver", "📍 Denver", "🏃 Workout"])
+    }
+
+    @Test func aReflectionGoesInWithoutItsKind() {
+        var moment = Moment(title: "Creativity Reflection")
+        moment.reflections = ["What did you make this week that you're proud of?"]
+        #expect(moment.heading == nil)
+        #expect(moment.lines().isEmpty)
+    }
+
+    @Test func aMomentFromAnotherDayIsAskedAbout() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/Denver"))
+        func at(_ day: Int, _ hour: Int) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour)))
+        }
+        var moment = Moment(title: "Walk")
+        // No date: nothing to ask.
+        #expect(moment.day(otherThan: try at(22, 9), calendar: calendar) == nil)
+        // An afternoon on the 18th, written about on the 18th and on the 22nd.
+        moment.when = DateInterval(start: try at(18, 14), end: try at(18, 15))
+        #expect(moment.day(otherThan: try at(18, 21), calendar: calendar) == nil)
+        #expect(moment.day(otherThan: try at(22, 9), calendar: calendar) == calendar.startOfDay(for: try at(18, 0)))
+        // A trip from the 18th to the 20th, ending at midnight: any of those days, not the 21st.
+        moment.when = DateInterval(start: try at(18, 8), end: try at(21, 0))
+        #expect(moment.day(otherThan: try at(20, 12), calendar: calendar) == nil)
+        #expect(moment.day(otherThan: try at(21, 12), calendar: calendar) == calendar.startOfDay(for: try at(18, 0)))
+    }
+
+    @Test func nothingToSayAddsNothing() {
+        #expect(Moment(title: "").lines().isEmpty)
+    }
+}
+
+struct PasskeyPromptTests {
+    private func defaults() -> UserDefaults {
+        let name = "PasskeyPromptTests.\(UUID().uuidString)"
+        return UserDefaults(suiteName: name)!
+    }
+
+    @Test func asksOnlyAfterASignInToAnAccountWithoutAPasskey() {
+        let store = defaults()
+        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, defaults: store))
+        // Not on launch, and not once there's a passkey.
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: false, defaults: store))
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: true, justSignedIn: true, defaults: store))
+        // An older server doesn't say: don't ask.
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: nil, justSignedIn: true, defaults: store))
+    }
+
+    @Test func notNowPutsItOffForThirtyDays() {
+        let store = defaults()
+        let now = Date()
+        PasskeyPrompt.dismiss(now: now, defaults: store)
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: now.addingTimeInterval(86_400), defaults: store))
+        let later = now.addingTimeInterval(TimeInterval(PasskeyPrompt.snoozeDays + 1) * 86_400)
+        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: later, defaults: store))
+    }
+
+    @Test func stopsAfterTheLastNotNow() {
+        let store = defaults()
+        let now = Date()
+        for _ in 0..<PasskeyPrompt.maxAsks { PasskeyPrompt.dismiss(now: now, defaults: store) }
+        let later = now.addingTimeInterval(365 * 86_400)
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: false, now: later, defaults: store))
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: later, defaults: store))
     }
 }

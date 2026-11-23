@@ -65,15 +65,31 @@ module StructuredDataHelper
       "@id": "#{base_url}/#webapplication",
       name: BRAND_NAME,
       url: "#{base_url}/",
-      description: "A private journal that lives in your email inbox. Reply to a daily prompt to write an entry, and rediscover past entries automatically.",
+      description: "A simple, private daily journal. Write by email, the iPhone app, or the web, and Rewind brings past entries back to you.",
       applicationCategory: "LifestyleApplication",
-      operatingSystem: "Web",
+      operatingSystem: "Web, iOS",
       publisher: { "@id": "#{base_url}/#organization" },
       offers: [
         offer_json_ld("Dabble Me Free", "0.00"),
         offer_json_ld("Dabble Me PRO (monthly)", PRO_PRICES[:monthly]),
         offer_json_ld("Dabble Me PRO (yearly)", PRO_PRICES[:yearly])
       ]
+    }
+  end
+
+  # FAQPage node built from the same sections that render the page, so the two can't drift.
+  # Answers are plain text (ApplicationHelper.faq_plain_text).
+  def faq_page_json_ld(sections)
+    {
+      "@type": "FAQPage",
+      "@id": "#{structured_data_base_url}#{support_path}#faq",
+      mainEntity: sections.values.flat_map { |section| section[:questions] }.map do |qa|
+        {
+          "@type": "Question",
+          name: qa[:q],
+          acceptedAnswer: { "@type": "Answer", text: ApplicationHelper.faq_plain_text(qa[:a]) }
+        }
+      end
     }
   end
 
@@ -87,7 +103,7 @@ module StructuredDataHelper
       description: content_for(:description),
       url: url,
       mainEntityOfPage: { "@type": "WebPage", "@id": url },
-      image: "#{base_url}/dabble_logo_ogimage.jpg",
+      image: "#{base_url}/og/dabble-og-3.jpg",
       datePublished: published,
       dateModified: modified,
       inLanguage: "en",

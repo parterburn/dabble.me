@@ -175,8 +175,10 @@ RSpec.describe "Passkey sign-in in the browser", type: :feature, js: true do
 
       visit new_user_session_path
       fill_in "user_email", with: user.email
+      click_button "Continue"
+      find("summary", text: "Use password instead").click
       fill_in "user_password", with: user.password
-      click_button "Log in", exact: true
+      click_button "Log in with password"
       expect(page).to have_button("Use a passkey instead")
       otp_page = page.current_path
 

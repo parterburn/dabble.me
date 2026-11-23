@@ -1,17 +1,24 @@
-<p>
-  Welcome to
-  <%= link_to "Dabble Me", "https://#{ENV['MAIN_DOMAIN']}" %>
-  - the simple & private journal that you'll actually use! Since you're new here, we're going to make it easy for you to write your first entry.
-</p>
-<p>
-  <b>How's your day going?</b>
-  Just reply to this email with your answer, and it's instantly saved in your Dabble Me account.
-</p>
-<p style="padding: 14px 18px; border-radius: 12px; background-color: #F3F2EC;">
-  <b>On an iPhone or iPad?</b>
-  Read and write your journal in the Dabble Me app, now in beta:
-  <%= link_to "get the iOS app", ApplicationHelper.ios_testflight_url, style: "font-weight: bold;" %>.
-</p>
+<% if @user.signed_up_in_app? %>
+  <p>
+    Welcome to
+    <%= link_to "Dabble Me", "https://#{ENV['MAIN_DOMAIN']}" %>
+    - the simple & private journal that you'll actually use! You're all set up in the app, so that's the easiest place to write your first entry.
+  </p>
+  <p>
+    <b>How's your day going?</b>
+    Open the Dabble Me app and write a sentence or two about it. That's your first entry.
+  </p>
+<% else %>
+  <p>
+    Welcome to
+    <%= link_to "Dabble Me", "https://#{ENV['MAIN_DOMAIN']}" %>
+    - the simple & private journal that you'll actually use! Since you're new here, we're going to make it easy for you to write your first entry.
+  </p>
+  <p>
+    <b>How's your day going?</b>
+    Just reply to this email with your answer, and it's instantly saved in your Dabble Me account.
+  </p>
+<% end %>
 <p>
   Helpful tips:
   <ol>
@@ -30,22 +37,42 @@
       <br>
       <br>
     </li>
+    <% if @user.signed_up_in_app? %>
+      <li>
+        Turn on a daily reminder in the app's Settings → Reminders, and it'll nudge you to write.
+        <br>
+        <br>
+      </li>
+    <% end %>
     <% if @user.is_free? %>
       <li>
-        As a free user, you'll receive an email every other week on Sunday.
+        <% if @user.signed_up_in_app? %>
+          As a free user, you'll also get an email every other week on Sunday. Reply to it and your answer is saved as an entry too.
+        <% else %>
+          As a free user, you'll receive an email every other week on Sunday.
+        <% end %>
         <br>
         <br>
       </li>
       <li>
-        Unlock premium features like changing email frequency, editing entries, and attaching photos to your reply by subscribing to
-        <%= link_to("Dabble Me PRO", "https://#{ENV['MAIN_DOMAIN']}/subscribe")+"." %>
+        <% if @user.signed_up_in_app? %>
+          Unlock premium features like photos, editing entries, search, and On This Day with
+          <%= link_to("Dabble Me PRO", "https://#{ENV['MAIN_DOMAIN']}/subscribe") %>, in the app's Settings or on the web.
+        <% else %>
+          Unlock premium features like changing email frequency, editing entries, and attaching photos to your reply by subscribing to
+          <%= link_to("Dabble Me PRO", "https://#{ENV['MAIN_DOMAIN']}/subscribe")+"." %>
+        <% end %>
       </li>
     <% end %>
   </ol>
 </p>
 <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;">
 <p>
-  You can always email <%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %> to post new entries&nbsp;<i>(hint: add this to your contacts)</i>.
+  <% if @user.signed_up_in_app? %>
+    Prefer email? Reply to this one, or email <%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %> any time, and it's saved as an entry&nbsp;<i>(hint: add this to your contacts)</i>.
+  <% else %>
+    You can always email <%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %> to post new entries&nbsp;<i>(hint: add this to your contacts)</i>.
+  <% end %>
 </p>
 <p>
   For reference, your username is: <%= @user.email %>

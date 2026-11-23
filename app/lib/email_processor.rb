@@ -350,6 +350,11 @@ class EmailProcessor
     body = EmailReplyTrimmer.trim(body)
     return unless body.present?
 
+    # Drop raw <img> tags. The plain-text part is not run through the HTML
+    # safe list, so a literal remote <img> here would be stored and act as a
+    # tracking pixel. Inline images are handled from the HTML part instead.
+    body&.gsub!(/<img\b[^>]*>/i, "")
+
     # Remove embedded images and data
     body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*?\"/, "src=\"\"")
     body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*?\)/, "url()")

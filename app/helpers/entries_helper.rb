@@ -32,7 +32,11 @@ module EntriesHelper
     return nil unless body.present?
 
     body = Rinku.auto_link(body, :all, 'target="_blank"')
-    sanitize body, tags: %w(strong em a div span ul ol li b i img br p hr u em blockquote), attributes: %w(href style src target)
+    # No <img>: an entry's photo lives in entry.image, never in the body. A
+    # remote <img> in stored HTML (raw HTML in a plain-text email, or pasted
+    # into the editor) would load from someone else's server every time the
+    # entry is viewed, like a tracking pixel.
+    sanitize body, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href style target)
   end
 
   # Turns each #tag in an entry's HTML into a link that searches for it, the

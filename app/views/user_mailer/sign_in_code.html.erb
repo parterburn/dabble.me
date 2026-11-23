@@ -1,0 +1,17 @@
+<p><%= @new_account ? "Here's the code to create your Dabble Me account:" : "Here's your code to sign in to Dabble Me:" %></p>
+
+<p style="font-size: 28px; font-weight: bold; letter-spacing: 6px; font-family: Menlo, Consolas, monospace;"><%= @code %></p>
+
+<p>Enter it where you asked for it. It works once, for the next <%= EmailCode::LIFETIME.in_minutes.to_i %> minutes.</p>
+
+<p>
+  If you didn't ask for this, you can ignore this email.
+  Nobody can <%= @new_account ? "make an account with this address" : "get into your account" %> without the code.
+</p>
+
+<p>
+  <br>
+  Thanks,
+  <br>
+  Dabble Me
+</p>

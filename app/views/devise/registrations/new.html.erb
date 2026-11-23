@@ -1,8 +1,19 @@
-<% content_for :title, "Sign up" %>
+<% if current_gift %>
+  <%# What a shared gift link previews as (iMessage, Slack and others read these tags). %>
+  <% content_for :title, "A gift for you" %>
+  <% content_for :social_title, "You've been given a year of Dabble Me PRO" %>
+  <% content_for :social_image, "/og/dabble-og-gift-3.jpg" %>
+  <% content_for :description, "A free year of Dabble Me PRO, a #{Gift::VALUE} value. No card needed. Dabble Me is a private journal you keep by replying to an email." %>
+<% else %>
+  <% content_for :title, "Sign up" %>
+<% end %>
 <% content_for :robots, "noindex, follow" %>
 
 <section class="py-12 lg:py-20">
   <div class="mx-auto max-w-xl px-4 sm:px-6">
+    <% if current_gift %>
+      <%= render "devise/registrations/gift_header" %>
+    <% else %>
     <!-- Header -->
     <div class="text-center mb-8">
       <h1 class="font-serif text-3xl sm:text-4xl tracking-tight text-primary">Create your free account</h1>
@@ -10,112 +21,19 @@
         Start your journaling habit with day one.
       </p>
     </div>
+    <% end %>
 
-    <!-- Sign up form -->
+    <!-- Sign up form: an email, then the emailed code (EmailCodesController) -->
     <div class="card p-6 sm:p-8">
-      <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-5", toolname: "create_account", tooldescription: "Create a free Dabble Me journal account. Fill the form and leave it for the user to review and submit. Do not submit automatically." }) do |f| %>
-        <%= render "devise/shared/error_messages", resource: resource %>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <%= f.label :first_name, class: "block text-sm font-medium text-primary mb-1.5" %>
-            <%= f.text_field :first_name, 
-                autofocus: true, 
-                required: true,
-                value: params[:user].try(:[], "first_name"),
-                toolparamdescription: "First name for the new journal account.",
-                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-          </div>
-          <div>
-            <%= f.label :last_name, class: "block text-sm font-medium text-primary mb-1.5" %>
-            <%= f.text_field :last_name, 
-                required: true,
-                value: params[:user].try(:[], "last_name"),
-                toolparamdescription: "Last name for the new journal account.",
-                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-          </div>
-        </div>
-
-        <div>
-          <%= f.label :email, class: "block text-sm font-medium text-primary mb-1.5" %>
-          <%= f.email_field :email, 
-              required: true,
-              placeholder: "you@example.com",
-              toolparamdescription: "Email address that will receive journal prompts.",
-              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <%= f.label :password, class: "block text-sm font-medium text-primary mb-1.5" %>
-            <%= f.password_field :password, 
-                autocomplete: "new-password", 
-                required: true,
-                toolparamdescription: "New account password. Leave empty unless the user provided one.",
-                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-            <% if @validatable %>
-              <p class="mt-1 text-xs text-muted">Min <%= @minimum_password_length %> characters</p>
-            <% end %>
-          </div>
-          <div>
-            <%= f.label :password_confirmation, "Confirm password", class: "block text-sm font-medium text-primary mb-1.5" %>
-            <%= f.password_field :password_confirmation, 
-                autocomplete: "new-password", 
-                required: true,
-                toolparamdescription: "Password confirmation. Must match the password field.",
-                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-          </div>
-        </div>
-
-        <% if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present? %>
-          <div class="flex justify-center">
-            <%= captcha_tags action: "sign-up", data: {
-              theme: "light",
-              callback: "dabbleCaptchaSolved",
-              "expired-callback": "dabbleCaptchaExpired",
-              "error-callback": "dabbleCaptchaError"
-            } %>
-          </div>
-          <p id="captcha-error" class="hidden text-center text-sm text-red-600" role="alert">
-            Captcha failed to load. Please disable any ad/privacy blockers for this site and reload the page.
-          </p>
-          <script>
-            (function () {
-              var script = document.currentScript;
-              var form = script && script.closest('form');
-              var submit = form && form.querySelector('[type="submit"]');
-              var errEl = document.getElementById('captcha-error');
-              if (!submit) return;
-              submit.disabled = true;
-              window.dabbleCaptchaSolved  = function () { submit.disabled = false; if (errEl) errEl.classList.add('hidden'); };
-              window.dabbleCaptchaExpired = function () { submit.disabled = true;  if (window.turnstile) window.turnstile.reset(); };
-              window.dabbleCaptchaError   = function () { submit.disabled = true;  if (errEl) errEl.classList.remove('hidden'); };
-              // Safety net: if the Turnstile script never loads within 10s, surface the error.
-              setTimeout(function () {
-                if (submit.disabled && window.dabbleCaptchaSolved && !window.turnstile) {
-                  if (errEl) errEl.classList.remove('hidden');
-                }
-              }, 10000);
-            })();
-          </script>
-        <% end %>
-
-        <div>
-          <%= f.submit "Create account", class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
-        </div>
-
-        <p class="text-center text-xs text-muted">
-          By signing up you agree to the
-          <%= link_to "terms of service", terms_path, class: "text-accent hover:text-primary underline" %>.
-        </p>
-      <% end %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+      <%= render "devise/shared/email_code_form", intent: "sign_up", submit_label: current_gift ? "Claim my year of PRO" : "Create account" %>
     </div>
 
     <!-- Already have an account -->
     <div class="mt-8 text-center space-y-4">
       <p class="text-muted">
         Already have an account?
-        <%= link_to "Log in", new_user_session_path, class: "text-accent underline hover:text-primary font-medium transition-colors" %>
+        <%= link_to current_gift ? "Log in to add the gift to it" : "Log in", current_gift ? gift_path(current_gift.code, login: 1) : new_user_session_path, class: "text-accent underline hover:text-primary font-medium transition-colors" %>
       </p>
     </div>
   </div>

@@ -12,7 +12,7 @@
     </div>
     <div class="s-scrollable">
       <div class="entry-panel">
-        <%= ApplicationHelper.faqs[:general][:questions].find { |q| q[:id] == "ideas-for-writing" }[:a].html_safe %>
+        <%= ApplicationHelper.faq("ideas-for-writing")[:a].html_safe %>
       </div>
     </div>
     <div class="clearfix"></div>

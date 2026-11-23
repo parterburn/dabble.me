@@ -18,7 +18,7 @@
     "type": "git",
     "url": "git+https://github.com/parterburn/dabble.me.git"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "bugs": {
     "url": "https://github.com/parterburn/dabble.me/issues"
   },

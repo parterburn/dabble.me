@@ -5,20 +5,17 @@ import SwiftUI
 struct EntryTemplateView: View {
     @Environment(AppModel.self) private var model
     @State private var editor = RichTextEditorModel(typed: EntryTemplate.runs)
-    @AppStorage(EntryTemplate.autoKey) private var addsToNewEntries = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // (The button's own icon, in the sentence.)
-            Text("A starting point for your entries: headings or questions you answer each time. Add it from the \(inlineIcon("slab-lightbulb", named: "Prompt")) button while writing, or touch and hold that button to add it straight away. Touch and hold a Write button on Today to start an entry with it.")
+            Text("A starting point for your entries: headings or questions you answer each time. A new entry shows it, faintly, on its empty page: swipe right or tap Swipe to start from it, or just start writing. Touch and hold a Write button on Today to open a new entry with it already in.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
-            Toggle("Start New Entries with It", isOn: $addsToNewEntries)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+                .padding(.bottom, 12)
             Divider()
             // B, I and U, always: as in an entry's bar, and the only buttons here.
             RichTextEditor(model: editor, trailing: AnyView(formatButtons.foregroundStyle(.tint)),
@@ -46,7 +43,6 @@ struct EntryTemplateView: View {
             // Sent to the account once, on the way out, not on every letter typed.
             AccountSettings.sync(with: model)
         }
-        .onChange(of: addsToNewEntries) { AccountSettings.changed(.entryTemplateAuto, model: model) }
     }
 
     /// Bold, italic and underline, the same letters as an entry's bar: for the selected words or,

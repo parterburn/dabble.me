@@ -6,6 +6,8 @@ struct Me: Decodable, Sendable, Equatable {
     let id: Int
     let email: String
     let firstName: String?
+    /// Only older accounts have one: sign-up stopped asking for it (nil from an older server).
+    var lastName: String? = nil
     /// First and last name, as set on dabble.me (nil from an older server, or when not set).
     var name: String? = nil
     let plan: String
@@ -27,7 +29,37 @@ struct Me: Decodable, Sendable, Equatable {
     let canSeeStats: Bool?
     let settingsUrl: URL
     let securityUrl: URL
+    /// Whether the account has a passkey (nil from an older server: then the app doesn't ask).
+    var hasPasskey: Bool? = nil
+    /// False for an account made by email code that never set a password: Delete Account and
+    /// adding a passkey confirm with an emailed code instead. Nil from an older server (then the
+    /// app asks for the password, as before).
+    var hasPassword: Bool? = nil
     let aiConnectors: AIConnectors?
+    /// The UUID to buy PRO in the app with (StoreKit's appAccountToken): Apple puts it in the
+    /// signed transaction, which is how the server knows which account bought it. Nil from an
+    /// older server, and then the app sells nothing.
+    var appleAccountToken: String? = nil
+    /// False once Dabble Me's closing is announced: nothing new is sold (purchases already made
+    /// are still reported). Missing from older servers.
+    var canBuyInApp: Bool? = nil
+    /// The app may offer the in-app purchase.
+    var sellsInApp: Bool { appleAccountToken != nil && canBuyInApp != false }
+    /// Where PRO comes from: "apple" (an App Store subscription), "web" (dabble.me), or nil.
+    var proSource: String? = nil
+    /// The App Store subscription that makes the account PRO, if one does.
+    var appleSubscription: AppleSubscriptionInfo? = nil
+
+    var isProThroughApple: Bool { isPro && proSource == "apple" }
+    var isProThroughWeb: Bool { isPro && proSource != "apple" }
+
+    struct AppleSubscriptionInfo: Decodable, Sendable, Equatable {
+        let productId: String
+        let expiresAt: String?
+        let willRenew: Bool?
+        let inGracePeriod: Bool?
+        let sandbox: Bool?
+    }
 
     /// Free accounts can write and delete; editing, photos, links, search and Stats are PRO.
     var mayDelete: Bool { canDelete ?? canEdit }
@@ -215,6 +247,84 @@ struct ImageUpload: Decodable, Sendable {
     let uploadHeaders: [String: String]
     let uploadedImageKey: String
     let maxBytes: Int
+}
+
+/// GET /api/v1/account_deletion: what Delete Account's confirmation says.
+struct AccountDeletionInfo: Decodable, Sendable, Equatable {
+    struct SeparateBilling: Decodable, Sendable, Equatable {
+        /// Gumroad, PayPal, Stripe, or Apple (an App Store subscription, cancelled in iOS Settings).
+        let provider: String
+        /// False for Stripe with no customer on file: there may be nothing left to cancel.
+        let certain: Bool
+    }
+
+    let entryCount: Int
+    /// PRO billing that deleting the account doesn't stop; nil when there's none to cancel.
+    let separateBilling: SeparateBilling?
+}
+
+/// A POST with nothing to send (encodes as `{}`).
+struct EmptyBody: Encodable, Sendable {}
+
+/// POST /api/v1/passkeys answers with the passkey's name.
+struct PasskeyAdded: Decodable, Sendable {
+    let nickname: String?
+}
+
+/// POST /api/v1/exports: the export is on its way to `email`.
+struct ExportRequestResult: Decodable, Sendable {
+    /// "started" or "preparing" (emailed when it's ready), or "sent" (a recent one, emailed again).
+    let status: String
+    let email: String
+
+    var title: String { status == "sent" ? "Export Sent" : "Export Started" }
+
+    /// Asked for on the Delete Account page: the export goes with the account.
+    func message(beforeDeleting: Bool) -> String {
+        guard beforeDeleting else { return message }
+        return message + "\n\nDownload it before you delete your account: deleting it deletes the export too."
+    }
+
+    var message: String {
+        switch status {
+        case "sent": "We've emailed your latest export to \(email) again. The link works for 7 days."
+        case "preparing": "Your export is already being prepared. We'll email it to \(email) when it's ready."
+        default: "We'll email your export to \(email) when it's ready. The link works for 7 days."
+        }
+    }
+}
+
+/// POST /api/v1/account_deletion.
+struct AccountDeletionResult: Decodable, Sendable {
+    let deletesAt: String
+}
+
+/// PATCH /api/v1/me: an empty name clears it; a nil one is left out, so it stays as it is.
+struct NameUpdate: Encodable, Sendable {
+    var firstName: String?
+    var lastName: String?
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(firstName, forKey: .firstName)
+        try container.encodeIfPresent(lastName, forKey: .lastName)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case firstName, lastName
+    }
+}
+
+/// Delete Account's confirmation: the password, or an emailed code on an account with none.
+struct AccountDeletionRequest: Encodable, Sendable {
+    var password: String? = nil
+    var emailCode: String? = nil
+}
+
+/// POST /api/v1/confirmation_code's answer: the code went to `email`.
+struct ConfirmationCodeSent: Decodable, Sendable {
+    let email: String
+    let resendAfter: Int?
 }
 
 struct APIErrorBody: Decodable, Sendable {
@@ -445,4 +555,16 @@ struct TagDateList: Decodable, Sendable {
 struct TagDateUpdate: Encodable, Sendable {
     var tag: String? = nil
     var date: String? = nil
+}
+
+/// GET /api/v1/plan (Settings → Plan): when a PRO plan bought on dabble.me renews or ends.
+/// Only Stripe plans have a date; nil for anything else, or when Stripe couldn't be asked.
+struct PlanDetails: Decodable, Sendable, Equatable {
+    var webSubscription: WebSubscriptionInfo? = nil
+
+    struct WebSubscriptionInfo: Decodable, Sendable, Equatable {
+        let provider: String?
+        let expiresAt: String?
+        let willRenew: Bool?
+    }
 }

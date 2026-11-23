@@ -66,6 +66,17 @@ RSpec.describe ExportArchive do
     expect(article.text).to include('Hello')
   end
 
+  it 'leaves a remote image in an entry body out of the web page' do
+    entry_on(Time.utc(2026, 3, 1, 12), %(<p>Hello</p><img src="https://tracker.example.com/open.gif">))
+
+    described_class.new(user.entries).write_to(path)
+    article = Nokogiri::HTML(unzip['journal.html']).at_css('article')
+
+    expect(article.css('img')).to be_empty
+    expect(article.to_html).not_to include('tracker.example.com')
+    expect(article.text).to include('Hello')
+  end
+
   it 'reads entries across batches' do
     stub_const('ExportArchive::BATCH_SIZE', 2)
     5.times { |day| entry_on(Time.utc(2026, 4, day + 1, 12), "day #{day + 1}") }

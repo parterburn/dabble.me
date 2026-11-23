@@ -1,11 +1,12 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "dabble-me",
-  "version": "0.1.8",
+  "version": "0.1.10",
   "description": "Search, reflect on, recap, and write your private Dabble Me journal using its existing OAuth MCP server.",
   "author": {
     "name": "Dabble Me"
   },
+  "license": "AGPL-3.0-only",
   "extensions": {
     "com.openai": {
       "interface": {
@@ -17,8 +18,8 @@
         "logo": "./assets/logo.png",
         "composerIcon": "./assets/logo.png",
         "defaultPrompt": [
+          "Make a private Spotify Wrapped of my journal; use lots of photos.",
           "Help me reflect on my journal from last month.",
-          "Make a private Spotify Wrapped of my journal this year.",
           "Help me write an entry in my Dabble Me journal."
         ],
         "websiteURL": "https://dabble.me",

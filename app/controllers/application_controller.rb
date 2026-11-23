@@ -51,7 +51,8 @@ class ApplicationController < ActionController::Base
   protected
 
   def configure_permitted_parameters
-    added_attrs = [:first_name, :last_name, :email, :password, :password_confirmation]
+    # Sign-up asks for no name: the email is the account. A name, if any, is added in Settings.
+    added_attrs = [:email, :password, :password_confirmation]
     preference_attrs = [:first_name, :last_name, { frequency: [] }, :way_back_past_entries, :send_past_entry, :send_updates, :send_time, :send_timezone, :past_filter, hashtags_attributes: [:tag, :date]]
     devise_parameter_sanitizer.permit :sign_up, keys: added_attrs
     devise_parameter_sanitizer.permit :account_update, keys: [:email, :password, :password_confirmation]
@@ -107,6 +108,38 @@ class ApplicationController < ActionController::Base
   # From the day a closing is announced, turns away new accounts and new
   # payments. Used as a before_action where either starts. The /pay redirects
   # in config/routes.rb make the same check.
+  # Adding a passkey on the web needs the password, or an emailed code on an account with
+  # none, unless this session signed in with an emailed code in the last few minutes.
+  def passkey_proof_needed?
+    # An admin's first passkey always takes the password (admin_first_passkey_proof_valid?).
+    return true if admin_adding_first_passkey?
+
+    signed_in_at = session[EmailCodesController::SIGNED_IN_SESSION]
+    !(signed_in_at.is_a?(Integer) && Time.at(signed_in_at) > EmailCodesController::FRESH_FOR.ago)
+  end
+  helper_method :passkey_proof_needed?
+
+  # The password, or for an account with no password, a "confirm" code emailed to it.
+  def current_password_or_code_valid?(password, email_code)
+    if current_user.has_password?
+      current_user.valid_password?(password.to_s)
+    else
+      EmailCode.confirm(current_user, email_code)
+    end
+  end
+
+  # An admin's first passkey is what the admin pages ask for, so it takes the password: not an
+  # emailed code, and not the minutes after an emailed-code sign-in, either of which is the
+  # inbox alone (AdminAccounts). An admin with no password and no passkey is set up from the
+  # Rails console.
+  def admin_adding_first_passkey?
+    AdminAccounts.protected?(current_user) && !current_user.webauthn_credentials.exists?
+  end
+
+  def admin_first_passkey_proof_valid?(password)
+    current_user.has_password? && current_user.valid_password?(password.to_s)
+  end
+
   def refuse_when_closing
     redirect_to goodbye_path if site_closure
   end

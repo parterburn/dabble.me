@@ -7,7 +7,7 @@ struct SettingsView: View {
     @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
     @Environment(\.openURL) private var openURL
     @State private var confirmingSignOut = false
-    @State private var confirmingDeletion = false
+    @State private var deletingAccount = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
     /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
@@ -17,8 +17,11 @@ struct SettingsView: View {
     /// The account's email schedule and past-entry choices, shared by the Reminders rows.
     @State private var emailSchedule = EmailScheduleStore()
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
-    /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
-    /// buy outside the app (guideline 3.1.1(a), US storefront). Elsewhere it's plain text.
+    @AppStorage(DictationSettings.enabledKey) private var dictationEnabled = true
+    @AppStorage(DictationSettings.styleKey) private var dictationStyle = DictationStyle.polished
+    /// With an older server (no in-app purchase), the plan links to dabble.me/subscribe only on
+    /// the US App Store, where Apple allows links to buy outside the app (guideline 3.1.1(a), US
+    /// storefront). Otherwise the Plan row opens PlanView, which sells PRO in the app.
     @State private var canLinkToSubscribe = false
 
     var body: some View {
@@ -31,31 +34,22 @@ struct SettingsView: View {
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 0))
                 if let me = model.me {
-                    Section("Account") {
-                        // Your name opens Settings on dabble.me, where it's changed.
-                        Link(destination: me.settingsUrl) {
-                            LabeledContent("Name") {
-                                HStack(spacing: 8) {
-                                    Text(me.name ?? me.firstName ?? "Add your name")
-                                        .foregroundStyle((me.name ?? me.firstName) == nil ? .secondary : .primary)
-                                    ExternalLinkIcon()
-                                }
-                            }
+                    Section {
+                        // Name, email, passkey, Account Security and Export Entries, on a page of their own.
+                        PaneLink {
+                            AccountSettingsView()
+                        } label: {
+                            LabeledContent("Account", value: me.email)
                         }
-                        .foregroundStyle(.primary)
-                        .accessibilityHint("Opens your settings on dabble.me")
-                        // Your email opens Account Security on dabble.me (password, passkeys, 2FA).
-                        Link(destination: me.securityUrl) {
-                            LabeledContent("Email") {
-                                HStack(spacing: 8) {
-                                    Text(me.email)
-                                    ExternalLinkIcon()
-                                }
+                        if me.appleAccountToken != nil {
+                            // The plan, and PRO bought here (or managed, when it was bought here).
+                            PaneLink {
+                                PlanView()
+                            } label: {
+                                LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
                             }
-                        }
-                        .foregroundStyle(.primary)
-                        .accessibilityHint("Opens Account Security on dabble.me")
-                        if canLinkToSubscribe {
+                        } else if canLinkToSubscribe {
+                            // An older server, which can't take an in-app purchase.
                             Link(destination: AppConfig.webURL("subscribe")) {
                                 LabeledContent("Plan") {
                                     HStack(spacing: 8) {
@@ -82,17 +76,29 @@ struct SettingsView: View {
                 intelligenceSection
 
                 Section("App") {
-                    // Which calendars the composer's lightbulb lists the day's events from.
-                    PaneLink {
-                        CalendarSettingsView()
-                    } label: {
-                        Label("Calendars", icon: "slab-calendar")
-                    }
                     // What an entry can start from: added from the composer's lightbulb or to every new one.
                     PaneLink {
                         EntryTemplateView()
                     } label: {
                         Label("Entry Template", icon: "slab-equals")
+                    }
+                    // The composer's microphone: on or off, Polished or Verbatim, and words to expect.
+                    if Dictation.isSupported {
+                        PaneLink {
+                            DictationSettingsView()
+                        } label: {
+                            LabeledContent {
+                                Text(dictationEnabled ? dictationStyle.label : "Off")
+                            } label: {
+                                Label("Dictation", icon: "slab-microphone")
+                            }
+                        }
+                    }
+                    // Which calendars the composer's lightbulb lists the day's events from.
+                    PaneLink {
+                        CalendarSettingsView()
+                    } label: {
+                        Label("Calendars", icon: "slab-calendar")
                     }
                     PaneLink {
                         AccessibilitySettingsView()
@@ -118,17 +124,6 @@ struct SettingsView: View {
                             ExternalLinkLabel("Claude/ChatGPT Connector", icon: "slab-claude")
                         }
                     }
-                    Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
-                        ExternalLinkLabel("Account Security", icon: "slab-shield")
-                    }
-                    Link(destination: AppConfig.webURL("entries/export")) {
-                        ExternalLinkLabel("Export Entries", icon: "slab-arrow-up-from-line")
-                    }
-                } header: {
-                    Text("On dabble.me")
-                }
-
-                Section {
                     Link(destination: AppConfig.webURL("support")) {
                         ExternalLinkLabel("Help & Support", icon: "slab-circle-question")
                     }
@@ -145,23 +140,17 @@ struct SettingsView: View {
                     Button("Sign Out", role: .destructive) { confirmingSignOut = true }
                         .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                             Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
+                            // Every browser and app on the account, this one included.
+                            Button("Sign Out of All Devices", role: .destructive) { Task { await model.signOutEverywhere() } }
+                        } message: {
+                            Text("Sign Out signs out this device only. Sign Out of All Devices signs out every browser and app signed in to your account.")
                         }
-                    // Deleting finishes on dabble.me (signed in there, confirmed with the password, and
-                    // it can still be undone for an hour), so this says what's about to happen, signs
-                    // the app out and hands over to the browser.
-                    Button(role: .destructive) { confirmingDeletion = true } label: {
-                        HStack {
-                            Text("Delete Account…")
-                            Spacer()
-                            ExternalLinkIcon()
+                    // Deleting happens here: the password, then one last confirmation, in a sheet.
+                    Button("Delete Account…", role: .destructive) { deletingAccount = true }
+                        .sheet(isPresented: $deletingAccount) {
+                            DeleteAccountView()
+                                .opensDabbleLinksInApp()
                         }
-                    }
-                    .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
-                        Button("Sign Out and Continue", role: .destructive) { Task { await continueDeletionInBrowser() } }
-                        Button("Cancel", role: .cancel) {}
-                    } message: {
-                        Text("You'll be signed out of the app, and your browser will open dabble.me, where you finish deleting your account with your password. You can export your entries there first.")
-                    }
                 } footer: {
                     // The app's name and version, centered at the foot: a tap goes to its page.
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
@@ -186,6 +175,24 @@ struct SettingsView: View {
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
         }
+        // A name save that failed, from the Name page (on Done or on going Back). On the stack,
+        // so it shows over the Name page too.
+        .alert("Couldn't sign out of all devices", isPresented: Binding(
+            get: { model.signOutEverywhereError != nil },
+            set: { if !$0 { model.signOutEverywhereError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.signOutEverywhereError ?? "")
+        }
+        .alert("Couldn't save your name", isPresented: Binding(
+            get: { model.nameSaveError != nil },
+            set: { if !$0 { model.nameSaveError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.nameSaveError ?? "")
+        }
     }
 }
 
@@ -202,7 +209,6 @@ private extension SettingsView {
                 LabeledContent("Push", value: ReminderSettings.summary(enabled: dailyReminder, days: ReminderSettings.days(from: reminderDays),
                                                                        minutes: reminderTime >= 0 ? reminderTime : emailTime))
             }
-            EmailScheduleRow(store: emailSchedule)
             // The widget's a nudge to write too, and its look backs are the reminders' own.
             PaneLink {
                 WidgetSettingsView()
@@ -210,6 +216,7 @@ private extension SettingsView {
                 let _ = model.widgetChoiceChanges // redrawn when the choice changes
                 LabeledContent("Home Screen Widget", value: WidgetSnapshot.content.source.title)
             }
+            EmailScheduleRow(store: emailSchedule)
             PastEntriesRow(store: emailSchedule)
         } header: {
             Text("Reminders")
@@ -253,19 +260,13 @@ private extension SettingsView {
         }
         .disabled(!lock.isAvailable)
     }
-
-    /// The browser itself, not the page inside the app: that one's signed out along with the app.
-    func continueDeletionInBrowser() async {
-        await model.signOut()
-        await UIApplication.shared.open(AppConfig.webURL("settings/delete-account"))
-    }
 }
 
-/// Explains PRO-only features. No purchase links: plans are managed on the web, and
-/// App Store rules don't allow steering to outside purchases from inside the app.
+/// Explains PRO-only features, with the in-app purchase under it for a Free account
+/// (SubscribeOptions; nothing is linked to buy outside the app here).
 struct ProInfoView: View {
     enum Feature {
-        case writing, search, stats
+        case writing, search, stats, photos
     }
 
     let feature: Feature
@@ -274,13 +275,16 @@ struct ProInfoView: View {
     /// everyone, and a free account should know there'd be one.
     var rewindYear: Int?
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppModel.self) private var model
 
     var body: some View {
         NavigationStack {
             ContentUnavailableView {
-                Label(title, systemImage: feature == .writing ? "square.and.pencil" : feature == .stats ? "chart.bar" : "magnifyingglass")
+                Label(title, systemImage: icon)
             } description: {
                 Text(message)
+            } actions: {
+                SubscribeOptions()
             }
             .toolbar {
                 if showsDoneButton {
@@ -290,11 +294,22 @@ struct ProInfoView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        // Tall enough for the plans and their terms when there's something to buy.
+        .presentationDetents(model.me?.isPro == false && model.me?.sellsInApp == true ? [.large] : [.medium])
+    }
+
+    private var icon: String {
+        switch feature {
+        case .writing: "square.and.pencil"
+        case .search: "magnifyingglass"
+        case .stats: "chart.bar"
+        case .photos: "photo.on.rectangle"
+        }
     }
 
     private var title: String {
         switch feature {
+        case .photos: "Photos are a PRO feature"
         case .writing: "Writing in the app is a PRO feature"
         case .search: "Search is a PRO feature"
         case .stats: rewindYear.map { "\(String($0)) Rewind and Stats are PRO features" } ?? "Stats are a PRO feature"
@@ -303,6 +318,8 @@ struct ProInfoView: View {
 
     private var message: String {
         switch feature {
+        case .photos:
+            "With Dabble Me PRO you can add up to \(AppModel.maxPhotos) photos to an entry."
         case .writing:
             "You can always write for free by replying to your Dabble Me email. Your reply shows up here as an entry."
         case .search:

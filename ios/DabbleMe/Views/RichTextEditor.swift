@@ -61,8 +61,16 @@ final class RichTextEditorModel {
     private var linkRange = NSRange(location: 0, length: 0)
 
     @ObservationIgnored fileprivate weak var textView: UITextView?
+    /// The text has the keyboard.
+    fileprivate(set) var isFocused = false
+    /// How much of the text's foot the bar (and any row open in it) covers, in points: 0 with
+    /// no keyboard. Something floating over the text's bottom sits this far up to stay clear.
+    fileprivate(set) var barCover: CGFloat = 0
     /// Links are PRO: without them, a pasted address stays plain text.
     @ObservationIgnored var allowsLinks = true
+    /// A swipe to the right across the empty page (the composer's template). Only while there's
+    /// nothing written and nothing selected, so it never gets in the way of the text's own gestures.
+    @ObservationIgnored var onSwipeRightWhenEmpty: (@MainActor () -> Void)?
 
     init(blocks: [DocumentBlock] = []) {
         initialBlocks = blocks
@@ -242,6 +250,19 @@ final class RichTextEditorModel {
         addLines(added)
     }
 
+    /// A moment from Journaling Suggestions: its title in bold, as a question is, then a plain line
+    /// for each place, workout, song and so on, on lines of their own with the cursor after them.
+    func addMoment(heading: String?, lines: [String]) {
+        guard heading != nil || !lines.isEmpty else { return }
+        let style = RichText.Style.journal
+        var bold = style.baseAttributes
+        bold[.font] = style.baseFont.with(bold: true, italic: false)
+        let added = NSMutableAttributedString()
+        if let heading { added.append(NSAttributedString(string: heading + "\n", attributes: bold)) }
+        for line in lines { added.append(NSAttributedString(string: line + "\n", attributes: style.baseAttributes)) }
+        addLines(added)
+    }
+
     /// Adds the writer's template (Settings → Entry Template) as a prompt goes in: at the
     /// cursor, on lines of its own, with the cursor after it.
     func addTemplate(_ typed: [DocumentRun]) {
@@ -290,6 +311,26 @@ final class RichTextEditorModel {
         textView.scrollRangeToVisible(textView.selectedRange)
         textDidChange()
         focus()
+    }
+
+    /// Puts words that were spoken (`Dictation`) where the cursor is, as if typed there.
+    func insertDictated(_ heard: String) {
+        guard let textView else { return }
+        let storage = textView.textStorage
+        let range = textView.selectedRange
+        // The line so far, up to the cursor: a space before the words, and mid-sentence a
+        // lowercase first word.
+        let before = (storage.string as NSString).substring(to: range.location)
+        let lineSoFar = before.split(separator: "\n", omittingEmptySubsequences: false).last.map(String.init) ?? ""
+        let words = Dictation.insertion(of: heard, before: lineSoFar)
+        guard !words.isEmpty else { return }
+        var attributes = textView.typingAttributes
+        attributes[.link] = nil
+        attributes[.backgroundColor] = nil
+        storage.replaceCharacters(in: range, with: NSAttributedString(string: words, attributes: attributes))
+        textView.selectedRange = NSRange(location: range.location + (words as NSString).length, length: 0)
+        textView.scrollRangeToVisible(textView.selectedRange)
+        textDidChange()
     }
 
     /// `replace(with:)`, with text as typed (a template to start over from).
@@ -698,6 +739,13 @@ struct RichTextEditor: UIViewRepresentable {
         textView.inputAccessoryView = context.coordinator.makeBar(for: self)
         context.coordinator.keepTextClear(of: textView)
         textView.accessibilityLabel = "Entry"
+        // Right across the empty page: the composer's template (`onSwipeRightWhenEmpty`). The text
+        // view's own gestures go on as ever beside it, and it never begins over written text.
+        let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipedRight))
+        swipe.direction = .right
+        swipe.delaysTouchesEnded = false
+        swipe.delegate = context.coordinator
+        textView.addGestureRecognizer(swipe)
         model.attach(textView)
         return textView
     }
@@ -714,11 +762,25 @@ struct RichTextEditor: UIViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, UITextViewDelegate {
+    final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
         let model: RichTextEditorModel
 
         init(model: RichTextEditorModel) {
             self.model = model
+        }
+
+        @objc func swipedRight() {
+            model.onSwipeRightWhenEmpty?()
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard gestureRecognizer is UISwipeGestureRecognizer else { return true }
+            return model.onSwipeRightWhenEmpty != nil && model.isEmpty && !model.hasSelection
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            gestureRecognizer is UISwipeGestureRecognizer
         }
 
         func textViewDidChange(_ textView: UITextView) {
@@ -730,6 +792,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
+            model.isFocused = true
             model.editingBegan()
             // (Words selected by the touch that brought the keyboard count from here.)
             model.selectionDidChange()
@@ -737,6 +800,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidEndEditing(_ textView: UITextView) {
+            model.isFocused = false
             model.selectionDidChange()
             // Once the keyboard (and the bar) has gone, or stayed for the link's address.
             DispatchQueue.main.async { [weak self] in self?.padBottomForBar() }
@@ -767,6 +831,7 @@ struct RichTextEditor: UIViewRepresentable {
                 let textBottom = (textView.superview ?? window).convert(textView.frame, to: space).maxY
                 covered = max(0, textBottom - barTop)
             }
+            if abs(model.barCover - covered) > 0.5 { model.barCover = covered }
             guard abs(textView.contentInset.bottom - covered) > 0.5 else { return }
             let grew = covered > textView.contentInset.bottom
             textView.contentInset.bottom = covered

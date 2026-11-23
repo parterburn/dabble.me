@@ -10,6 +10,12 @@ Rails.application.config.filter_parameters += [
   :authorization,
   :otp_attempt,
   :otp_code,
+  # Emailed sign-in and confirm codes (EmailCode).
+  /\A(code|email_code)\z/,
+  # Passkey setup from the app: setup_token stands in for the password for a few minutes.
+  :setup_token,
+  :passkey_setup_token,
+  :challenge_token,
   :body,
   :raw_body,
   :html,
@@ -18,5 +24,13 @@ Rails.application.config.filter_parameters += [
   :original_email,
   :text_body,
   :entry_template,
+  :gift_code, # a gift link's code (Gift) works for anyone who has it
+  :first_name,
+  :last_name,
+  # Apple-signed transactions and notifications (they carry the account's appAccountToken).
+  :signed_transaction,
+  :signedPayload,
+  :signedTransactionInfo,
+  :signedRenewalInfo,
   /\Aentry\z/i
 ]

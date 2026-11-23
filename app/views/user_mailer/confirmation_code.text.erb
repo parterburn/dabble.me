@@ -1,0 +1,12 @@
+Hey <%= @user.first_name_or_fallback %>,
+
+Here's the code to confirm a change to your Dabble Me account (<%= @user.email %>):
+
+<%= @code %>
+
+It works once, for the next <%= EmailCode::LIFETIME.in_minutes.to_i %> minutes.
+
+If you didn't ask for this, someone else may be signed in to your account. Reply to this email and we'll help.
+
+Thanks,
+Dabble Me

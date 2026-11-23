@@ -3,78 +3,14 @@
 
 <section class="py-12 lg:py-20">
   <div class="mx-auto max-w-lg px-4 sm:px-6">
-    <!-- Header -->
     <div class="text-center mb-8">
       <h1 class="font-serif text-3xl sm:text-4xl tracking-tight text-primary">Welcome back</h1>
     </div>
 
-    <!-- Login form -->
     <div class="card p-6 sm:p-8">
-      <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-5", toolname: "log_in", tooldescription: "Fill the Dabble Me login form for the current user. Leave the form for the user to review and submit. Do not submit automatically." }) do |f| %>
-        
-        <%= render "devise/shared/error_messages", resource: resource %>
-
-        <div>
-          <%= f.label :email, class: "block text-sm font-medium text-primary mb-1.5" %>
-          <%= f.email_field :email, 
-              autofocus: true, 
-              required: true,
-              autocomplete: "username webauthn",
-              value: params[:user].try(:[], "email") || resource.email,
-              placeholder: "you@example.com",
-              toolparamdescription: "Email address for the existing Dabble Me account.",
-              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-        </div>
-
-        <div>
-          <%= f.label :password, class: "block text-sm font-medium text-primary mb-1.5" %>
-          <%= f.password_field :password, 
-              autocomplete: "current-password", 
-              required: true,
-              toolparamdescription: "Account password. Leave empty unless the user provided one.",
-              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-        </div>
-
-        <% if devise_mapping.rememberable? %>
-          <div class="flex items-center justify-between">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <%= f.check_box :remember_me, checked: resource.remember_me.nil? || ActiveModel::Type::Boolean.new.cast(resource.remember_me), class: "w-4 h-4 rounded border-subtle text-accent focus:ring-accent cursor-pointer" %>
-              <span class="text-sm text-muted">Stay logged in</span>
-            </label>
-            <%= link_to "Forgot password?", new_password_path(resource_name), class: "text-sm text-accent hover:text-primary transition-colors" %>
-          </div>
-        <% end %>
-
-        <div>
-          <%= f.submit "Log in", class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
-        </div>
-
-        <!-- Divider -->
-        <div class="relative">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-subtle"></div>
-          </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="px-4 bg-surface text-muted">or</span>
-          </div>
-        </div>
-
-        <!-- Passkey login -->
-        <button type="button" id="login-passkey" class="w-full px-6 py-3 text-sm font-medium rounded-lg border border-subtle bg-surface text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent cursor-pointer transition-colors flex items-center justify-center gap-2">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33" />
-          </svg>
-          Log in with Passkey
-        </button>
-
-        <p class="text-center text-xs text-muted">
-          By logging in you agree to the
-          <%= link_to "terms of service", terms_path, class: "text-accent hover:text-primary underline" %>.
-        </p>
-      <% end %>
+      <%= render "devise/shared/email_code_form", intent: "sign_in", submit_label: "Continue" %>
     </div>
 
-    <!-- Sign up CTA -->
     <div class="mt-8 text-center">
       <p class="text-muted">
         Don't have an account?
@@ -83,17 +19,3 @@
     </div>
   </div>
 </section>
-
-<% content_for :scripts do %>
-  <%= javascript_include_tag "webauthn" %>
-  <script>
-    DABBLE.webauthn.setupSignIn({
-      buttonId: "login-passkey",
-      autofill: true,
-      rememberMe: function() {
-        var box = document.getElementById("user_remember_me");
-        return !!(box && box.checked);
-      }
-    });
-  </script>
-<% end %>

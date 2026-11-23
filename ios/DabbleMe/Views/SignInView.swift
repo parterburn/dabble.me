@@ -4,19 +4,23 @@ import SwiftUI
 /// sign-up front and center on Today. Everything shown here is made up; nothing is loaded.
 struct SignInView: View {
     @State private var selected = "Today"
+    @Environment(AppModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         TabView(selection: $selected) {
             Tab("Today", image: icon("slab-calendar", "Today"), value: "Today") { WelcomeView().tabBarClearance() }
             Tab("Journal", image: icon("slab-book", "Journal"), value: "Journal") {
-                LockedGlimpse(title: "Your whole journal, by month",
-                              message: "Every entry you've written, with photos, Stats and a timeline to jump years back.") {
+                LockedGlimpse(icon: "slab-book",
+                              title: "The private timeline of your life",
+                              message: "Every entry and photo, in order and just for you. Jump back a week or ten years.") {
                     SampleJournal()
                 }
                 .tabBarClearance()
             }
             Tab("Search", image: icon("slab-search", "Search"), value: "Search") {
-                LockedGlimpse(title: "Find any moment",
+                LockedGlimpse(icon: "slab-search",
+                              title: "Find any moment",
                               message: "Search every word you've ever written, or tap one of your #hashtags.") {
                     SampleHashtags()
                 }
@@ -25,6 +29,11 @@ struct SignInView: View {
             Tab("Settings", image: icon("slab-gear", "Settings"), value: "Settings") { GuestSettings().tabBarClearance() }
         }
         .opensDabbleLinksInApp()
+        // Sign in and sign up are the app's own forms (passkeys go to dabble.me from there).
+        .sheet(item: $model.authForm) { mode in
+            AuthFormView(mode: mode)
+                .opensDabbleLinksInApp()
+        }
     }
 
     /// The selected tab shows the filled version of its icon.
@@ -152,7 +161,7 @@ private struct WelcomeView: View {
 
                 VStack(spacing: 12) {
                     Button {
-                        Task { await model.signIn(createAccount: true) }
+                        model.authForm = .signUp
                     } label: {
                         Text("Start Your Journal")
                             .frame(maxWidth: .infinity, minHeight: 30)
@@ -161,21 +170,20 @@ private struct WelcomeView: View {
                     .controlSize(.large)
 
                     Button {
-                        Task { await model.signIn() }
+                        model.authForm = .signIn
                     } label: {
-                        Group {
-                            if model.isSigningIn {
-                                ProgressView()
-                            } else {
-                                Text("I Already Have an Account")
-                            }
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 30)
+                        Text("I Already Have an Account")
+                            .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
 
-                    if let error = model.signInError {
+                    if let notice = model.signInNotice {
+                        Text(notice)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    } else if let error = model.signInError {
                         Text(error)
                             .font(.footnote)
                             .foregroundStyle(Color.deleteRed)
@@ -186,7 +194,6 @@ private struct WelcomeView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                .disabled(model.isSigningIn)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 20)
 
@@ -207,37 +214,58 @@ private struct WelcomeView: View {
 }
 
 /// A small stack of made-up memories that deals itself in and gently cycles, like flipping back
-/// through old entries: the feeling of On This Day, before you have any.
+/// through old entries: the feeling of On This Day, before you have any. They show off what an
+/// entry can hold: a photo, #hashtags, and a dated hashtag's age (#anniversary, as the entry pill shows it).
+/// The photos are bundled CC0 samples (Flickr: "World's cutest snowman" by Lottie's pets & stuff,
+/// "Bruges" by Daquella manera, "White coffee on the table" by freestocks.org), not anyone's journal.
 private struct MemoryDeck: View {
-    private static let memories: [(caption: String, text: String)] = [
-        ("1 year ago", "Bruges! Wandered the canals all afternoon and ate an unreasonable number of waffles."),
-        ("3 years ago", "First snow of the year. Built a lopsided snowman and drank cocoa by the window."),
-        ("5 years ago", "Moved into the new apartment. No curtains yet, pizza on the floor. Already feels like home."),
-        ("Yesterday", "Made pour-over and read on the porch until noon. Grateful for quiet mornings."),
+    private struct Memory {
+        let caption: String
+        let text: String
+        var photo: String? = nil
+        /// A dated hashtag and its age on the entry's day, as the server words it.
+        var datedTag: (tag: String, age: String)? = nil
+    }
+
+    private static let memories: [Memory] = [
+        Memory(caption: "1 year ago", text: "Bruges for our #anniversary! Wandered the canals all afternoon and ate too many waffles.",
+               photo: "SampleBruges", datedTag: ("anniversary", "9 years, 2 days")),
+        Memory(caption: "3 years ago", text: "First snow of the year. Built a lopsided snowman, then cocoa by the window. #winter",
+               photo: "SampleSnowman"),
+        Memory(caption: "5 years ago", text: "Moved into the new apartment. No curtains yet, pizza on the floor. Already feels like #home."),
+        Memory(caption: "Yesterday", text: "Made pour-over and read on the porch until noon. Grateful for quiet mornings. #gratitude",
+               photo: "SampleCoffee"),
     ]
 
     @State private var front = 0
     @State private var dealt = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// The three memories showing, back to front: identified by the memory, so on each flip the
+    /// cards behind slide forward as themselves. (Keyed by depth instead, every card cross-faded
+    /// into the next one at once, and the back cards' text showed through the front card.)
+    private var showing: [Int] {
+        (0..<3).reversed().map { (front + $0) % Self.memories.count }
+    }
+
     var body: some View {
         ZStack {
-            ForEach(0..<3, id: \.self) { depth in
-                let index = (front + 2 - depth) % Self.memories.count
-                let isFront = depth == 2
-                card(Self.memories[index], isFront: isFront)
-                    .rotationEffect(.degrees(dealt ? Double(depth - 2) * 3.5 : 0))
-                    .offset(y: dealt ? CGFloat(2 - depth) * -10 : 40)
-                    .scaleEffect(isFront ? 1 : 0.96 - CGFloat(1 - depth) * 0.02)
-                    .zIndex(Double(depth))
-                    .id(index)
-                    .transition(.asymmetric(insertion: .opacity, removal: .move(edge: .leading).combined(with: .opacity)))
+            ForEach(showing, id: \.self) { index in
+                let position = (index - front + Self.memories.count) % Self.memories.count // 0 is the front
+                card(Self.memories[index], isFront: position == 0)
+                    .rotationEffect(.degrees(dealt ? Double(position) * -3.5 : 0))
+                    .offset(y: dealt ? CGFloat(position) * -10 : 40)
+                    .scaleEffect(position == 0 ? 1 : 0.96 - CGFloat(position - 1) * 0.02)
+                    .zIndex(Double(3 - position))
+                    // The front card slides away whole (no fade, so the card under it never shows
+                    // through); the new one fades in at the back.
+                    .transition(.asymmetric(insertion: .opacity, removal: .move(edge: .leading)))
             }
         }
-        .frame(height: 190)
+        .frame(height: 216)
         .padding(.top, 8)
         .accessibilityElement()
-        .accessibilityLabel("Examples of past entries resurfacing, like On This Day")
+        .accessibilityLabel("Examples of past entries resurfacing, like On This Day, with photos and hashtags")
         .task {
             withAnimation(reduceMotion ? nil : .spring(duration: 0.8, bounce: 0.3).delay(0.3)) { dealt = true }
             guard !reduceMotion else { return }
@@ -248,27 +276,60 @@ private struct MemoryDeck: View {
         }
     }
 
-    private func card(_ memory: (caption: String, text: String), isFront: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func card(_ memory: Memory, isFront: Bool) -> some View {
+        // The date has the full width to itself; the photo sits beside the words, under it.
+        VStack(alignment: .leading, spacing: 8) {
             Text(memory.caption)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.tint)
-            Text(memory.text)
-                .font(.system(.body, design: .serif))
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Self.withHashtags(memory.text)
+                        .font(.system(.body, design: .serif))
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(4)
+                        .minimumScaleFactor(0.85)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if let dated = memory.datedTag {
+                        HashtagPill(tag: dated.tag, age: dated.age)
+                    }
+                }
+                if let photo = memory.photo {
+                    Image(photo)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 64, height: 64)
+                        .clipShape(.rect(cornerRadius: 10))
+                        .padding(.top, 3)
+                }
+            }
             Spacer(minLength: 0)
         }
         .padding(18)
-        .frame(maxWidth: 340, minHeight: 150, maxHeight: 150, alignment: .topLeading)
+        .frame(maxWidth: 340, minHeight: 176, maxHeight: 176, alignment: .topLeading)
         .background(Color(.systemBackground), in: .rect(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
         .shadow(color: .black.opacity(isFront ? 0.08 : 0.03), radius: isFront ? 12 : 4, y: isFront ? 6 : 2)
     }
+
+    /// The entry's words with its #hashtags in the tint, as the timeline shows them.
+    private static func withHashtags(_ text: String) -> Text {
+        var attributed = AttributedString(text)
+        let regex = try! NSRegularExpression(pattern: "(?<![\\w&/#])#([0-9]*[A-Za-z_][A-Za-z0-9_]*)")
+        for match in regex.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+            guard let range = Range(match.range, in: attributed) else { continue }
+            attributed[range].foregroundColor = Color("AccentColor")
+        }
+        return Text(attributed)
+    }
 }
 
-/// A tab's content, dimmed behind a card that says what signing in unlocks.
+/// A tab's content, dimmed behind a card that says what signing in unlocks: solid olive, so it
+/// reads as the thing to tap rather than one more grey panel. Text and icon take OnAccent (white
+/// on olive; dark green on the light sage olive of dark mode); the button is Paper with olive
+/// text, the reverse of the app's usual filled button.
 private struct LockedGlimpse<Content: View>: View {
+    let icon: String
     let title: String
     let message: String
     @ViewBuilder let content: Content
@@ -282,26 +343,36 @@ private struct LockedGlimpse<Content: View>: View {
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
             VStack(spacing: 14) {
-                appIcon("slab-lock")
+                appIcon(icon)
                     .font(.title2)
-                    .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
                 Text(title)
                     .font(.custom("InstrumentSerif-Regular", size: 30))
                     .multilineTextAlignment(.center)
                 Text(message)
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .opacity(0.85)
                     .multilineTextAlignment(.center)
-                Button("Start Your Journal") { Task { await model.signIn(createAccount: true) } }
-                    .filledButtonStyle()
-                Button("Sign In") { Task { await model.signIn() } }
-                    .font(.subheadline)
+                Button {
+                    model.authForm = .signUp
+                } label: {
+                    Text("Start Your Journal")
+                        .foregroundStyle(Color("AccentColor"))
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color("Paper"))
+                .padding(.top, 2)
+                Button("Sign In") { model.authForm = .signIn }
+                    .font(.subheadline.weight(.medium))
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 4)
             }
+            .foregroundStyle(Color("OnAccent"))
             .padding(24)
             .frame(maxWidth: 360)
-            .background(.regularMaterial, in: .rect(cornerRadius: 22))
+            .background(Color("AccentColor"), in: .rect(cornerRadius: 22))
+            .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
             .padding()
-            .disabled(model.isSigningIn)
         }
         .background(Color("Paper").ignoresSafeArea())
     }
@@ -364,10 +435,9 @@ private struct GuestSettings: View {
         NavigationStack {
             List {
                 Section {
-                    Button { Task { await model.signIn(createAccount: true) } } label: { Label("Start Your Journal", icon: "slab-plus") }
-                    Button { Task { await model.signIn() } } label: { Label("Sign In", icon: "slab-arrow-right-to-bracket") }
+                    Button { model.authForm = .signUp } label: { Label("Start Your Journal", icon: "slab-plus") }
+                    Button { model.authForm = .signIn } label: { Label("Sign In", icon: "slab-arrow-right-to-bracket") }
                 }
-                .disabled(model.isSigningIn)
                 Section {
                     Link(destination: AppConfig.webURL("support")) { ExternalLinkLabel("Help & Support", icon: "slab-circle-question") }
                     Link(destination: AppConfig.webURL("privacy")) { ExternalLinkLabel("Privacy Policy", icon: "slab-hand") }

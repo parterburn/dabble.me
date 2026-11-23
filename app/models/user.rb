@@ -4,12 +4,14 @@ class User < ActiveRecord::Base
   BLOCKED_EMAIL_DOMAINS = %w[pentest2bot.ink].freeze
 
   validates :email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
+  validate :pending_email_available, if: -> { pending_email.present? && will_save_change_to_pending_email? }
   validate :email_domain_not_blocked
 
   # Include default devise modules. Others available are:
   # :confirmable, :timeoutable and :omniauthable, :lockable
   devise :otp_authenticatable, :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
+  include SignedInDevices
 
   # user_key is the posting address (<user_key>@post.dabble.me) and appears in
   # every email we send. image_key names the user's S3 photo folder and never
@@ -36,6 +38,15 @@ class User < ActiveRecord::Base
   # the other columns) by substring in SQL.
   encrypts :user_key, :image_key, deterministic: true
   encrypts :first_name, :last_name, :past_filter, :otp_auth_secret, :otp_recovery_secret, :app_settings
+  # Names are optional: a cleared field is stored as nil, never "".
+  normalizes :first_name, :last_name, with: ->(name) { name.strip.presence }
+
+  # Where the account was made (the signup_platform column). NULL for accounts from before it
+  # was recorded. Set by whichever sign-up created the account: RegistrationsController (web)
+  # and Api::V1::RegistrationsController (the app).
+  SIGNUP_PLATFORMS = %w[web ios_app android_app].freeze
+  APP_SIGNUP_PLATFORMS = %w[ios_app android_app].freeze
+  validates :signup_platform, inclusion: { in: SIGNUP_PLATFORMS }, allow_nil: true
 
   validates :user_key, uniqueness: true
   validates :image_key, uniqueness: true, allow_nil: true
@@ -50,10 +61,16 @@ class User < ActiveRecord::Base
     end
   end
 
+  # Before the dependent destroys below: an export's ZIP would be deleted from storage before
+  # the passkeys' guard rolled the rest back.
+  before_destroy :keep_admin_account, prepend: true
+
   has_many :entries, dependent: :destroy
   has_many :hashtags, dependent: :destroy
   has_many :exports, dependent: :destroy
   has_many :payments
+  has_many :apple_subscriptions, dependent: :nullify
+  has_one :gift_redemption, dependent: :delete
   has_many :webauthn_credentials, dependent: :destroy
   has_many :mcp_tool_invocations, dependent: :delete_all
   has_many :ignored_email_images, dependent: :delete_all
@@ -69,6 +86,9 @@ class User < ActiveRecord::Base
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }
   scope :free_only, -> { where("plan ILIKE '%free%' OR plan IS null") }
   scope :pro_only, -> { where("plan ILIKE '%pro%'") }
+  # PRO that someone pays for: everything but a gifted year (Gift). Business metrics count these.
+  scope :gifted, -> { where("plan ILIKE '%gift%'") }
+  scope :paid_pro, -> { pro_only.where("plan NOT ILIKE '%gift%'") }
   scope :monthly, -> { where("plan ILIKE '%monthly%'") }
   scope :yearly, -> { where("plan ILIKE '%yearly%'") }
   scope :forever, -> { where("plan ILIKE '%forever%'") }
@@ -76,6 +96,9 @@ class User < ActiveRecord::Base
   scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }
   scope :paypal_only, -> { where("plan ILIKE '%paypal%'") }
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
+  scope :apple_only, -> { where("plan ILIKE '%apple%'") }
+  # App Store plans end when Apple says (AppStore::Entitlement), not by payment dates.
+  scope :not_apple, -> { where("plan NOT ILIKE '%apple%'") }
   scope :referrals, -> { where("referrer IS NOT null") }
 
   # Users whose "first last" name holds every word of the query, ignoring case and order
@@ -98,6 +121,7 @@ class User < ActiveRecord::Base
   after_commit :notify_stripe
   after_update :revoke_doorkeeper_oauth_if_downgraded_from_pro
   after_update :revoke_doorkeeper_oauth_if_credentials_changed
+  before_update :unverify_changed_email, if: :will_save_change_to_email?
 
   EMAIL_DAYS = %w[Sun Mon Tue Wed Thu Fri Sat].freeze
 
@@ -108,9 +132,13 @@ class User < ActiveRecord::Base
   validate :send_timezone_must_exist, if: :will_save_change_to_send_timezone?
 
   before_save { email&.gsub!(",",".")&.gsub!(".@", "@")&.downcase! }
+  before_validation { self.pending_email = pending_email.strip.downcase.presence if pending_email }
   after_commit on: :update do
     restrict_free_frequency
   end
+  # Back to Free some other way (a web plan ended, an admin's change) while an App Store
+  # subscription is still paid for: that subscription makes it PRO again.
+  after_commit :resume_apple_subscription, on: :update, if: -> { saved_change_to_plan? && is_free? }
   after_commit :send_welcome_email, on: :create
 
   def self.blocked_email_domain?(domain)
@@ -131,19 +159,20 @@ class User < ActiveRecord::Base
   end
 
   def full_name
-    "#{first_name} #{last_name}" if first_name.present? || last_name.present?
+    [first_name, last_name].filter_map(&:presence).join(' ').presence
   end
 
   def abbreviated_name
-    "#{first_name} #{last_name.first&.upcase}"
+    "#{first_name} #{last_name&.first&.upcase}".strip
   end
 
   def cleaned_to_address
-    "#{full_name.gsub(/[^\w\s-]/i, '') if full_name.present?} <#{email}>"
+    name = full_name.to_s.gsub(/[^\w\s-]/i, '').squish
+    name.present? ? "#{name} <#{email}>" : email
   end
 
   def full_name_or_email
-    first_name.present? ? "#{first_name} #{last_name}" : email
+    first_name.present? ? full_name : email
   end
 
   def email_domain_not_blocked
@@ -153,6 +182,20 @@ class User < ActiveRecord::Base
     return unless self.class.blocked_email_domain?(domain)
 
     errors.add(:email, 'is not allowed')
+  end
+
+  # Checked when the change is asked for, so a taken or blocked address is turned away before
+  # a code goes out. The unique index on email still decides if two accounts race for it.
+  # Errors go on :email, the field the address was typed in.
+  def pending_email_available
+    domain = pending_email.split('@', 2).last
+    if !pending_email.match?(VALID_EMAIL_REGEX)
+      errors.add(:email, 'is invalid')
+    elsif self.class.blocked_email_domain?(domain)
+      errors.add(:email, 'is not allowed')
+    elsif self.class.where.not(id: id).exists?(email: pending_email)
+      errors.add(:email, 'has already been taken')
+    end
   end
 
   def send_timezone_must_exist
@@ -245,6 +288,64 @@ class User < ActiveRecord::Base
     grants.update_all(revoked_at: now)
   end
 
+  # An admin's account goes only from the Rails console, with its passkeys (AdminAccounts).
+  def keep_admin_account
+    return unless AdminAccounts.protected?(self) && !AdminAccounts.passkey_removal_allowed?
+
+    errors.add(:base, 'Admin accounts can only be deleted inside AdminAccounts.allow_passkey_removal.')
+    throw :abort
+  end
+
+  # The first emailed-code sign-in to an unclaimed account (EmailSignIn.unclaimed?): whoever set
+  # its password, passkeys, 2FA or sign-ins may not own the address, so all of them go. Clearing
+  # the password changes the salt, which ends its web sessions and "Stay logged in" cookies.
+  def clear_credentials_for_email_claim!
+    # EmailSignIn.unclaimed? never holds for an admin, whose passkeys only the console removes.
+    raise AdminAccounts::Refused, 'Admin accounts keep their credentials' if AdminAccounts.protected?(self)
+
+    transaction do
+      webauthn_credentials.destroy_all
+      disable_otp! if otp_enabled?
+      revoke_doorkeeper_access_tokens!
+      update_columns(encrypted_password: '', remember_created_at: nil, reset_password_token: nil,
+                     reset_password_sent_at: nil)
+      # Its old posting address may be known to whoever made the account: entries mailed there
+      # would still land in this journal.
+      rotate_user_key!
+    end
+  end
+
+  # A new address hasn't been proven yet: its first code sign-in treats the account as unclaimed
+  # (EmailSignIn.unclaimed?), so nobody can move an account onto someone else's address and
+  # keep it once they sign in. Settings doesn't change the address this way any more (see
+  # #confirm_pending_email!); this stays as the backstop for anything else that does.
+  def unverify_changed_email
+    self.email_verified_at = @new_email_proven ? Time.current : nil
+    self.email_changed_at = Time.current
+  end
+
+  # Settings holds a new address in pending_email until a code sent there is entered
+  # (EmailChangesController). Then the address is proven, so the account stays verified and
+  # its next code sign-in wipes nothing.
+  def confirm_pending_email!
+    return false if pending_email.blank?
+
+    @new_email_proven = true
+    self.email = pending_email
+    self.pending_email = nil
+    save
+  rescue ActiveRecord::RecordNotUnique
+    # Another account took the address between the validation and the write.
+    errors.add(:email, 'has already been taken')
+    false
+  ensure
+    @new_email_proven = false
+  end
+
+  def cancel_pending_email!
+    update_column(:pending_email, nil)
+  end
+
   def deletion_pending?
     deleted_at.present?
   end
@@ -260,8 +361,65 @@ class User < ActiveRecord::Base
     plan_name == 'Dabble Me PRO'
   end
 
+  # Signed up in one of the apps rather than on the web, so the welcome email leads with the app.
+  def signed_up_in_app?
+    APP_SIGNUP_PLATFORMS.include?(signup_platform)
+  end
+
   def is_free?
     !is_pro?
+  end
+
+  # Set on an account made by entering an emailed code (EmailSignIn): it starts with no
+  # password. One can be set later (Account Security, or Forgot password).
+  attr_accessor :passwordless_signup
+
+  # False for an account made by email code that hasn't set a password. Its sign-in is the
+  # emailed code or a passkey, and an EmailCode stands in where the password is asked for.
+  def has_password?
+    encrypted_password.present?
+  end
+
+  # An account with no password never matches one, but it still spends a bcrypt hash on the
+  # attempt, so a password sign-in takes as long as for any other address and its timing
+  # doesn't show which addresses are email-code accounts.
+  def self.no_password_digest
+    @no_password_digest ||= Devise::Encryptor.digest(self, SecureRandom.hex(16))
+  end
+
+  def valid_password?(password)
+    return super if has_password?
+
+    Devise::Encryptor.compare(self.class, self.class.no_password_digest, password.to_s)
+    false
+  end
+
+  # Devise ties sessions and "Stay logged in" cookies to the password hash's salt, so changing
+  # the password signs other browsers out. An account with no password has no hash: it gets a
+  # stand-in, which changes (signing those browsers out) once a password is set.
+  def authenticatable_salt
+    return super if has_password?
+
+    OpenSSL::HMAC.hexdigest('SHA256', Rails.application.key_generator.generate_key('passwordless_salt', 32),
+                            "#{id}:#{created_at.to_i}").first(29)
+  end
+
+  # Set on a gift sign-up (Gift): the gift goes on just after the account is created, and the
+  # welcome email's copy depends on the plan, so RegistrationsController sends it after that.
+  attr_accessor :welcome_email_after_gift
+
+  # On a gifted year of PRO (Gift), as opposed to a paid plan.
+  def gifted_pro?
+    is_pro? && plan.to_s.match?(/gift/i)
+  end
+
+  def gift_expires_at
+    gift_redemption&.expires_at if gifted_pro?
+  end
+
+  # The gift's last day as the person sees it, e.g. "November 22, 2027".
+  def gift_expires_on
+    gift_expires_at&.in_time_zone(send_timezone.presence || "UTC")&.strftime("%B %-d, %Y")
   end
 
   def plan_name
@@ -289,7 +447,45 @@ class User < ActiveRecord::Base
       "Gumroad"
     elsif plan && plan.match(/paypal/i)
       'PayPal'
+    elsif plan && plan.match(/apple/i)
+      'Apple'
     end
+  end
+
+  # The UUID the iOS app buys with (StoreKit's appAccountToken), made the first time it's asked
+  # for. Apple puts it in the signed transaction, which is how a purchase names its account.
+  # Two requests at once both get the one that was saved.
+  def apple_account_token!
+    return apple_account_token if apple_account_token.present?
+
+    begin
+      User.where(id: id, apple_account_token: nil).update_all(apple_account_token: SecureRandom.uuid)
+    rescue ActiveRecord::RecordNotUnique
+      retry
+    end
+    self.apple_account_token = User.where(id: id).pick(:apple_account_token)
+    clear_attribute_change(:apple_account_token)
+    apple_account_token
+  end
+
+  # A PRO plan's billing that deleting the account doesn't stop, so the person cancels it
+  # themselves: Gumroad and PayPal bill on their own, and a Stripe plan with no customer on
+  # file may have something left there (DeleteUserJob cancels the customer's subscriptions).
+  # Nil when there's nothing (PRO Forever, say, or Stripe with a customer). The web's delete
+  # page and the app's (Api::V1::AccountDeletionsController) both say so.
+  def separate_billing_to_cancel
+    # An App Store subscription keeps billing until it's cancelled in iOS Settings, whatever
+    # the plan says (it may be a second subscription alongside a web one).
+    if apple_subscriptions.any? { |s| s.entitles_pro? && s.auto_renew != false }
+      return { provider: "Apple", certain: true }
+    end
+
+    provider = plan_type_unlinked
+    return if provider == "Apple" # Cancelled already (auto-renew off), or over.
+    return if !is_pro? || provider.blank?
+    return if provider == "Stripe" && stripe_id.present?
+
+    { provider: provider, certain: provider != "Stripe" }
   end
 
   def plan_type
@@ -299,6 +495,8 @@ class User < ActiveRecord::Base
       "<a href='https://gumroad.com/login' target='_blank'>Gumroad</a>"
     elsif plan && plan.match(/paypal/i)
       'PayPal'
+    elsif plan && plan.match(/apple/i)
+      "<a href='https://apps.apple.com/account/subscriptions' target='_blank'>the App Store</a>"
     end
   end
 
@@ -414,12 +612,26 @@ class User < ActiveRecord::Base
   end
 
   def restrict_free_frequency
-    if self.is_free? && self.frequency.present? && ENV['FREE_WEEK'] != 'true'
+    if self.is_free? && self.frequency.present?
       self.update_columns(frequency: ["Sun"], previous_frequency: frequency)
     end
   end
 
+  def resume_apple_subscription
+    AppStore::Entitlement.sync!(self) if apple_subscriptions.any?(&:entitles_pro?)
+  end
+
+  # Devise's validatable asks for a password on every new account; a passwordless sign-up has
+  # none. Setting one later is validated as usual.
+  def password_required?
+    return false if passwordless_signup && password.nil? && password_confirmation.nil?
+
+    super
+  end
+
   def send_welcome_email
+    return if welcome_email_after_gift
+
     UserMailer.welcome_email(self).deliver_later
   rescue StandardError => e
     Sentry.set_user(id: self.id, email: self.email)
@@ -493,6 +705,22 @@ class User < ActiveRecord::Base
       end
     end
     valid
+  end
+
+  # The app's sign-in takes either kind of code in one field. The failure lockout covers both,
+  # and a recovery code that works clears the failures the TOTP check just counted.
+  def validate_otp_or_recovery_token(token)
+    return false if otp_locked_out?
+    return true if validate_otp_token(token)
+    return false if otp_locked_out?
+    return false unless validate_otp_recovery_token(token)
+
+    Rails.cache.delete("otp_user_failures:#{id}")
+    true
+  end
+
+  def otp_locked_out?
+    Rails.cache.read("otp_user_failures:#{id}").to_i >= OTP_MAX_USER_FAILURES
   end
 
   def validate_otp_recovery_token(token)

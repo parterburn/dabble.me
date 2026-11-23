@@ -108,7 +108,6 @@ final class AppModel {
     }
 
     private(set) var isSignedIn: Bool
-    private(set) var isSigningIn = false
     var signInError: String?
 
     private(set) var me: Me?
@@ -127,62 +126,266 @@ final class AppModel {
     var timelineError: String?
 
     let api: APIClient
+    /// PRO bought in the app (StoreKit), reported to the server for the signed-in account.
+    let subscriptions: SubscriptionStore
     private let tokens: TokenProvider
     private var processingWatches: Set<Int> = []
-    private let authenticator = WebAuthenticator()
+    private let passkeys = PasskeyAuthenticator()
+    /// The email field's passkey autofill, apart from `passkeys` (one request each at a time).
+    private let autoFillPasskeys = PasskeyAuthenticator()
 
     init(tokens: TokenProvider = TokenProvider()) {
         self.tokens = tokens
         api = APIClient(tokens: tokens)
+        subscriptions = SubscriptionStore(api: api)
         isSignedIn = KeychainStore.load() != nil
         Task { [weak self] in
             await tokens.setSignedOutHandler { self?.didLoseSession() }
         }
+        // Purchases are for the account that's loaded: none while signed out or still loading.
+        subscriptions.accountToken = { [weak self] in
+            guard let self, isSignedIn else { return nil }
+            return me?.appleAccountToken.flatMap(UUID.init(uuidString:))
+        }
+        subscriptions.didChangePlan = { [weak self] in await self?.refresh() }
+        subscriptions.start()
     }
 
     // MARK: - Auth
 
-    func signIn(createAccount: Bool = false) async {
-        guard !isSigningIn else { return }
-        isSigningIn = true
+    /// The sign-in or sign-up form, when it's showing (the signed-out screens present it).
+    var authForm: AuthFormMode?
+    /// Said on the welcome screen after the account's deletion is set (not an error).
+    var signInNotice: String?
+
+    /// Emails a sign-in code (`AuthFormView`'s Continue). The answer is the same for every
+    /// address, so the code screen always follows.
+    func sendSignInCode(email: String) async throws -> NativeAuth.CodeSent {
+        try await NativeAuth.sendCode(email: email)
+    }
+
+    /// The emailed code: signs in, or makes the account. Then the 2FA code if the server asks for
+    /// one (`NativeAuthError.needsCode`). A sign-in (not a sign-up) asks to add a passkey after.
+    func signIn(email: String, emailCode: String, otpCode: String?) async throws {
+        let session = try await NativeAuth.signIn(email: email, emailCode: emailCode, otpCode: otpCode)
+        await didSignIn(with: session.tokens, passkeySetupToken: session.passkeySetupToken, asksForPasskey: !session.created)
+    }
+
+    /// Passkeys above the keyboard while the email field is focused. Waits until one is picked
+    /// (then signs in) or `stopPasskeyAutoFill()`, which throws `CancellationError`.
+    func passkeyAutoFill() async throws {
+        autoFillPasskeys.prepareAutoFill()
+        // Quiet when the challenge can't be had: nobody asked for anything yet.
+        guard let challenge = try? await NativeAuth.passkeyChallenge(),
+              let bytes = NativeAuth.data(base64URL: challenge.challenge) else { return }
+        let assertion = try await autoFillPasskeys.autoFillAssertion(relyingParty: challenge.rpId, challenge: bytes)
+        let session = try await NativeAuth.signIn(with: assertion, for: challenge)
+        await didSignIn(with: session.tokens)
+    }
+
+    func stopPasskeyAutoFill() {
+        autoFillPasskeys.cancel()
+    }
+
+    /// "Use Password Instead" on the code screen: email and password, then the 2FA code if the
+    /// server asks for one (`NativeAuthError.needsCode`). Throws what the form should say.
+    func signIn(email: String, password: String, code: String?) async throws {
+        let session = try await NativeAuth.signIn(email: email, password: password, code: code)
+        // (session.deletionCancelled: the account was set to be deleted and this kept it, as
+        // the welcome screen's notice promised.)
+        await didSignIn(with: session.tokens, passkeySetupToken: session.passkeySetupToken, asksForPasskey: true)
+    }
+
+    func signUp(email: String, password: String, firstName: String?) async throws {
+        let session = try await NativeAuth.signUp(email: email, password: password, firstName: firstName)
+        await didSignIn(with: session.tokens, passkeySetupToken: session.passkeySetupToken)
+    }
+
+    /// The system's passkey sheet, then the server checks the assertion. Throws
+    /// `CancellationError` when the sheet is closed, else what the form should say.
+    func signInWithPasskey() async throws {
+        let challenge = try await NativeAuth.passkeyChallenge()
+        guard let bytes = NativeAuth.data(base64URL: challenge.challenge) else {
+            throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Sign-in failed.")
+        }
+        let assertion = try await passkeys.assert(relyingParty: challenge.rpId, challenge: bytes)
+        let session = try await NativeAuth.signIn(with: assertion, for: challenge)
+        await didSignIn(with: session.tokens)
+    }
+
+    /// `asksForPasskey`: a password or email-code sign-in (not sign-up), after which the passkey prompt comes
+    /// up once the journal has loaded. Adding one needs no password for the next few minutes
+    /// (the server's PasskeysController::SETUP_WINDOW), from the prompt or Settings.
+    private func didSignIn(with fresh: OAuthTokens, passkeySetupToken: String? = nil, asksForPasskey: Bool = false) async {
+        passkeySetup = passkeySetupToken.map { ($0, Date().addingTimeInterval(14 * 60)) }
+        passkeyPromptChecked = false
+        justSignedIn = asksForPasskey && passkeySetupToken != nil
+        await tokens.signIn(with: fresh)
         signInError = nil
-        defer { isSigningIn = false }
+        signInNotice = nil
+        authForm = nil
+        isSignedIn = true
+        await refresh()
+    }
 
-        let pkce = PKCE()
-        let state = PKCE.randomURLSafeString(byteCount: 16)
-        do {
-            let callback = try await authenticator.authenticate(
-                url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state, createAccount: createAccount),
-                ephemeral: UserDefaults.standard.bool(forKey: Self.signedOutKey))
-            let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
-            let value = { (name: String) in items.first { $0.name == name }?.value }
+    // MARK: - Passkey
 
-            if let error = value("error") {
-                throw WebAuthError.invalidCallback(value("error_description") ?? "Sign-in was not completed (\(error)).")
+    /// Ask to add a passkey (`PasskeyPrompt` says when): MainTabs presents it when nothing else
+    /// is up. Settings' Add a Passkey opens the same sheet.
+    var passkeyPromptPending = false
+    var showsPasskeyPrompt = false
+    /// Checked once per password or email-code sign-in.
+    private var passkeyPromptChecked = false
+    private var justSignedIn = false
+    private var passkeySetup: (token: String, expires: Date)?
+
+    /// The account has no password (made by email code): confirmations use an emailed code.
+    var confirmsWithEmailCode: Bool { me?.hasPassword == false }
+
+    /// Emails a code to the signed-in account, for `confirmsWithEmailCode` (adding a passkey,
+    /// Delete Account).
+    func sendConfirmationCode() async throws -> ConfirmationCodeSent {
+        try await api.post("api/v1/confirmation_code", EmptyBody())
+    }
+
+    /// The sheet needs the password (or an emailed code): there's been no sign-in in the last
+    /// few minutes.
+    var addingPasskeyNeedsPassword: Bool {
+        guard let passkeySetup else { return true }
+        return passkeySetup.expires < Date()
+    }
+
+    /// The prompt closed without a passkey (Not Now, or swiped away): put off, and counted.
+    func passkeyPromptClosed() {
+        if me?.hasPasskey == false { PasskeyPrompt.dismiss() }
+    }
+
+    private func considerPasskeyPrompt() {
+        guard !passkeyPromptChecked, let me else { return }
+        passkeyPromptChecked = true
+        if PasskeyPrompt.shouldAsk(hasPasskey: me.hasPasskey, justSignedIn: justSignedIn) {
+            passkeyPromptPending = true
+        }
+        justSignedIn = false
+    }
+
+    /// The system's sheet makes a passkey for dabble.me (iCloud Keychain, or the password manager
+    /// picked), then the server keeps it. Throws `CancellationError` when the sheet is closed.
+    /// `password` is the password, or the emailed code when `confirmsWithEmailCode`.
+    func addPasskey(password: String?) async throws {
+        // Chosen once, before the system's sheet: the setup token can run out while it's up.
+        let token = addingPasskeyNeedsPassword ? nil : passkeySetup?.token
+        let byCode = token == nil && confirmsWithEmailCode
+        let proof = NativeAuth.PasskeyProof(setupToken: token, currentPassword: token == nil && !byCode ? password : nil,
+                                            emailCode: byCode ? password : nil)
+        let creation: NativeAuth.PasskeyCreation = try await api.post("api/v1/passkeys/options",
+                                                                      json: try JSONEncoder().encode(proof))
+        guard let challenge = NativeAuth.data(base64URL: creation.challenge),
+              let userID = NativeAuth.data(base64URL: creation.userId) else {
+            throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Something went wrong.")
+        }
+        let excluded = (creation.excludeCredentials ?? []).compactMap { NativeAuth.data(base64URL: $0) }
+        let registration = try await passkeys.register(relyingParty: creation.rpId, challenge: challenge,
+                                                       userName: creation.userName, userID: userID, excluding: excluded)
+        // An emailed code works once: the options answer's setup token goes with the passkey.
+        let body = try JSONEncoder().encode(NativeAuth.NewPasskey(
+            registration: registration, creation: creation, nickname: PasskeyPrompt.nickname,
+            setupToken: creation.setupToken ?? proof.setupToken, password: proof.currentPassword))
+        let _: PasskeyAdded = try await api.post("api/v1/passkeys", json: body)
+        passkeySetup = nil
+        // Known now, even if the refresh below doesn't get through (Done shouldn't count as Not Now).
+        me?.hasPasskey = true
+        if let me: Me = try? await api.get("api/v1/me") { self.me = me }
+    }
+
+    // MARK: - Name
+
+    /// Set when a name save fails; Settings shows it, so a save made on going Back isn't lost silently.
+    var nameSaveError: String?
+    /// The last name save queued, so saves reach the server in the order they were made.
+    private var nameSave: Task<Void, Never>?
+
+    /// Saves your name to the account (as the web settings do); the server hands back the account.
+    /// Saves run one at a time, so a quick Done then Back can't land out of order.
+    func saveName(_ update: NameUpdate) {
+        let previous = nameSave
+        nameSave = Task {
+            await previous?.value
+            do {
+                let me: Me = try await api.patch("api/v1/me", update)
+                self.me = me
+            } catch {
+                nameSaveError = error.localizedDescription
             }
-            guard value("state") == state, let code = value("code") else {
-                throw WebAuthError.invalidCallback(nil)
-            }
-            await tokens.signIn(with: try await OAuthEndpoints.exchange(code: code, pkce: pkce))
-            UserDefaults.standard.removeObject(forKey: Self.signedOutKey)
-            isSignedIn = true
-            await refresh()
-        } catch WebAuthError.cancelled {
-            // User closed the sheet; nothing to report.
-        } catch {
-            signInError = error.localizedDescription
         }
     }
 
-    /// Set by Sign Out until the next sign-in, which then asks for the password again rather than
-    /// riding on Safari's dabble.me session.
-    private static let signedOutKey = "auth.signedOut"
+    // MARK: - Export
+
+    /// Starts the web's export of the whole journal; the server emails the link.
+    func requestExport() async throws -> ExportRequestResult {
+        try await api.post("api/v1/exports", EmptyBody())
+    }
+
+    // MARK: - Account deletion
+
+    func accountDeletionInfo() async throws -> AccountDeletionInfo {
+        try await api.get("api/v1/account_deletion")
+    }
+
+    /// Confirmed with the password. The server deletes the account an hour later unless the
+    /// person signs back in, and has already ended this session; the app signs out here.
+    func deleteAccount(password: String) async throws {
+        let result: AccountDeletionResult = try await api.post("api/v1/account_deletion", AccountDeletionRequest(password: password))
+        await finishDeletion(result)
+    }
+
+    /// The same, confirmed with a code emailed to an account with no password (`sendConfirmationCode`).
+    func deleteAccount(emailCode: String) async throws {
+        let result: AccountDeletionResult = try await api.post("api/v1/account_deletion", AccountDeletionRequest(emailCode: emailCode))
+        await finishDeletion(result)
+    }
+
+    /// The same, confirmed with one of the account's passkeys (for someone who signs in with a
+    /// passkey and may not know the password). Throws `CancellationError` if the sheet is closed.
+    func deleteAccountWithPasskey() async throws {
+        let challenge = try await NativeAuth.passkeyChallenge()
+        guard let bytes = NativeAuth.data(base64URL: challenge.challenge) else {
+            throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Something went wrong.")
+        }
+        let assertion = try await passkeys.assert(relyingParty: challenge.rpId, challenge: bytes)
+        let body = try JSONEncoder().encode(NativeAuth.PasskeyConfirmation(assertion: assertion, challenge: challenge))
+        let result: AccountDeletionResult = try await api.post("api/v1/account_deletion", json: body)
+        await finishDeletion(result)
+    }
+
+    private func finishDeletion(_ result: AccountDeletionResult) async {
+        await signOut()
+        let deletesAt = ISO8601DateFormatter().date(from: result.deletesAt) ?? Date().addingTimeInterval(3600)
+        signInNotice = "Your account will be deleted at \(deletesAt.formatted(date: .omitted, time: .shortened)). Sign back in before then to keep it."
+    }
+
+    /// Set when Sign Out of All Devices couldn't reach dabble.me; Settings shows it. The app
+    /// stays signed in then, so it never looks like other devices were signed out when they weren't.
+    var signOutEverywhereError: String?
+
+    /// Signs out every browser and app on the account (connected apps like Claude keep their
+    /// access), then this app. dabble.me revokes this app's token along with the rest.
+    func signOutEverywhere() async {
+        do {
+            try await api.delete("api/v1/device_sessions")
+        } catch {
+            signOutEverywhereError = (error as? LocalizedError)?.errorDescription
+                ?? "Couldn't reach Dabble Me. Check your connection and try again."
+            return
+        }
+        await signOut()
+    }
 
     func signOut() async {
         if let token = await tokens.clear() {
             Task.detached { await OAuthEndpoints.revoke(token) }
         }
-        UserDefaults.standard.set(true, forKey: Self.signedOutKey)
         await WebLinks.clearWebsiteData()
         DraftStore.clearAll()
         // (Kept on the account: they come back at the next sign-in.)
@@ -217,6 +420,10 @@ final class AppModel {
     private func resetSession() {
         isSignedIn = false
         me = nil
+        passkeySetup = nil
+        passkeyPromptPending = false
+        showsPasskeyPrompt = false
+        subscriptions.reset()
         today = nil
         recentWrittenDays = nil
         months = []
@@ -241,6 +448,8 @@ final class AppModel {
             let (me, monthList, today) = try await (meRequest, monthsRequest, todayRequest)
             self.me = me
             self.today = today
+            // A purchase the server hasn't heard about yet (offline, or made while signed out).
+            Task { await subscriptions.reportUnfinished() }
             months = monthList.months
             // Entries can change by email or on the web: keep cached months on screen, reload the
             // visible ones (and the newest) now, and the rest when they scroll back into view.
@@ -248,6 +457,7 @@ final class AppModel {
             staleMonths = Set(monthEntries.keys)
             timelineError = nil
             hasLoaded = true
+            considerPasskeyPrompt()
             WidgetSync.update(from: self)
             // The template and widget choice as the account has them (another phone may have
             // changed them), or sent up if they were changed here.

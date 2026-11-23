@@ -27,19 +27,6 @@
     <script>
       window.action = '<%= @js_action %>';
     </script>
-
-    <% if Rails.env.production? %>
-      <%= javascript_include_tag "https://www.googletagmanager.com/gtag/js?id=#{ENV['GOOGLE_ANALYTICS_4_ID']}", async: true %>
-      <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-
-        gtag('config', "<%= ENV['GOOGLE_ANALYTICS_4_ID'] %>", {
-          'anonymize_ip': true
-        });
-      </script>
-    <% end %>
   </head>
 
   <body class="<%= @body_class %>">
@@ -48,6 +35,7 @@
 
       <div id="main-container" class="clear-top <%= params[:controller].in?(['admin', 'payments', 'inspirations']) ? 'container-fluid' : 'container' %>">
         <%= render 'shared/closing_banner' %>
+        <%= render 'shared/passkey_nudge' %>
         <% if notice %>
           <div class="col-md-8 col-md-offset-2 alert alert-success"><%= notice.html_safe %></div>
           <div class="clearfix"></div>
