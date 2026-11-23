@@ -11,8 +11,8 @@ enum AuthFormMode: String, Identifiable {
 /// The app's own sign-in and sign-up, in a sheet over the welcome screens. Passwordless:
 ///
 /// 1. An email. The field offers the account's passkeys above the keyboard (`AppModel.passkeyAutoFill`),
-///    and the "Sign In with a Passkey" link under Continue opens the system's sheet: either
-///    signs straight in. A mistyped common domain gets a "Did you mean …?" (`EmailTypo`).
+///    and on sign-in the "Sign In with a Passkey" link under Continue opens the system's sheet:
+///    either signs straight in. A mistyped common domain gets a "Did you mean …?" (`EmailTypo`).
 ///    The main buttons always look ready: tapped too soon, they say what's missing under the
 ///    field and put the cursor there, rather than sitting greyed out.
 /// 2. Continue always emails a six-digit code and shows the code screen, with or without an
@@ -176,7 +176,9 @@ struct AuthFormView: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
 
-            passkeyLink
+            // Sign-in only: a passkey can't start an account. A returning writer on sign-up still
+            // gets their passkey offered above the keyboard (autofill) and "I Already Have an Account".
+            if !isSignUp { passkeyLink }
 
             errorRow
         } footer: {

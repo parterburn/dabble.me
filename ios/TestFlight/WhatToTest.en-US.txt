@@ -1,22 +1,16 @@
-Sign-in buttons: Continue never looks greyed out any more, and Sign In with a Passkey is now a plain olive link under it instead of a second button.
+Sign-in buttons: the Sign In with a Passkey link now shows only on Welcome back (sign in), not on Start your journal, since a passkey can't create an account. Continue never looks greyed out.
 
-Sign in and sign up
-- From the welcome screen, tap I Already Have an Account. Continue should be solid olive with the email field empty.
-- Tap Continue with no email: an olive note under the field says "Enter your email first, and we'll send you a code." and the cursor goes to the field. Nothing is sent.
-- Type "foo" and tap Continue: the note says it doesn't look like an email address yet. Typing in the field clears the note.
-- Do the same from Start Your Journal.
+Sign up
+- From the welcome screen, tap Start Your Journal. There should be no passkey link under Continue.
+- If you have a Dabble Me passkey on this device, tap the email field: your passkey should still be offered above the keyboard and sign you straight in.
+- Tap Continue with no email: an olive note under the field says "Enter your email first, and we'll send you a code."
 
-Passkey link
-- Under Continue, tap Sign In with a Passkey (olive text, no button outline). The system passkey sheet should open and sign you in as before.
+Sign in
+- Tap I Already Have an Account. Sign In with a Passkey (olive text) shows under Continue and opens the system passkey sheet as before.
+- Tap Continue with no email, then with "foo": an olive note asks for an email. Typing clears it.
 
-Code screen
-- Continue with a real email. On the code screen, tap Continue before entering the code: a note asks for the 6-digit code.
-- Tap Use Password Instead, then Continue with the password empty: a note asks for your password.
-- On an account with two-factor, after the password, tap Continue with the code empty: a note asks for your two-factor code.
-
-VoiceOver (optional)
-- With VoiceOver on, tapping Continue too soon reads the note aloud.
+Switching
+- On Start your journal, tap I Already Have an Account: the passkey link appears. Tap New to Dabble Me? Start Your Journal: it goes away.
 
 Still the same
-- Entering a full email and tapping Continue sends a code, and a typo like gmial.com still gets "Did you mean…?".
-- Passkey autofill above the keyboard still works.
+- A full email and Continue sends a code; the code screen works as before.
