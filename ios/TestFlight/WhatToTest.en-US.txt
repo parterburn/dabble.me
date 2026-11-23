@@ -11,6 +11,7 @@ Entry template on the empty page
 - With a template (Settings → Entry Template), a new entry's empty page shows it, faint, under "Start writing or [Swipe →] to use template:".
 - Swipe right across the page, or tap the Swipe badge: the template goes in. Just start typing to write without it.
 - A long template shows its first lines and fades out at the bottom.
+- A template of only empty bullets (no words) still shows "Start writing or [Swipe →] to use template:", just with nothing faint under it. Tap Swipe, or with VoiceOver use "Use Template": the bullets go in.
 - The "Start New Entries with It" switch is gone. If you had it on, new entries open empty with the template one swipe away, and Today and the widget show the day's prompt again.
 - Holding a Write button on Today still opens an entry with the template already in.
 
