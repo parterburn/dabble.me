@@ -8,8 +8,8 @@ class DeleteUserJob < ActiveJob::Base
   def perform(user_id, requested_at = nil)
     user = User.find_by(id: user_id)
     return unless user # Already deleted
-    return unless user.deleted_at.present? # Deletion was cancelled
-    return if requested_at && user.deleted_at.to_i != requested_at # Cancelled, then asked for again
+    # Cancelled by signing back in, or cancelled and then asked for again.
+    return unless still_requested?(user, requested_at)
     # Admins keep their passkeys (AdminAccounts), so the app never deletes one. A deletion
     # queued before they were made admin stops here. The console deletes an admin with
     # AdminAccounts.allow_passkey_removal { user.destroy! }.
@@ -32,14 +32,19 @@ class DeleteUserJob < ActiveJob::Base
     user.exports.find_each(&:destroy)
 
     # Destroy remaining associations (including Doorkeeper OAuth rows) and the user atomically
-    refused = false
+    stopped = false
     ActiveRecord::Base.transaction do
       # Checked again under a lock: the entries above can take a while, and delete_all below
       # skips WebauthnCredential's guard. Leaving the block (not rolling back) keeps the
       # cleared deleted_at.
       user.lock!
+      # Signed back in while the entries were going: keep the account and what's left of it.
+      unless still_requested?(user, requested_at)
+        stopped = true
+        next
+      end
       if AdminAccounts.protected?(user)
-        refused = true
+        stopped = true
         refuse_admin(user)
         next
       end
@@ -50,7 +55,7 @@ class DeleteUserJob < ActiveJob::Base
       user.webauthn_credentials.delete_all
       user.delete
     end
-    return if refused
+    return if stopped
 
     # Log the deletion
     if user_plan.present? && user_plan.match(/pro/i)
@@ -67,6 +72,12 @@ class DeleteUserJob < ActiveJob::Base
   end
 
   private
+
+  def still_requested?(user, requested_at)
+    return false if user.deleted_at.blank?
+
+    requested_at.nil? || user.deleted_at.to_i == requested_at
+  end
 
   def refuse_admin(user)
     user.update_column(:deleted_at, nil)
