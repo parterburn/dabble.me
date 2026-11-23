@@ -1,6 +1,21 @@
 require 'rails_helper'
 
 RSpec.describe EntriesHelper, type: :helper do
+  describe '#format_body' do
+    it 'drops <img> tags so a stored remote image never loads when the entry is viewed' do
+      html = helper.format_body('<p>Hi</p><img src="https://tracker.example.com/open.gif"><p>there</p>')
+
+      expect(html).to eq('<p>Hi</p><p>there</p>')
+    end
+
+    it 'keeps links and basic formatting' do
+      html = helper.format_body('<p><strong>Bold</strong> <a href="https://example.com">link</a></p>')
+
+      expect(html).to include('<strong>Bold</strong>')
+      expect(html).to include('href="https://example.com"')
+    end
+  end
+
   describe '#link_hashtags' do
     def linked(html)
       Capybara.string(helper.link_hashtags(html))

@@ -5,8 +5,10 @@
 module ExportHtml
   # What an entry's own HTML may keep. Anything that could run code, or style
   # the page around it, is dropped.
-  TAGS = %w[p br div span strong b em i u a ul ol li blockquote hr img].freeze
-  ATTRIBUTES = %w[href src alt].freeze
+  # No <img> from the body: the entry's own photo is added separately below,
+  # and a remote <img> in the body would phone home when the export is opened.
+  TAGS = %w[p br div span strong b em i u a ul ol li blockquote hr].freeze
+  ATTRIBUTES = %w[href].freeze
 
   STYLE = <<~CSS
     * { box-sizing: border-box; }
