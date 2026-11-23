@@ -1,4 +1,4 @@
-Dictation: quicker to start and quicker to write your words in.
+Dictation: quicker to start and finish, a haptic tap at start and stop, and centered loading dots.
 
 Starting
 - Open the composer: it should open and type exactly as fast as before (the model loads a moment after the keyboard is up). Wait a second, then tap the mic. The waveform should show almost at once, with only a blink of the dots first.
@@ -8,12 +8,20 @@ Starting
 Finishing
 - Say a sentence or two and tap Done. The words should go in noticeably sooner than before.
 - Try a longer one (a minute or so): it takes a little longer, but should not sit on the dots for long.
-- With Settings → Dictation → Fix Misheard Words on, it's still slower than without it (the on-device model has to rewrite the text), but should be a bit quicker than before.
+- With Settings → Dictation → Fix Misheard Words on, it's still the slowest (the on-device model rewrites the text), but a bit quicker than before.
+
+Haptics
+- You feel a tap when recording actually starts (as the waveform appears, not when you touch the mic), and another when it stops: Done, the mic again, letting go of a held mic, the X, or the 10-second "Didn't hear anything".
+- Hold the mic to talk: a tap once it starts recording, another when you let go.
+- With System Haptics off in iOS Settings → Sounds & Haptics, there's no tap.
+
+Centered loading dots
+- While dictation gets ready, and after Done while it writes your words in, the dots sit centered in the row, where the waveform is while recording.
 
 Still the same
 - X drops the recording, and the next tap still starts quickly.
 - Changing Settings → Dictation → Language, then dictating, uses the new language.
-- The very first time on a phone (or after iOS clears the model), it still downloads the speech model first, with its percentage.
+- The very first time on a phone (or after iOS clears the model), it still downloads the speech model first, with "Downloading N%" next to the dots.
 
 Timings
 - With the iPhone connected to a Mac, Console shows each dictation's timings: search for "Dictation".

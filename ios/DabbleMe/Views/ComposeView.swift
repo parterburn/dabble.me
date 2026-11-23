@@ -351,6 +351,11 @@ struct ComposeView: View {
                 if !focused, dictation.state == .listening { dictation.stop() }
             }
             .onDisappear { dictation.cancel() }
+            // A tap in the hand as the recording starts, and another as it stops (Done, a held mic
+            // let go, the X, or the silence limit).
+            // (`.start` and `.stop` only play on watchOS: impacts, firmer to start, lighter to stop.)
+            .sensoryFeedback(.impact(weight: .medium), trigger: dictation.state) { _, now in now == .listening }
+            .sensoryFeedback(.impact(weight: .light), trigger: dictation.state) { was, now in was == .listening && now != .listening }
             // Why it couldn't listen is said for a while, then the row closes.
             .task(id: dictation.problem) {
                 guard dictation.problem != nil else { return }
@@ -2037,7 +2042,8 @@ private struct DictationRow: View {
                     .accessibilityHint("Writes what you said into the entry")
                 } else {
                     // Getting ready or writing it down: just the dots (and, the first time, how
-                    // much of the download is in).
+                    // much of the download is in), centered where the waveform sits while recording.
+                    Spacer(minLength: 0)
                     TypingDots(size: .small)
                         .accessibilityElement()
                         .accessibilityLabel("Dictation")

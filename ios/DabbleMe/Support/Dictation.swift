@@ -656,6 +656,8 @@ private final class Recorder {
         do {
             // `.measurement`: the microphone as it is, without the voice-call processing.
             try session.setCategory(.record, mode: .measurement)
+            // The composer's start and stop taps still play while the microphone's on.
+            try? session.setAllowHapticsAndSystemSoundsDuringRecording(true)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             recorder = try AVAudioRecorder(url: url, settings: [
                 AVFormatIDKey: kAudioFormatLinearPCM,
