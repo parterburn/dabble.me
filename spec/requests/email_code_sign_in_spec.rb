@@ -628,7 +628,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       send_web_code(user.email)
       post verify_email_code_path, params: { code: last_code }
 
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
       expect(flash[:notice]).to eq(I18n.t("devise.sessions.deletion_cancelled"))
       expect(user.reload.deleted_at).to be_nil
     end
@@ -646,7 +646,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
         token: ROTP::TOTP.new(user.otp_auth_secret).now
       }
 
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
       expect(user.reload.deleted_at).to be_nil
     end
 
