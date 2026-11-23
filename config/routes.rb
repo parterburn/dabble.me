@@ -151,6 +151,8 @@ Rails.application.routes.draw do
   match 'users/confirmation_code', to: 'confirmation_codes#create', as: 'confirmation_code', via: %i[post put patch delete]
 
   namespace :passkeys do
+    # Offered once per browser after a web sign-in (PasskeyOffer).
+    resource :offer, only: :show
     resources :registrations, only: [:new, :create, :destroy]
     resources :sessions, only: [:new, :create]
     resource :verification, only: [:new, :create] do

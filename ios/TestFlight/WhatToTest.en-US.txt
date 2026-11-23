@@ -1,4 +1,4 @@
-Sign Out of All Devices now disconnects connected apps (Claude, ChatGPT and other AI connectors) too, and Settings says so. Nothing else in the app changed.
+Sign Out of All Devices now disconnects connected apps (Claude, ChatGPT and other AI connectors) too, and Settings says so. On the website, signing in now offers a passkey once per browser; the app's own passkey prompt is unchanged.
 
 Settings
 - Open Settings and find Sign Out of All Devices. The note under it should say it also disconnects connected apps like Claude.
@@ -7,6 +7,12 @@ Sign Out of All Devices
 - With Claude (or another AI connector) connected to your Dabble Me account, tap Sign Out of All Devices. The app signs out, as before.
 - Sign back in. In Claude, ask it to read your journal: it should ask you to connect Dabble Me again.
 - On dabble.me, Account Security → Connected apps should no longer list Claude until you reconnect it.
+
+Passkey prompt (unchanged)
+- On an account with no passkey, sign in with your password or an emailed code: the "Add a passkey" sheet should still appear. Not Now puts it away.
+
+Website (optional)
+- Sign in at dabble.me in a browser with an account that has no passkey: a page offers "Sign in with Touch ID next time" (Face ID on iPhone). Add a passkey makes one in a tap; Not now goes on to the journal. Signing in again on the same browser doesn't ask twice.
 
 Still the same
 - Plain Sign Out signs out this device only, and connected apps keep working.

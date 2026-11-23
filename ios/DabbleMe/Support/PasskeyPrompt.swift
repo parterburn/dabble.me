@@ -3,7 +3,7 @@ import Foundation
 /// When the app asks someone to add a passkey: only right after a password or email-code
 /// sign-in (not sign-up, not on launch), to an account without one. "Not Now" puts it off for `snoozeDays`;
 /// after `maxAsks` of those it stops for good. Settings → Add a Passkey stays until the account
-/// has one. The web asks with a banner on Today (`PasskeyNudge`).
+/// has one. The web asks once per browser, on a page after sign-in (`PasskeyOffer`).
 enum PasskeyPrompt {
     static let snoozeDays = 30
     static let maxAsks = 3

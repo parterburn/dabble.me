@@ -44,9 +44,8 @@ RSpec.describe 'OTP authentication flow', type: :request do
       token: totp_code
     }
 
-    expect(response).to redirect_to(root_path)
-    follow_redirect!
-    expect(response).to redirect_to(today_path)
+    # An account with no passkey stops at the passkey offer first (PasskeyOffer).
+    expect(response).to redirect_to(passkeys_offer_path)
   end
 
   it 'allows enabling and resetting OTP from the custom token settings view' do

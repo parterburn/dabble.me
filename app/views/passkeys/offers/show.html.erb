@@ -1,0 +1,69 @@
+<%# Offered once per browser after a web sign-in to an account with no passkey (PasskeyOffer).
+    Where the browser can't make a passkey, the page goes straight on (pages/passkeys/offers.js). %>
+<% title "Add a passkey — Dabble me." %>
+<% content_for :tailwind, true %>
+<% unlock = case @device[:os]
+            when "iPhone", "iPad" then "Face ID"
+            when "Mac" then "Touch ID"
+            when "Windows" then "Windows Hello"
+            when "Android" then "your fingerprint or screen lock"
+            else "your fingerprint, face or device PIN"
+            end %>
+
+<div class="tw mx-auto max-w-xl pt-4 pb-16 sm:pt-10" id="passkey-offer"
+     data-continue-to="<%= @continue_to %>"
+     data-nickname="<%= [@device[:browser], @device[:os]].compact.join(' on ') %>"
+     data-proof-needed="<%= passkey_proof_needed? %>">
+  <section class="card p-6 sm:p-10">
+    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-olive-100 text-primary" aria-hidden="true">
+      <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33" />
+      </svg>
+    </div>
+
+    <div id="passkey-offer-ask">
+      <h1 class="mt-5 font-serif text-3xl tracking-tight text-primary sm:text-4xl">Sign in with <%= unlock %> next time</h1>
+      <p class="mt-3 text-muted">
+        Add a passkey and signing in to your journal takes one tap. No password to remember, no code to wait for.
+      </p>
+
+      <ul class="mt-6 space-y-3 text-primary">
+        <li class="flex gap-3">
+          <span class="slab-icon slab-icon--check mt-0.5 shrink-0 text-green-700" aria-hidden="true"></span>
+          <span><strong class="font-semibold">Can't be phished.</strong> A passkey only works on dabble.me, so a fake sign-in page gets nothing.</span>
+        </li>
+        <li class="flex gap-3">
+          <span class="slab-icon slab-icon--check mt-0.5 shrink-0 text-green-700" aria-hidden="true"></span>
+          <span><strong class="font-semibold">Nothing to leak.</strong> There's no secret stored on our side, so a breach can't expose it.</span>
+        </li>
+        <li class="flex gap-3">
+          <span class="slab-icon slab-icon--check mt-0.5 shrink-0 text-green-700" aria-hidden="true"></span>
+          <span><strong class="font-semibold">Stays private.</strong> Your face or fingerprint never leaves this device.</span>
+        </li>
+      </ul>
+
+      <% if passkey_proof_needed? %>
+        <%# Signed in a while ago: Account Security asks for the password first. %>
+        <%= link_to "Add a passkey", "#{security_path}#passkeys", class: "button-primary mt-8 w-full", id: "add-passkey-offer" %>
+      <% else %>
+        <button type="button" id="add-passkey-offer" class="button-primary mt-8 w-full">Add a passkey</button>
+      <% end %>
+      <p id="passkey-offer-error" class="field-help mt-3 hidden" role="alert"></p>
+
+      <p class="mt-4 text-center">
+        <%= link_to "Not now", @continue_to, id: "passkey-offer-skip", class: "text-sm text-muted hover:text-primary" %>
+      </p>
+    </div>
+
+    <div id="passkey-offer-done" class="hidden" role="status">
+      <h1 class="mt-5 font-serif text-3xl tracking-tight text-primary sm:text-4xl">You're set</h1>
+      <p class="mt-3 text-muted">Next time, pick your passkey when you sign in. Your other ways to sign in still work.</p>
+      <%= link_to "Continue to your journal", @continue_to, class: "button-primary mt-8 w-full" %>
+    </div>
+  </section>
+
+  <p class="mt-6 text-center text-xs text-muted">
+    We'll only ask once on this browser. You can add or remove passkeys any time in
+    <%= link_to "Account Security", "#{security_path}#passkeys", class: "underline hover:text-primary" %>.
+  </p>
+</div>

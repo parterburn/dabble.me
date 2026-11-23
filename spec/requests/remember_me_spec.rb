@@ -200,7 +200,7 @@ RSpec.describe "Staying signed in (remember me)", type: :request do
         token: ROTP::TOTP.new(user.otp_auth_secret).now
       }
 
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
       expect(remember_cookie_set?).to be(true)
     end
 
@@ -217,7 +217,7 @@ RSpec.describe "Staying signed in (remember me)", type: :request do
         token: ROTP::TOTP.new(user.otp_auth_secret).now
       }
 
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
       expect(remember_cookie_set?).to be(true)
     end
   end

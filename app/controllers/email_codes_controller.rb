@@ -10,10 +10,6 @@ class EmailCodesController < ApplicationController
   layout 'marketing'
 
   EMAIL_CODE_SESSION = :email_code_sign_in
-  # After signing in with a code, adding a passkey on Account Security needs nothing more for
-  # this long (Passkeys::RegistrationsController), as the app's setup token does.
-  SIGNED_IN_SESSION = :email_code_signed_in_at
-  FRESH_FOR = 15.minutes
 
   before_action :redirect_signed_in, only: %i[create show verify resend]
   before_action :require_pending_email, only: %i[show verify resend]
@@ -100,9 +96,9 @@ class EmailCodesController < ApplicationController
     end
 
     sign_in(:user, user)
-    session[SIGNED_IN_SESSION] = Time.current.to_i
 
     if created
+      skip_passkey_offer!
       redirect_to after_sign_in_path_for(user), **sign_up_flash(user)
     elsif current_gift
       # An existing account with a gift link: the gift page has the redeem button.

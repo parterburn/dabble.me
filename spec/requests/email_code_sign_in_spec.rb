@@ -317,7 +317,8 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       post email_codes_path, params: { user: { email: user.email } }
       post verify_email_code_path, params: { code: last_code }
 
-      expect(response).to redirect_to(root_path)
+      # Its passkeys were wiped, so the passkey offer comes first (PasskeyOffer).
+      expect(response).to redirect_to(passkeys_offer_path)
       user.reload
       expect(user.has_password?).to be(false)
       expect(user.webauthn_credentials).to be_empty
@@ -471,7 +472,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
     it "signs an existing account in with the code" do
       send_web_code(user.email)
       post verify_email_code_path, params: { code: last_code }
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
       get edit_user_registration_path
       expect(response).to have_http_status(:ok)
     end
@@ -499,7 +500,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
     it "still signs in with the password from the code page" do
       send_web_code(user.email)
       post user_session_path, params: { user: { email: user.email, password: password }, from_code: "1" }
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(passkeys_offer_path)
     end
 
     it "asks for the 2FA code after the emailed code" do
