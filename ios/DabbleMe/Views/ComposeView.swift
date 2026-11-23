@@ -247,7 +247,7 @@ struct ComposeView: View {
                                 // With a template, the empty page is the template itself, under a
                                 // line that says how to use it. Without, a question about the day
                                 // being written: today, yesterday, or another by name.
-                                if !templatePreview.characters.isEmpty {
+                                if !template.isEmpty {
                                     templatePlaceholder
                                 } else {
                                     Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
@@ -1143,19 +1143,22 @@ struct ComposeView: View {
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
-            Text(templatePreview)
-                .font(Font(RichText.Style.journal.baseFont))
-                .foregroundStyle(.tertiary)
-                .lineLimit(8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .mask {
-                    // A long one fades out at the foot, so it reads as more to come.
-                    LinearGradient(stops: [.init(color: .black, location: templateIsLong ? 0.6 : 1),
-                                           .init(color: .black.opacity(templateIsLong ? 0.15 : 1), location: 1)],
-                                   startPoint: .top, endPoint: .bottom)
-                }
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+            // (A template of only empty list items has no words to show: just the line above.)
+            if !templatePreview.characters.isEmpty {
+                Text(templatePreview)
+                    .font(Font(RichText.Style.journal.baseFont))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .mask {
+                        // A long one fades out at the foot, so it reads as more to come.
+                        LinearGradient(stops: [.init(color: .black, location: templateIsLong ? 0.6 : 1),
+                                               .init(color: .black.opacity(templateIsLong ? 0.15 : 1), location: 1)],
+                                       startPoint: .top, endPoint: .bottom)
+                    }
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
         }
     }
 
