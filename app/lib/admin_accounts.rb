@@ -7,6 +7,8 @@
 #
 #   AdminAccounts.allow_passkey_removal { user.webauthn_credentials.find(ID).destroy! }
 #
+# Deleting an admin's account works the same way: AdminAccounts.allow_passkey_removal { user.destroy! }
+#
 # The console can also take an admin's password away, so they sign in with a passkey or an
 # emailed code only (bin/rails "admin:remove_password[admin@example.com]").
 module AdminAccounts

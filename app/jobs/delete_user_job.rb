@@ -11,11 +11,9 @@ class DeleteUserJob < ActiveJob::Base
     return unless user.deleted_at.present? # Deletion was cancelled
     return if requested_at && user.deleted_at.to_i != requested_at # Cancelled, then asked for again
     # Admins keep their passkeys (AdminAccounts), so the app never deletes one. A deletion
-    # queued before they were made admin stops here; the console deletes an admin.
-    if AdminAccounts.protected?(user)
-      user.update_column(:deleted_at, nil)
-      return
-    end
+    # queued before they were made admin stops here. The console deletes an admin with
+    # AdminAccounts.allow_passkey_removal { user.destroy! }.
+    return refuse_admin(user) if AdminAccounts.protected?(user)
 
     # Capture user info before deletion for logging
     user_email = user.email
@@ -35,6 +33,14 @@ class DeleteUserJob < ActiveJob::Base
 
     # Destroy remaining associations (including Doorkeeper OAuth rows) and the user atomically
     ActiveRecord::Base.transaction do
+      # Checked again under a lock: the entries above can take a while, and delete_all below
+      # skips WebauthnCredential's guard.
+      user.lock!
+      if AdminAccounts.protected?(user)
+        refuse_admin(user)
+        raise ActiveRecord::Rollback
+      end
+
       Doorkeeper::AccessGrant.where(resource_owner_id: user_id).delete_all
       Doorkeeper::AccessToken.where(resource_owner_id: user_id).delete_all
       user.original_hashtags.delete_all
@@ -57,6 +63,12 @@ class DeleteUserJob < ActiveJob::Base
   end
 
   private
+
+  def refuse_admin(user)
+    user.update_column(:deleted_at, nil)
+    Sentry.capture_message('Admin account deletion refused', level: :warning, extra: { user_id: user.id })
+    nil
+  end
 
   def cancel_stripe_subscriptions(stripe_id)
     return if stripe_id.blank?

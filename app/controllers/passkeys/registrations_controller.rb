@@ -24,7 +24,12 @@ class Passkeys::RegistrationsController < ApplicationController
   def create
     # The password (or the emailed code on an account with none), unless this session just
     # signed in with an emailed code.
-    if passkey_proof_needed? && !current_password_or_code_valid?(params[:current_password], params[:email_code])
+    if admin_adding_first_passkey?
+      unless admin_first_passkey_proof_valid?(params[:current_password])
+        render json: { errors: ["Admin accounts add their first passkey with their password."] }, status: :unprocessable_content
+        return
+      end
+    elsif passkey_proof_needed? && !current_password_or_code_valid?(params[:current_password], params[:email_code])
       message = current_user.has_password? ? "Incorrect current password." : "That code didn't work. Send a new one and try again."
       render json: { errors: [message] }, status: :unprocessable_content
       return

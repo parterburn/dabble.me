@@ -40,6 +40,15 @@ RSpec.describe "Admin account protection", type: :request do
       expect(AdminAccounts.passkey_removal_allowed?).to be(false)
     end
 
+    it "keeps the whole account from destroy, before anything it owns goes" do
+      entry = create(:entry, user: admin)
+      expect(admin.destroy).to be(false)
+      expect(Entry.exists?(entry.id)).to be(true)
+
+      AdminAccounts.allow_passkey_removal { admin.destroy! }
+      expect(User.exists?(admin.id)).to be(false)
+    end
+
     it "leaves other accounts' passkeys removable" do
       other = create(:webauthn_credential)
       expect(other.destroy).to be_truthy
@@ -83,10 +92,49 @@ RSpec.describe "Admin account protection", type: :request do
       expect(admin.reload.deleted_at).to be_nil
     end
 
-    it "won't add another passkey to an admin who has one (that needs the web's passkey check)" do
+    it "won't add a passkey for an admin (that happens on the web, behind its checks)" do
       post "/api/v1/passkeys/options", params: { current_password: password }, headers: headers, as: :json
       expect(response).to have_http_status(:forbidden)
+
+      AdminAccounts.allow_passkey_removal { credential.destroy! }
+      post "/api/v1/passkeys/options", params: { current_password: password }, headers: headers, as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(MobileApp.passkey_setup(admin, MobileApp.issue_token!(admin))).to eq({})
     end
+  end
+
+  describe "an admin's first passkey on the web" do
+    before do
+      AdminAccounts.allow_passkey_removal { credential.destroy! }
+      sign_in admin
+    end
+
+    def add_passkey(**proof)
+      get new_passkeys_registration_path, as: :json
+      challenge = JSON.parse(response.body)["challenge"]
+      attestation = passkey_client.create(challenge: challenge, user_verified: true)
+      post passkeys_registrations_path, params: attestation.merge(nickname: "Laptop", **proof), as: :json
+    end
+
+    it "takes the password" do
+      expect { add_passkey(current_password: password) }.to change { admin.webauthn_credentials.count }.by(1)
+    end
+
+    it "won't take an emailed code, or the minutes after a code sign-in (the inbox alone)" do
+      code = EmailCode.issue!(admin.email, purpose: "confirm", user: admin)
+      expect { add_passkey(email_code: code) }.not_to change { admin.webauthn_credentials.count }
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+  end
+
+  it "keeps another admin from moving an admin's email" do
+    other_admin = create(:user, admin: true)
+    register_passkey(other_admin, client: WebAuthn::FakeClient.new(WebAuthn.configuration.allowed_origins.first))
+    allow(AdminAccess).to receive(:passkey_fresh?).and_return(true)
+    sign_in other_admin
+
+    patch admin_user_path(admin), params: { user: { email: "someone-else@example.com" } }
+    expect(admin.reload.email).not_to eq("someone-else@example.com")
   end
 
   it "stops a deletion queued before the account was made admin" do

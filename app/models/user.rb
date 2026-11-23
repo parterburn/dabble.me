@@ -61,6 +61,10 @@ class User < ActiveRecord::Base
     end
   end
 
+  # Before the dependent destroys below: an export's ZIP would be deleted from storage before
+  # the passkeys' guard rolled the rest back.
+  before_destroy :keep_admin_account, prepend: true
+
   has_many :entries, dependent: :destroy
   has_many :hashtags, dependent: :destroy
   has_many :exports, dependent: :destroy
@@ -282,6 +286,14 @@ class User < ActiveRecord::Base
     end
     tokens.update_all(revoked_at: now)
     grants.update_all(revoked_at: now)
+  end
+
+  # An admin's account goes only from the Rails console, with its passkeys (AdminAccounts).
+  def keep_admin_account
+    return unless AdminAccounts.protected?(self) && !AdminAccounts.passkey_removal_allowed?
+
+    errors.add(:base, 'Admin accounts can only be deleted inside AdminAccounts.allow_passkey_removal.')
+    throw :abort
   end
 
   # The first emailed-code sign-in to an unclaimed account (EmailSignIn.unclaimed?): whoever set
