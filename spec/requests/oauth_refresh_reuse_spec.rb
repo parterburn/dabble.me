@@ -80,6 +80,25 @@ RSpec.describe "Reusing a rotated refresh token", type: :request do
     end
   end
 
+  it "revokes the newer token when the chain rotates while it's being cut off" do
+    old = issue
+    old_refresh = old.plaintext_refresh_token
+    second = refresh(old_refresh)
+    stale_leaf = Doorkeeper::AccessToken.by_token(second["access_token"])
+    third = refresh(second["refresh_token"]) # rotates the leaf after it was looked up
+
+    calls = 0
+    allow(OauthRefreshReuse).to receive(:chain_leaf).and_wrap_original do |original, token|
+      calls += 1
+      calls == 2 ? stale_leaf : original.call(token) # live_successor, then the stale first walk
+    end
+
+    travel_to(2.minutes.from_now) do
+      expect(OauthRefreshReuse.handle!(old.reload)).to be(true)
+      expect(Doorkeeper::AccessToken.by_token(third["access_token"])).to be_revoked
+    end
+  end
+
   it "can't disconnect a connection made after the old one was removed" do
     old = issue
     old_refresh = old.plaintext_refresh_token

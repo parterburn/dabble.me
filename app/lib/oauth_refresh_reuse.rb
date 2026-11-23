@@ -26,6 +26,11 @@ module OauthRefreshReuse
   def live_successor(token, now: Time.current)
     return nil unless token&.revoked_at && token.revoked_at <= now - GRACE
 
+    chain_leaf(token)
+  end
+
+  # The unrevoked token at the end of a revoked token's rotation chain, or nil.
+  def chain_leaf(token)
     current = token
     MAX_CHAIN.times do
       successor = rotated_into(current)
@@ -47,12 +52,32 @@ module OauthRefreshReuse
     scope.order(:id).first
   end
 
-  # Revokes the successor and emails the user. True when it did.
+  # Revokes the live successor and emails the user. True when it did.
+  #
+  # Doorkeeper locks a refresh token's row while it rotates it, so the successor is locked and
+  # checked again here: if a refresh rotated it in the meantime, the walk starts over from it and
+  # revokes the newer token instead, so the email is never sent while a token is still live.
   def handle!(token, now: Time.current)
-    live = live_successor(token, now: now)
-    return false unless live
+    return false unless live_successor(token, now: now)
 
-    live.update_columns(revoked_at: now)
+    revoked = false
+    start = token
+    3.times do
+      live = chain_leaf(start)
+      break unless live
+
+      revoked = Doorkeeper::AccessToken.transaction do
+        live.lock!
+        next false if live.revoked_at
+
+        live.update_columns(revoked_at: now)
+        true
+      end
+      break if revoked
+
+      start = live
+    end
+    return false unless revoked
 
     user = User.find_by(id: token.resource_owner_id)
     app_name = token.application&.name
