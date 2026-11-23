@@ -454,6 +454,43 @@ describe EmailProcessor do
       expect(paid_user.entries.reload.first.body).to eq("<div>FIRST PARAGRAPH<br><br>SECOND PARAGRAPH</div>")
     end
 
+    it "drops a remote <img> written as raw HTML in a plain-text email" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Dear diary\n\n<img src=\"https://tracker.example.com/open.gif\" width=\"1\" height=\"1\">Today was good",
+        vendor_specific: {}
+      )
+
+      EmailProcessor.new(email).process
+
+      body = paid_user.entries.reload.first.body
+      expect(body).not_to include("<img")
+      expect(body).not_to include("tracker.example.com")
+      expect(body).to include("Dear diary")
+      expect(body).to include("Today was good")
+    end
+
+    it "drops remote <img> tags from an HTML email body even when the image is too small to keep" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Today was good",
+        vendor_specific: {
+          stripped_html: '<div>Today was good<img src="https://tracker.example.com/open.gif" width="1" height="1"></div>'
+        }
+      )
+      allow(SafeRemoteFetch).to receive(:fetch).and_return(nil)
+
+      EmailProcessor.new(email).process
+
+      body = paid_user.entries.reload.first.body
+      expect(body).not_to include("<img")
+      expect(body).not_to include("tracker.example.com")
+    end
+
     it "preserves blank lines between HTML email paragraphs" do
       paid_user.entries.destroy_all
       email = FactoryBot.build(
