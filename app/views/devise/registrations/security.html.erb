@@ -7,8 +7,31 @@
     <p class="mt-2 text-muted">Your email, password, passkeys, two-factor authentication, where you're signed in, and connected apps.</p>
   </header>
 
+  <%# Jump links, so Sessions and Connected apps (below the form) are one tap away. A count
+      shows only when there's something there. %>
+  <% security_sections = [
+       ["Email and password", "email-password", nil],
+       ["Passkeys", "passkeys", current_user.webauthn_credentials.length],
+       ["Sessions", "sessions", @user_sessions.length],
+       ["Connected apps", "connected-apps", @oauth_applications.size]
+     ] %>
+  <nav aria-label="Sections on this page" class="-mt-3 mb-8">
+    <ul class="flex flex-wrap gap-2">
+      <% security_sections.each do |label, anchor, count| %>
+        <li>
+          <a href="#<%= anchor %>" class="inline-flex items-center gap-1.5 rounded-full border border-subtle bg-surface px-3.5 py-1.5 text-sm font-medium text-primary no-underline transition-colors hover:bg-surface-elevated hover:text-primary focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none">
+            <%= label %>
+            <% if count.to_i.positive? %>
+              <span class="min-w-5 rounded-full bg-cream-200 px-1.5 text-center text-xs font-semibold tabular-nums text-muted"><%= count %></span>
+            <% end %>
+          </a>
+        </li>
+      <% end %>
+    </ul>
+  </nav>
+
   <%= form_for(user, url: registration_path(user), html: { method: :put, class: "space-y-6" }) do |f| %>
-    <section class="card p-6 sm:p-8">
+    <section class="card scroll-mt-4 p-6 sm:p-8" id="email-password">
       <h2 class="font-serif text-2xl text-primary">Email and password</h2>
 
       <div class="mt-5 grid gap-5 sm:grid-cols-2">
@@ -35,7 +58,7 @@
       </div>
     </section>
 
-    <section class="card p-6 sm:p-8" id="passkeys">
+    <section class="card scroll-mt-4 p-6 sm:p-8" id="passkeys">
       <h2 class="font-serif text-2xl text-primary">Passkeys and two-factor</h2>
       <p class="mt-1 text-sm text-muted">More ways to keep your journal safe when you log in.</p>
 
