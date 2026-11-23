@@ -6,43 +6,53 @@
 #
 # Clients sometimes send two refreshes at once (MCP clients do), so a reuse within GRACE of the
 # rotation is the client's own race and is only refused, as Doorkeeper refuses it anyway. Past
-# GRACE, the tokens issued after it for the same app and account (and, for the iOS app, the
-# same device) are revoked, and the user is emailed. The app has to connect again; whoever
-# holds the copy loses access too.
+# GRACE, the live token at the end of the old token's rotation chain is revoked, and the user is
+# emailed. The app has to connect again; whoever holds the copy loses access too.
 #
-# A token revoked for any other reason (removed in Connected apps, idle expiry, sign out of all
-# devices, a password change) leaves no live token after it, so reusing it does nothing here.
+# There's no lineage column, so the chain is rebuilt from timing: a refresh revokes the old row
+# and creates its successor in the same request, so a token's successor is the row for the same
+# account, app (and, for the iOS app, device) created within ROTATION_SLACK of its revoked_at. A
+# token revoked any other way (removed in Connected apps, idle expiry, sign out of all devices, a
+# password change) has no such row, so replaying it can't touch a connection authorized later.
 module OauthRefreshReuse
   GRACE = 60.seconds
-  # The new token is created in the same request that revokes the old one.
-  ROTATION_SLACK = 5.seconds
+  ROTATION_SLACK = 2.seconds
+  # A year of daily refreshes, with room to spare.
+  MAX_CHAIN = 1_000
 
   module_function
 
-  # The old token's successors still alive, or none when this isn't a suspicious reuse.
-  def successors(token, now: Time.current)
-    return Doorkeeper::AccessToken.none unless token&.revoked_at && token.revoked_at <= now - GRACE
+  # The live token the old one was rotated into, or nil when this isn't a suspicious reuse.
+  def live_successor(token, now: Time.current)
+    return nil unless token&.revoked_at && token.revoked_at <= now - GRACE
 
+    current = token
+    MAX_CHAIN.times do
+      successor = rotated_into(current)
+      return nil unless successor
+      return successor if successor.revoked_at.nil?
+
+      current = successor
+    end
+    nil
+  end
+
+  def rotated_into(token)
     scope = Doorkeeper::AccessToken.where(
       resource_owner_id: token.resource_owner_id,
       application_id: token.application_id,
-      revoked_at: nil
-    ).where(created_at: (token.revoked_at - ROTATION_SLACK)..)
-    scope = scope.where(user_session_id: token.user_session_id) if token.respond_to?(:user_session_id) && token.user_session_id
-    scope
+      created_at: (token.revoked_at - ROTATION_SLACK)..(token.revoked_at + ROTATION_SLACK)
+    ).where.not(id: token.id).where('id > ?', token.id)
+    scope = scope.where(user_session_id: token.user_session_id) if token.user_session_id
+    scope.order(:id).first
   end
 
-  # Revokes the successors and emails the user. True when it did.
+  # Revokes the successor and emails the user. True when it did.
   def handle!(token, now: Time.current)
-    live = successors(token, now: now)
-    return false unless live.exists?
+    live = live_successor(token, now: now)
+    return false unless live
 
-    live.update_all(revoked_at: now)
-    Doorkeeper::AccessGrant.where(
-      resource_owner_id: token.resource_owner_id,
-      application_id: token.application_id,
-      revoked_at: nil
-    ).update_all(revoked_at: now)
+    live.update_columns(revoked_at: now)
 
     user = User.find_by(id: token.resource_owner_id)
     app_name = token.application&.name
