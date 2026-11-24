@@ -423,6 +423,8 @@ final class AppModel {
         passkeySetup = nil
         passkeyPromptPending = false
         showsPasskeyPrompt = false
+        reviewPromptPending = false
+        showsReviewPromptStandIn = false
         subscriptions.reset()
         today = nil
         recentWrittenDays = nil
@@ -654,7 +656,41 @@ final class AppModel {
         await loadToday()
         // Today's writing reminder isn't needed once there's an entry.
         await ReminderScheduler.shared.reschedule(for: self)
+        ReviewPrompt.recordNewEntry()
+        // Not waited on: the composer closes as soon as the entry is saved.
+        Task { await considerReviewPrompt() }
         return envelope
+    }
+
+    // MARK: - App Store review
+
+    /// Ask for a rating (`ReviewPrompt` says when): MainTabs asks once the composer has closed
+    /// and nothing else is up.
+    var reviewPromptPending = false
+    /// TestFlight: the alert that stands in for the system prompt iOS won't show there.
+    var showsReviewPromptStandIn = false
+    private var reviewPromptVersion = ""
+    private var reviewPromptInTestFlight = false
+
+    private func considerReviewPrompt() async {
+        let inTestFlight = await ReviewPrompt.runsFromTestFlight()
+        let version = ReviewPrompt.version(inTestFlight: inTestFlight)
+        let decision = ReviewPrompt.decision(version: version, ignoresGap: inTestFlight)
+        ReviewPrompt.log.info("New entry saved, version \(version, privacy: .public): \(String(describing: decision), privacy: .public)")
+        // Not on top of (or right after) the passkey prompt.
+        guard decision == .ask, !passkeyPromptPending, !showsPasskeyPrompt else { return }
+        reviewPromptVersion = version
+        reviewPromptInTestFlight = inTestFlight
+        reviewPromptPending = true
+    }
+
+    /// MainTabs is about to ask: counted as asked for this version, whether or not iOS shows it.
+    /// Returns whether to show TestFlight's stand-in alert as well.
+    func reviewPromptAsked() -> Bool {
+        reviewPromptPending = false
+        ReviewPrompt.markAsked(version: reviewPromptVersion)
+        ReviewPrompt.log.info("Asked for a review, version \(self.reviewPromptVersion, privacy: .public)")
+        return reviewPromptInTestFlight
     }
 
     /// Uploads photos straight to S3 in parallel (presigned) and returns their keys for the entry request.
