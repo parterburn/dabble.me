@@ -54,7 +54,7 @@ RSpec.describe "Signed-in devices (Sessions on Account Security)", type: :reques
 
     get security_path
     expect(response.body).to include("Safari on Mac", "Denver, Colorado, US", "This device", "Active now")
-    expect(response.body.index('id="sessions"')).to be < response.body.index("Connected apps")
+    expect(response.body.index('id="sessions"')).to be < response.body.index(%(id="connected-apps"))
   end
 
   it "says how long ago an idle device was last active" do
