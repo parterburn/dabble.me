@@ -1,4 +1,5 @@
 import BackgroundTasks
+import StoreKit
 import SwiftUI
 import UserNotifications
 import WidgetKit
@@ -223,6 +224,7 @@ struct RootView: View {
 
 struct MainTabs: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         @Bindable var model = model
@@ -282,6 +284,30 @@ struct MainTabs: View {
             }
             // Busy the whole time: not this launch.
             model.passkeyPromptPending = false
+        }
+        // Ask for a rating (ReviewPrompt says when): once the composer has closed, over the entry
+        // just written, and never over anything else.
+        .task(id: model.reviewPromptPending) {
+            guard model.reviewPromptPending else { return }
+            for _ in 0..<20 {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled, model.reviewPromptPending else { return }
+                let busy = model.lock.isLocked || UIWindow.isShowingSomethingOverApp || model.showsPasskeyPrompt
+                if !busy {
+                    let inTestFlight = model.reviewPromptAsked()
+                    requestReview()
+                    if inTestFlight { model.showsReviewPromptStandIn = true }
+                    return
+                }
+            }
+            // Busy the whole time: not this entry.
+            ReviewPrompt.log.info("Review prompt skipped: something stayed up over the app")
+            model.reviewPromptPending = false
+        }
+        .alert("App Store Rating", isPresented: $model.showsReviewPromptStandIn) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This is where iOS would ask you to rate Dabble Me. TestFlight never shows that prompt, so this note stands in for it.")
         }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
             // The open sheet picks another itself; otherwise show one. Not while locked, and not
