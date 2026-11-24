@@ -1,17 +1,15 @@
-App Store rating prompt: the app now asks for a rating at a good moment, right after you save a new entry, once you've written new entries in the app on 3 different days. It asks at most once per version, and never within 120 days of the last ask. iOS decides whether the prompt actually appears.
+Two things in this build: a fix for the crash when you first tap the composer's microphone, and the App Store rating prompt.
 
-TestFlight never shows Apple's rating prompt, so here an "App Store Rating" alert stands in for it. In TestFlight it can come back once per build, so each build can be checked.
+Microphone crash fix
+- Best on a phone that has never let Dabble Me use the microphone (delete and reinstall the app first).
+- Open the composer and tap the microphone. iOS should ask to use the microphone, with "Dictate an entry instead of typing it." The app should stay open.
+- Allow it, say a sentence, tap Done: the words land in your entry as before.
+- Reinstall again, tap the microphone, choose Don't Allow: the app stays open and a note offers Settings.
 
-Check it
+App Store rating prompt
+The app asks for a rating right after you save a new entry, once you've written new entries in the app on 3 different days. At most once per version, never within 120 days of the last ask. TestFlight never shows Apple's prompt, so an "App Store Rating" alert stands in for it, once per build.
 - Days count from this build on. Write a new entry in the app (Today or Journal, then Save) on 3 different days.
 - On the third day, after Save: the composer closes, the entry opens, and about a second later the "App Store Rating" alert appears. Tap OK.
-- Write another new entry the same day: no alert.
-- Several entries on one day count as one day.
-
-Never shown
-- After editing an entry, or when a save fails.
-- Over another sheet, or right after the passkey prompt.
-- Entries written by email don't count.
-
-Logs
-- Every decision is logged under the "ReviewPrompt" category (Console app, filter by "ReviewPrompt"), for example "tooFewDays(2)" or "askedThisVersion".
+- Another new entry the same day: no alert. Several entries on one day count as one day.
+- Never shown after editing an entry, when a save fails, over another sheet, or right after the passkey prompt. Entries written by email don't count.
+- Every decision is logged under the "ReviewPrompt" category in the Console app.
