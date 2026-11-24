@@ -1,16 +1,12 @@
-Sign-in buttons: the Sign In with a Passkey link now shows only on Welcome back (sign in), not on Start your journal, since a passkey can't create an account. Continue never looks greyed out.
+Dictation crash fix: the app no longer closes the first time you tap the composer's microphone. iOS now asks for microphone access first, as it should.
 
-Sign up
-- From the welcome screen, tap Start Your Journal. There should be no passkey link under Continue.
-- If you have a Dabble Me passkey on this device, tap the email field: your passkey should still be offered above the keyboard and sign you straight in.
-- Tap Continue with no email: an olive note under the field says "Enter your email first, and we'll send you a code."
+First use (the crash)
+- Best on a phone that has never let Dabble Me use the microphone (delete and reinstall the app, or use a new tester's phone).
+- Open the composer and tap the microphone. iOS should ask to use the microphone, with "Dictate an entry instead of typing it." The app should stay open.
+- Allow it, say a sentence, tap Done: the words land in your entry as before.
 
-Sign in
-- Tap I Already Have an Account. Sign In with a Passkey (olive text) shows under Continue and opens the system passkey sheet as before.
-- Tap Continue with no email, then with "foo": an olive note asks for an email. Typing clears it.
-
-Switching
-- On Start your journal, tap I Already Have an Account: the passkey link appears. Tap New to Dabble Me? Start Your Journal: it goes away.
+Saying no
+- Reinstall, tap the microphone, choose Don't Allow. The app stays open and a note offers Settings to turn the microphone back on.
 
 Still the same
-- A full email and Continue sends a code; the code screen works as before.
+- Camera, photos, calendar and Face ID ask for access as before.

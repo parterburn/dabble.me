@@ -1422,3 +1422,21 @@ struct PasskeyPromptTests {
         #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: later, defaults: store))
     }
 }
+
+/// iOS kills the app (TCC) the first time it touches the mic, camera and so on without a usage string.
+struct PrivacyUsageTests {
+    @Test func everyPermissionWeAskForIsExplained() {
+        let info = Bundle.main.infoDictionary ?? [:]
+        for key in [
+            "NSMicrophoneUsageDescription",
+            "NSSpeechRecognitionUsageDescription",
+            "NSCameraUsageDescription",
+            "NSPhotoLibraryAddUsageDescription",
+            "NSCalendarsFullAccessUsageDescription",
+            "NSFaceIDUsageDescription",
+        ] {
+            let text = info[key] as? String ?? ""
+            #expect(!text.isEmpty, "Info.plist is missing \(key)")
+        }
+    }
+}

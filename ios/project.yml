@@ -98,6 +98,9 @@ targets:
         NSCameraUsageDescription: Take photos to add to your journal entries.
         NSCalendarsFullAccessUsageDescription: "See what's on your calendar for the day you're writing about, as a reminder. It stays on your phone."
         NSFaceIDUsageDescription: Unlock your journal with Face ID.
+        # Dictation (Support/Dictation.swift). Without these iOS kills the app the first time the mic is used.
+        NSMicrophoneUsageDescription: Dictate an entry instead of typing it. Your voice is turned into words on your phone.
+        NSSpeechRecognitionUsageDescription: Turn what you say into words, on your phone.
   DabbleMeWidget:
     type: app-extension
     platform: iOS
