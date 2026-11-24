@@ -11,7 +11,7 @@
       shows only when there's something there. %>
   <% security_sections = [
        ["Email and password", "email-password", nil],
-       ["Passkeys", "passkeys", current_user.webauthn_credentials.size],
+       ["Passkeys", "passkeys", current_user.webauthn_credentials.count],
        ["Sessions", "sessions", @user_sessions.length],
        ["Connected apps", "connected-apps", @oauth_applications.size]
      ] %>
