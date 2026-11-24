@@ -292,7 +292,9 @@ struct MainTabs: View {
             for _ in 0..<20 {
                 try? await Task.sleep(for: .seconds(1))
                 guard !Task.isCancelled, model.reviewPromptPending else { return }
-                let busy = model.lock.isLocked || UIWindow.isShowingSomethingOverApp || model.showsPasskeyPrompt
+                // In the background (or switching away), iOS can't show it: not counted as asked.
+                let busy = UIApplication.shared.applicationState != .active || model.lock.isLocked
+                    || UIWindow.isShowingSomethingOverApp || model.showsPasskeyPrompt
                 if !busy {
                     let inTestFlight = model.reviewPromptAsked()
                     requestReview()
@@ -300,8 +302,8 @@ struct MainTabs: View {
                     return
                 }
             }
-            // Busy the whole time: not this entry.
-            ReviewPrompt.log.info("Review prompt skipped: something stayed up over the app")
+            // Busy (or away) the whole time: not this entry.
+            ReviewPrompt.log.info("Review prompt skipped: the app was busy or in the background")
             model.reviewPromptPending = false
         }
         .alert("App Store Rating", isPresented: $model.showsReviewPromptStandIn) {
