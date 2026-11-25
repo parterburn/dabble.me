@@ -320,12 +320,17 @@ final class RichTextEditorModel {
         // Type as I Speak: the final words take the place of those shown while it was said.
         let live = liveDictation.flatMap { NSMaxRange($0.range) <= storage.length ? $0 : nil }
         liveDictation = nil
+        // Its words were overwritten by another change (see `storageEdited`): left as they are.
+        if liveDictationLost {
+            liveDictationLost = false
+            return
+        }
         let range = live?.range ?? textView.selectedRange
         // The line so far, up to the cursor: a space before the words, and mid-sentence a
         // lowercase first word.
         let words = Dictation.insertion(of: heard, before: lineSoFar(upTo: range.location, in: storage))
         guard !words.isEmpty else {
-            if live != nil { removeLiveDictation(range) }
+            if let live { restore(live) }
             return
         }
         nonisolated(unsafe) let finished = NSAttributedString(string: words, attributes: live?.attributes ?? dictationAttributes(textView))
@@ -344,35 +349,53 @@ final class RichTextEditorModel {
     /// `words` in place of `range`, with the cursor after them, in view.
     private func place(_ words: NSAttributedString, in range: NSRange) {
         guard let textView, NSMaxRange(range) <= textView.textStorage.length else { return }
+        isPlacingDictation = true
         textView.textStorage.replaceCharacters(in: range, with: words)
+        isPlacingDictation = false
         textView.selectedRange = NSRange(location: range.location + words.length, length: 0)
         textView.scrollRangeToVisible(textView.selectedRange)
     }
 
-    /// What dictation is showing while it's said (Type as I Speak): where in the text, and the
-    /// look it takes (the typing attributes at the start).
+    /// What dictation is showing while it's said (Type as I Speak): where in the text, the look
+    /// it takes (the typing attributes at the start), and what was selected there before, put
+    /// back if it's dropped.
     private struct LiveDictation {
         var range: NSRange
         let attributes: [NSAttributedString.Key: Any]
+        let replaced: NSAttributedString
     }
     @ObservationIgnored private var liveDictation: LiveDictation?
+    /// Another change overwrote the words being shown: the rest of that dictation leaves the
+    /// text alone.
+    @ObservationIgnored private var liveDictationLost = false
+    /// Dictation's own edit is going in (`storageEdited` skips it).
+    @ObservationIgnored private var isPlacingDictation = false
+    @ObservationIgnored nonisolated(unsafe) private var storageObserver: NSObjectProtocol?
     /// Words being said are in the text: typing waits until they're done (`insertDictated`).
     var isShowingDictation: Bool { liveDictation != nil }
 
+    deinit {
+        if let storageObserver { NotificationCenter.default.removeObserver(storageObserver) }
+    }
+
     /// The words said so far, in place of those shown before (at the cursor, the first time):
     /// those the transcriber has settled on as typed, the rest lighter, since they can change.
-    /// nil takes them out (dropped, or nothing heard).
+    /// nil takes them out (dropped, or nothing heard), and puts back anything they replaced.
     func showDictating(_ heard: Dictation.LiveWords?) {
         guard let textView else { return }
         let storage = textView.textStorage
         let live = liveDictation.flatMap { NSMaxRange($0.range) <= storage.length ? $0 : nil }
         guard let heard else {
             liveDictation = nil
-            if let live { removeLiveDictation(live.range) }
+            liveDictationLost = false
+            if let live { restore(live) }
             return
         }
+        guard !liveDictationLost else { return }
+        watchStorage(storage)
         let range = live?.range ?? textView.selectedRange
         let attributes = live?.attributes ?? dictationAttributes(textView)
+        let replaced = live?.replaced ?? storage.attributedSubstring(from: range)
         let (words, pendingLength) = Dictation.livePreview(of: heard, before: lineSoFar(upTo: range.location, in: storage))
         let length = (words as NSString).length
         let shown = NSMutableAttributedString(string: words, attributes: attributes)
@@ -381,18 +404,49 @@ final class RichTextEditorModel {
             shown.addAttribute(.foregroundColor, value: color.withAlphaComponent(0.45),
                                range: NSRange(location: length - pendingLength, length: pendingLength))
         }
+        isPlacingDictation = true
         storage.replaceCharacters(in: range, with: shown)
-        liveDictation = LiveDictation(range: NSRange(location: range.location, length: length), attributes: attributes)
+        isPlacingDictation = false
+        liveDictation = LiveDictation(range: NSRange(location: range.location, length: length), attributes: attributes, replaced: replaced)
         textView.selectedRange = NSRange(location: range.location + length, length: 0)
         textView.scrollRangeToVisible(textView.selectedRange)
         textDidChange()
     }
 
-    private func removeLiveDictation(_ range: NSRange) {
-        guard let textView, NSMaxRange(range) <= textView.textStorage.length else { return }
-        textView.textStorage.replaceCharacters(in: range, with: "")
-        textView.selectedRange = NSRange(location: range.location, length: 0)
+    /// Takes dropped words out, and puts back what they replaced (a selection at the start).
+    private func restore(_ live: LiveDictation) {
+        place(live.replaced, in: live.range)
         textDidChange()
+    }
+
+    /// Follows every other change to the text while words are being shown (a hashtag added by
+    /// holding the tag button, a pasted link, a template), so the words' place moves with it.
+    private func watchStorage(_ storage: NSTextStorage) {
+        guard storageObserver == nil else { return }
+        storageObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification,
+                                                                 object: storage, queue: nil) { [weak self] note in
+            guard let storage = note.object as? NSTextStorage, storage.editedMask.contains(.editedCharacters) else { return }
+            let edited = storage.editedRange
+            let delta = storage.changeInLength
+            MainActor.assumeIsolated { self?.storageEdited(edited, changeInLength: delta) }
+        }
+    }
+
+    private func storageEdited(_ edited: NSRange, changeInLength delta: Int) {
+        guard !isPlacingDictation, var live = liveDictation, edited.location != NSNotFound else { return }
+        // Where the edit ended before it was made.
+        let oldEnd = NSMaxRange(edited) - delta
+        if oldEnd <= live.range.location {
+            live.range.location += delta
+            liveDictation = live
+        } else if edited.location >= NSMaxRange(live.range) {
+            // After the words: nothing moves.
+        } else {
+            // Over the words themselves: they're left as they are, and this dictation stops
+            // touching the text.
+            liveDictation = nil
+            liveDictationLost = true
+        }
     }
 
     /// The line up to `location`, for `Dictation.insertion`.
