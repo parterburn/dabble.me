@@ -1170,6 +1170,7 @@ struct WhatToTestNotesTests {
 
 /// The Journal list's paragraph gap matches the entry page's: a blank line set in this size,
 /// plus the line spacing, is 0.6 of the text size.
+@MainActor
 struct ParagraphGapTests {
     @Test func gapLineAndSpacingMakeTheEntryPagesParagraphSpacing() {
         for (size, spacing) in [(CGFloat(17), CGFloat(5)), (16.83, 4.95), (18.7, 5.5)] {
