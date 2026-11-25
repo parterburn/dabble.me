@@ -17,13 +17,6 @@ import SwiftUI
 /// recording is a temporary file, deleted once it's been transcribed or dropped. The first use
 /// downloads the language's model, which iOS keeps (it isn't part of the app).
 ///
-/// Type as I Speak (Settings → Dictation, on unless turned off) streams the microphone to the
-/// same transcriber instead, with its words-so-far (`volatileResults`) on: they go into the entry
-/// as they're said, lighter until the transcriber settles on them (`LiveWords`). The settled words
-/// are the transcript, so there's no second pass after Done; the cleanup and the writer's
-/// spellings still run once, after it, and the words take their final form in place. No
-/// recording is kept on the phone then, not even for a moment.
-///
 /// Quick to start and to finish, as Hex is: the model is loaded when the composer opens
 /// (`prewarm`), not after Done, so a tap records at once and the words come back right after it.
 /// How long each step took goes to the log (Console, "Dictation").
@@ -38,13 +31,6 @@ final class Dictation {
         case listening
         /// Stopped: the recording is being transcribed and tidied.
         case writing
-    }
-
-    /// What's been heard so far, while Type as I Speak is on: `confirmed`, the words the
-    /// transcriber has settled on, then `pending`, its guess at the rest, which can still change.
-    struct LiveWords: Equatable {
-        var confirmed: String
-        var pending: String
     }
 
     enum Problem: Error, Equatable {
@@ -90,8 +76,6 @@ final class Dictation {
     static let levelCount = 48
 
     @ObservationIgnored private var run: Task<Void, Never>?
-    /// Type as I Speak's words so far, kept should the transcriber fail after Done.
-    @ObservationIgnored private var liveWords: LiveWords?
     /// The transcriber with its model loaded, for the next recording (`prewarm`): a
     /// `WarmSpeech` on iOS 26. Each one hears one recording.
     @ObservationIgnored private var warm: AnyObject?
@@ -132,10 +116,7 @@ final class Dictation {
     /// have been loading when it started). `canListen` is asked once the model is ready, in case
     /// the editor has lost the keyboard while it came down.
     /// `style`: Polished runs the cleanup, Verbatim leaves it as heard.
-    /// `preview`, when given, is Type as I Speak: the words so far, as they change, then nil if it
-    /// ends without words for `insert` (dropped, or nothing heard), so the editor takes them out.
     func start(style: DictationStyle, hints: @escaping @MainActor () -> [String], canListen: @escaping @MainActor () -> Bool,
-               preview: (@MainActor (LiveWords?) -> Void)? = nil,
                insert: @escaping @MainActor (String) -> Void) {
         guard state == .idle else { return }
         problem = nil
@@ -154,13 +135,9 @@ final class Dictation {
             do {
                 let heard: String
                 if Self.isDebugFake {
-                    heard = try await pretend(preview: preview)
+                    heard = try await pretend()
                 } else if #available(iOS 26.0, *) {
-                    if let preview {
-                        heard = try await listenLive(hints: hints, canListen: canListen, preview: preview)
-                    } else {
-                        heard = try await listen(hints: hints, canListen: canListen)
-                    }
+                    heard = try await listen(hints: hints, canListen: canListen)
                 } else {
                     throw Problem.unavailable
                 }
@@ -191,12 +168,9 @@ final class Dictation {
                 let finished = timings.joined(separator: ", ")
                 Self.log.notice("Dictation finished: \(finished, privacy: .public)")
             } catch is CancellationError {
-                preview?(nil)
             } catch let problem as Problem {
-                preview?(nil)
                 self.problem = problem
             } catch {
-                preview?(nil)
                 problem = .unavailable
             }
             endInput = nil
@@ -226,10 +200,9 @@ final class Dictation {
         // writer who hasn't dictated yet has no model loaded for them.
         guard AVAudioApplication.shared.recordPermission == .granted else { return }
         let requested = DictationSettings.language ?? .current
-        let live = DictationSettings.isLive
         warming = Task { [weak self] in
             let began = ContinuousClock.now
-            let speech = await WarmSpeech.make(for: requested, live: live)
+            let speech = await WarmSpeech.make(for: requested)
             guard let self else { return }
             self.warming = nil
             guard let speech, !self.isClosed else { return }
@@ -387,7 +360,7 @@ final class Dictation {
     private func listen(hints: @MainActor () -> [String], canListen: @MainActor () -> Bool) async throws -> String {
         guard await AVAudioApplication.requestRecordPermission() else { throw Problem.microphoneDenied }
         var lap = time("permission", since: tappedAt)
-        let speech = try await readySpeech(live: false)
+        let speech = try await readySpeech()
         lap = time(speech.wasWarm ? "model (ready)" : "model", since: lap)
         try Task.checkCancellation()
         guard canListen() else { throw CancellationError() }
@@ -476,166 +449,21 @@ final class Dictation {
         return text
     }
 
-    /// Type as I Speak: the microphone streamed to the transcriber while it's said, its words so
-    /// far to `preview` as they change. Done stops the microphone; the transcriber settles the
-    /// last words, and what it settled on is the transcript (no second pass over a recording).
-    @available(iOS 26.0, *)
-    private func listenLive(hints: @MainActor () -> [String], canListen: @MainActor () -> Bool,
-                            preview: @escaping @MainActor (LiveWords?) -> Void) async throws -> String {
-        guard await AVAudioApplication.requestRecordPermission() else { throw Problem.microphoneDenied }
-        var lap = time("permission", since: tappedAt)
-        let speech = try await readySpeech(live: true)
-        lap = time(speech.wasWarm ? "model (ready)" : "model", since: lap)
-        try Task.checkCancellation()
-        guard canListen() else { throw CancellationError() }
-        guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [speech.transcriber]) else {
-            throw Problem.unavailable
-        }
-        let microphone = try LiveMicrophone(format: format)
-        defer { microphone.stop() }
-
-        let analyzer = speech.analyzer
-        let transcriber = speech.transcriber
-        // The hashtags known at the tap (a dictation said in one go can't wait for more).
-        let expected = Self.hints(from: hints())
-        // Hears the microphone until it stops, then settles the rest and ends `results`.
-        liveWords = nil
-        let hearing = Task<String, Error> { [weak self] in
-            await speech.loading.value
-            if !expected.isEmpty {
-                let context = AnalysisContext()
-                context.contextualStrings[.general] = expected
-                try? await analyzer.setContext(context)
-            }
-            let analyzing = Task {
-                do {
-                    if let end = try await analyzer.analyzeSequence(microphone.buffers) {
-                        try await analyzer.finalizeAndFinish(through: end)
-                    } else {
-                        await analyzer.cancelAndFinishNow()
-                    }
-                } catch {
-                    // Ends `results` too, so the loop below isn't left waiting.
-                    await analyzer.cancelAndFinishNow()
-                    throw error
-                }
-            }
-            defer { analyzing.cancel() }
-            var confirmed = AttributedString()
-            var shown = LiveWords(confirmed: "", pending: "")
-            for try await result in transcriber.results {
-                try Task.checkCancellation()
-                let pending: String
-                if result.isFinal {
-                    confirmed += result.text
-                    pending = ""
-                } else {
-                    pending = String(result.text.characters)
-                }
-                let words = LiveWords(confirmed: String(confirmed.characters), pending: pending)
-                guard words != shown else { continue }
-                shown = words
-                self?.liveWords = words
-                // Only once there's something to show: blank words-so-far would just flicker.
-                if !(words.confirmed + words.pending).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    preview(words)
-                }
-            }
-            try await analyzing.value
-            return String(confirmed.characters)
-        }
-
-        let stopped = AsyncStream<Ending>.makeStream()
-        endInput = { stopped.continuation.yield(.keep); stopped.continuation.finish() }
-        abandon = { stopped.continuation.yield(.drop); stopped.continuation.finish() }
-        // The transcriber stopping by itself (it failed) ends the recording too, as Done does:
-        // what it heard is kept, rather than recording on into nothing.
-        let watching = Task { [weak self] in
-            do { _ = try await hearing.value } catch is CancellationError { return } catch {}
-            guard let self, self.state == .listening else { return }
-            Self.log.error("Dictation's transcriber stopped while recording")
-            self.stop()
-        }
-        defer { watching.cancel() }
-        let interruptions = Task { [weak self] in
-            for await _ in NotificationCenter.default.notifications(named: AVAudioSession.interruptionNotification).map({ _ in () }) {
-                self?.stop()
-            }
-        }
-        defer { interruptions.cancel() }
-        let started = Date.now
-        let silence = stopped.continuation
-        let metering = Task { [weak self] in
-            var heardVoice = false
-            while !Task.isCancelled {
-                guard let self else { return }
-                let level = microphone.level
-                self.record(level: level)
-                if level > Self.voiceLevel { heardVoice = true }
-                if self.state == .listening,
-                   !microphone.isRecording || Date.now.timeIntervalSince(started) >= Self.maxDuration { self.stop() }
-                if !heardVoice, self.state == .listening, Date.now.timeIntervalSince(started) >= Self.silenceLimit {
-                    silence.yield(.silent)
-                    silence.finish()
-                    return
-                }
-                try? await Task.sleep(for: .milliseconds(80))
-            }
-        }
-        defer { metering.cancel() }
-
-        state = .listening
-        listeningSince = .now
-        UIApplication.shared.isIdleTimerDisabled = true
-        time("microphone", since: lap)
-        time("tap to recording", since: tappedAt)
-        let startedIn = timings.joined(separator: ", ")
-        Self.log.notice("Dictation started (type as I speak): \(startedIn, privacy: .public)")
-        var ending = Ending.drop
-        for await end in stopped.stream { ending = end; break }
-        // The end of the microphone's audio: the analyzer settles what's left.
-        microphone.stop()
-        guard !Task.isCancelled, ending == .keep else {
-            hearing.cancel()
-            await analyzer.cancelAndFinishNow()
-            if ending == .silent, !Task.isCancelled { throw Problem.nothingHeard }
-            throw CancellationError()
-        }
-        timings.append(String(format: "recorded %.1f s", Date.now.timeIntervalSince(started)))
-        let heard: String
-        do {
-            heard = try await withTaskCancellationHandler {
-                try await hearing.value
-            } onCancel: {
-                hearing.cancel()
-            }
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            // The transcriber failed at the end: what was on screen is kept, not lost.
-            Self.log.error("Dictation's last words failed: \(error.localizedDescription, privacy: .public)")
-            heard = liveWords.map { $0.confirmed + $0.pending } ?? ""
-        }
-        time("last words", since: stoppedAt)
-        let text = heard.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { throw Problem.nothingHeard }
-        return text
-    }
-
     /// The transcriber for this recording: the one `prewarm` loaded, else a new one (its model
     /// downloaded first if it isn't on the phone), loading while the recording runs.
     @available(iOS 26.0, *)
-    private func readySpeech(live: Bool) async throws -> WarmSpeech {
+    private func readySpeech() async throws -> WarmSpeech {
         // Settings → Dictation's language, else the phone's.
         let requested = DictationSettings.language ?? .current
         // One being set up now (a quick check that the model's there) is further along.
         if let warming { await warming.value }
         defer { warm = nil }
-        if let speech = warm as? WarmSpeech, speech.requested == requested.identifier, speech.isLive == live { return speech }
+        if let speech = warm as? WarmSpeech, speech.requested == requested.identifier { return speech }
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: requested) else { throw Problem.language }
-        let transcriber = WarmSpeech.transcriber(for: locale, live: live)
+        // `.transcription`: finished text only, no words-so-far, over the whole recording.
+        let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
         try await install(transcriber)
-        return WarmSpeech(requested: requested.identifier, transcriber: transcriber, isLive: live, wasWarm: false)
+        return WarmSpeech(requested: requested.identifier, transcriber: transcriber, wasWarm: false)
     }
 
     /// How a recording ended: Done (transcribe it), dropped, or nothing heard in time.
@@ -671,10 +499,8 @@ final class Dictation {
         if levels.count > Self.levelCount { levels.removeFirst(levels.count - Self.levelCount) }
     }
 
-    /// The made-up recording: listens until it's stopped, then "hears" a sentence. With
-    /// `preview`, its words come a few at a time while it "listens", the last one lighter.
-    private func pretend(preview: (@MainActor (LiveWords?) -> Void)?) async throws -> String {
-        let sentence = "We walked along the river after, um, after dinner. Leo found a heron at 6, actually 7."
+    /// The made-up recording: listens until it's stopped, then "hears" a sentence.
+    private func pretend() async throws -> String {
         let stopped = AsyncStream<Bool>.makeStream()
         endInput = { stopped.continuation.yield(true); stopped.continuation.finish() }
         abandon = { stopped.continuation.yield(false); stopped.continuation.finish() }
@@ -691,24 +517,11 @@ final class Dictation {
             }
         }
         defer { wobble.cancel() }
-        let typing = Task { [weak self] in
-            guard let preview else { return }
-            let words = sentence.split(separator: " ").map(String.init)
-            for count in 1...words.count {
-                try? await Task.sleep(for: .milliseconds(350))
-                guard !Task.isCancelled, self?.state == .listening else { return }
-                preview(LiveWords(confirmed: words.prefix(count - 1).joined(separator: " "),
-                                  pending: (count > 1 ? " " : "") + words[count - 1]))
-            }
-        }
-        defer { typing.cancel() }
         var keeps = false
         for await keep in stopped.stream { keeps = keep; break }
         guard keeps else { throw CancellationError() }
-        typing.cancel()
-        preview?(LiveWords(confirmed: sentence, pending: ""))
-        try await Task.sleep(for: .milliseconds(preview == nil ? 600 : 150))
-        return sentence
+        try await Task.sleep(for: .milliseconds(600))
+        return "We walked along the river after, um, after dinner. Leo found a heron at 6, actually 7."
     }
 
     // MARK: Into the entry
@@ -726,17 +539,6 @@ final class Dictation {
         }
         guard let previous, !previous.isWhitespace else { return words }
         return " " + words
-    }
-
-    /// Type as I Speak's words so far, as they go into the entry (`insertion`), and how many
-    /// characters at their end (UTF-16, as the text view counts) are the guess still changing.
-    static func livePreview(of heard: LiveWords, before: String) -> (text: String, pendingLength: Int) {
-        let text = insertion(of: heard.confirmed + heard.pending, before: before)
-        // The guess is the end of the words, less any space after it (`insertion` trims that).
-        var pending = heard.pending
-        while pending.last?.isWhitespace == true { pending.removeLast() }
-        let length = (text as NSString).length
-        return (text, min(length, (pending as NSString).length))
     }
 
     /// The text before the cursor stops mid-sentence: there is some, and it doesn't end with a
@@ -806,18 +608,15 @@ private final class WarmSpeech {
     /// The language it was asked for (`Locale.identifier`), to tell whether Settings changed.
     let requested: String
     let transcriber: SpeechTranscriber
-    /// Type as I Speak's: words so far as well as settled ones.
-    let isLive: Bool
     let analyzer: SpeechAnalyzer
     /// The model loading; done once it's ready to hear.
     let loading: Task<Void, Never>
     /// Ready at the tap (`Dictation.prewarm`), for the log.
     let wasWarm: Bool
 
-    init(requested: String, transcriber: SpeechTranscriber, isLive: Bool, wasWarm: Bool) {
+    init(requested: String, transcriber: SpeechTranscriber, wasWarm: Bool) {
         self.requested = requested
         self.transcriber = transcriber
-        self.isLive = isLive
         self.wasWarm = wasWarm
         let analyzer = SpeechAnalyzer(modules: [transcriber],
                                       options: SpeechAnalyzer.Options(priority: .userInitiated, modelRetention: .lingering))
@@ -828,24 +627,16 @@ private final class WarmSpeech {
 
     /// One for `requested`, its model loading, or nil when the language isn't there or its model
     /// isn't on the phone yet (the tap downloads it).
-    static func make(for requested: Locale, live: Bool) async -> WarmSpeech? {
+    static func make(for requested: Locale) async -> WarmSpeech? {
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: requested) else { return nil }
-        let transcriber = transcriber(for: locale, live: live)
+        let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
         guard await AssetInventory.status(forModules: [transcriber]) == .installed, !Task.isCancelled else { return nil }
         // The only part on the main thread: making the analyzer. Logged, to keep it honest.
         let began = ContinuousClock.now
-        let speech = WarmSpeech(requested: requested.identifier, transcriber: transcriber, isLive: live, wasWarm: true)
+        let speech = WarmSpeech(requested: requested.identifier, transcriber: transcriber, wasWarm: true)
         let onMain = (ContinuousClock.now - began) / .milliseconds(1)
         Dictation.log.notice("Dictation prewarm: \(onMain, format: .fixed(precision: 1), privacy: .public) ms on the main thread")
         return speech
-    }
-
-    /// `.transcription`: settled text only, over the whole recording. Live: the same model, with
-    /// its words so far too (`volatileResults`), but not `fastResults`, which trades accuracy
-    /// for speed.
-    static func transcriber(for locale: Locale, live: Bool) -> SpeechTranscriber {
-        guard live else { return SpeechTranscriber(locale: locale, preset: .transcription) }
-        return SpeechTranscriber(locale: locale, transcriptionOptions: [], reportingOptions: [.volatileResults], attributeOptions: [])
     }
 }
 
@@ -910,115 +701,6 @@ private final class Recorder {
             try? await Task.sleep(for: .seconds(5))
             if !Self.retired.isEmpty { Self.retired.removeFirst() }
         }
-        let session = AVAudioSession.sharedInstance()
-        try? session.setActive(false, options: .notifyOthersOnDeactivation)
-        try? session.setCategory(previous.category, mode: previous.mode, options: previous.options)
-    }
-}
-
-/// Type as I Speak's microphone: `AVAudioEngine`'s input, converted to the transcriber's format
-/// and handed over as it comes (`buffers`), nothing written to disk. Not on the main actor: the
-/// audio arrives on the engine's own thread.
-@available(iOS 26.0, *)
-private final class LiveMicrophone: @unchecked Sendable {
-    let buffers: AsyncStream<AnalyzerInput>
-    private let continuation: AsyncStream<AnalyzerInput>.Continuation
-    private let engine: AVAudioEngine
-    private let converter: AVAudioConverter
-    private let format: AVAudioFormat
-    private let lock = NSLock()
-    private var loudness = 0.0
-    private var isStopped = false
-    private let previous: (category: AVAudioSession.Category, mode: AVAudioSession.Mode, options: AVAudioSession.CategoryOptions)
-
-    init(format: AVAudioFormat) throws {
-        self.format = format
-        (buffers, continuation) = AsyncStream<AnalyzerInput>.makeStream()
-        let session = AVAudioSession.sharedInstance()
-        let previous = (category: session.category, mode: session.mode, options: session.categoryOptions)
-        self.previous = previous
-        let engine = AVAudioEngine()
-        self.engine = engine
-        var converter: AVAudioConverter?
-        do {
-            // As `Recorder`: the microphone as it is, with the composer's taps still playing.
-            try session.setCategory(.record, mode: .measurement)
-            try? session.setAllowHapticsAndSystemSoundsDuringRecording(true)
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
-            let heard = engine.inputNode.outputFormat(forBus: 0)
-            if heard.sampleRate > 0, heard.channelCount > 0 { converter = AVAudioConverter(from: heard, to: format) }
-        } catch {}
-        guard let converter else {
-            try? session.setActive(false, options: .notifyOthersOnDeactivation)
-            try? session.setCategory(previous.category, mode: previous.mode, options: previous.options)
-            throw Dictation.Problem.unavailable
-        }
-        // No priming: the first samples aren't held back.
-        converter.primeMethod = .none
-        self.converter = converter
-        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: converter.inputFormat) { [weak self] buffer, _ in
-            self?.receive(buffer)
-        }
-        engine.prepare()
-        do {
-            try engine.start()
-        } catch {
-            stop()
-            throw Dictation.Problem.unavailable
-        }
-    }
-
-    var isRecording: Bool { engine.isRunning }
-
-    /// 0...1 from the latest audio's loudness (-50 dB and below is silence), as `Recorder.level`.
-    var level: Double { lock.withLock { loudness } }
-
-    private func receive(_ buffer: AVAudioPCMBuffer) {
-        let level = Self.level(of: buffer)
-        lock.withLock { loudness = level }
-        let ratio = format.sampleRate / buffer.format.sampleRate
-        let capacity = AVAudioFrameCount((Double(buffer.frameLength) * ratio).rounded(.up)) + 16
-        guard let converted = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: capacity) else { return }
-        // The converter asks for input until told there's none for now: this one buffer, once.
-        // (Its block runs during `convert`, on this thread, as Apple's own sample has it.)
-        nonisolated(unsafe) var given = false
-        nonisolated(unsafe) let input = buffer
-        var error: NSError?
-        let status = converter.convert(to: converted, error: &error) { _, inputStatus in
-            if given {
-                inputStatus.pointee = .noDataNow
-                return nil
-            }
-            given = true
-            inputStatus.pointee = .haveData
-            return input
-        }
-        guard status != .error, converted.frameLength > 0 else { return }
-        continuation.yield(AnalyzerInput(buffer: converted))
-    }
-
-    private static func level(of buffer: AVAudioPCMBuffer) -> Double {
-        guard let samples = buffer.floatChannelData?[0], buffer.frameLength > 0 else { return 0 }
-        let count = Int(buffer.frameLength)
-        var sum: Float = 0
-        for index in 0..<count { sum += samples[index] * samples[index] }
-        let rms = (sum / Float(count)).squareRoot()
-        guard rms > 0 else { return 0 }
-        let power = 20 * log10(Double(rms))
-        return min(1, max(0, (power + 50) / 50))
-    }
-
-    /// Ends the audio (`buffers` finishes) and puts the audio session back. Once.
-    func stop() {
-        let first = lock.withLock { () -> Bool in
-            defer { isStopped = true }
-            return !isStopped
-        }
-        guard first else { return }
-        engine.inputNode.removeTap(onBus: 0)
-        engine.stop()
-        continuation.finish()
-        lock.withLock { loudness = 0 }
         let session = AVAudioSession.sharedInstance()
         try? session.setActive(false, options: .notifyOthersOnDeactivation)
         try? session.setCategory(previous.category, mode: previous.mode, options: previous.options)

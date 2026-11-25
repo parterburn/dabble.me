@@ -1225,29 +1225,6 @@ struct DictationTests {
         #expect(Dictation.insertion(of: "  \n", before: "A long day.") == "")
     }
 
-    /// Type as I Speak: the words so far go in like dictated ones, the guess at their end marked.
-    @Test func liveWordsMarkTheGuessAtTheirEnd() {
-        let first = Dictation.livePreview(of: .init(confirmed: "", pending: " We walked "), before: "")
-        #expect(first.text == "We walked")
-        #expect(first.pendingLength == 9)
-        let next = Dictation.livePreview(of: .init(confirmed: " We walked", pending: " along the"), before: "A long day.")
-        #expect(next.text == " We walked along the")
-        #expect(next.pendingLength == 10)
-        let settled = Dictation.livePreview(of: .init(confirmed: " We walked along.", pending: ""), before: "")
-        #expect(settled.text == "We walked along.")
-        #expect(settled.pendingLength == 0)
-    }
-
-    /// On unless turned off.
-    @Test func typeAsISpeakIsOnByDefault() {
-        let stored = UserDefaults.standard.object(forKey: DictationSettings.liveKey)
-        defer { UserDefaults.standard.set(stored, forKey: DictationSettings.liveKey) }
-        UserDefaults.standard.removeObject(forKey: DictationSettings.liveKey)
-        #expect(DictationSettings.isLive)
-        UserDefaults.standard.set(false, forKey: DictationSettings.liveKey)
-        #expect(!DictationSettings.isLive)
-    }
-
     /// Mid-sentence, a dictionary word starts in lowercase; "I", names and acronyms don't.
     @Test func midSentenceWordsStartInLowercase() {
         #expect(Dictation.insertion(of: "Then we left.", before: "We ate and") == " then we left.")

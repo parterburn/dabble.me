@@ -30,8 +30,6 @@ enum DictationSettings {
     static let enabledKey = "dictation.enabled"
     static let styleKey = "dictation.style"
     static let wordsKey = "dictation.words"
-    /// Type as I Speak: the words go in while they're said, and can change until it stops.
-    static let liveKey = "dictation.live"
     /// A BCP 47 identifier, or empty for Automatic (the phone's language).
     static let languageKey = "dictation.language"
 
@@ -50,11 +48,6 @@ enum DictationSettings {
     /// On unless turned off.
     static var isEnabled: Bool {
         UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true
-    }
-
-    /// On unless turned off.
-    static var isLive: Bool {
-        UserDefaults.standard.object(forKey: liveKey) as? Bool ?? true
     }
 
     static var style: DictationStyle {
