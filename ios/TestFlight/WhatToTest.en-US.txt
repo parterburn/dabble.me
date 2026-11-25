@@ -1,15 +1,17 @@
-Two things in this build: a fix for the crash when you first tap the composer's microphone, and the App Store rating prompt.
+Type as I Speak: dictation now writes your words into the entry while you talk.
 
-Microphone crash fix
-- Best on a phone that has never let Dabble Me use the microphone (delete and reinstall the app first).
-- Open the composer and tap the microphone. iOS should ask to use the microphone, with "Dictate an entry instead of typing it." The app should stay open.
-- Allow it, say a sentence, tap Done: the words land in your entry as before.
-- Reinstall again, tap the microphone, choose Don't Allow: the app stays open and a note offers Settings.
+Type as I Speak (on by default)
+- Open the composer, tap the microphone and talk. Words appear at the cursor as you say them. The last few show lighter: that's the transcriber's guess, and it can change as you keep talking.
+- Tap Done. The dots show for a moment, then the words settle into normal text. With Polished on, ums, repeats and spoken corrections drop out here, "comma" and "hashtag leo" turn into marks and tags, and the text fades into its final form instead of jumping.
+- Hold the microphone to talk, let go to finish: same thing.
+- Tap the X while talking: the words that appeared are taken back out.
+- Stay quiet for 10 seconds after tapping: it stops, says it didn't hear anything, and leaves no text behind.
+- Typing is paused while words are going in. Tap Done first, then type.
+- Close the keyboard, open another row, or save mid-sentence: what you said so far is kept and tidied.
 
-App Store rating prompt
-The app asks for a rating right after you save a new entry, once you've written new entries in the app on 3 different days. At most once per version, never within 120 days of the last ask. TestFlight never shows Apple's prompt, so an "App Store Rating" alert stands in for it, once per build.
-- Days count from this build on. Write a new entry in the app (Today or Journal, then Save) on 3 different days.
-- On the third day, after Save: the composer closes, the entry opens, and about a second later the "App Store Rating" alert appears. Tap OK.
-- Another new entry the same day: no alert. Several entries on one day count as one day.
-- Never shown after editing an entry, when a save fails, over another sheet, or right after the passkey prompt. Entries written by email don't count.
-- Every decision is logged under the "ReviewPrompt" category in the Console app.
+Turning it off
+- Settings, Dictation, Type as I Speak. Off, it works as before: nothing shows until Done, then the words go in at once.
+- Compare the two on the same paragraph. If the final words are worse with it on, tell me.
+
+Logs
+- Every dictation logs its timings under the "Dictation" category in the Console app. With it on, look for "Dictation started (type as I speak)" and "last words" (Done until the final words).

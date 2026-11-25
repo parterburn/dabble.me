@@ -7,6 +7,7 @@ import SwiftUI
 struct DictationSettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage(DictationSettings.enabledKey) private var isEnabled = true
+    @AppStorage(DictationSettings.liveKey) private var typesAsSpoken = true
     @AppStorage(DictationSettings.styleKey) private var style = DictationStyle.polished
     @AppStorage(DictationSettings.wordsKey) private var storedWords = ""
     @AppStorage(DictationSettings.languageKey) private var language = ""
@@ -51,6 +52,18 @@ struct DictationSettingsView: View {
                     }
                 } footer: {
                     Text("Automatic uses your iPhone's language.")
+                }
+
+                Section {
+                    Toggle(isOn: $typesAsSpoken) {
+                        Label("Type as I Speak", icon: "slab-edit")
+                    }
+                } footer: {
+                    if typesAsSpoken {
+                        Text("Words appear as you talk and can change until you stop.")
+                    } else {
+                        Text("Words appear once you tap Done.")
+                    }
                 }
 
                 Section {

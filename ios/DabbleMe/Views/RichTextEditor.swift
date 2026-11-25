@@ -317,20 +317,96 @@ final class RichTextEditorModel {
     func insertDictated(_ heard: String) {
         guard let textView else { return }
         let storage = textView.textStorage
-        let range = textView.selectedRange
+        // Type as I Speak: the final words take the place of those shown while it was said.
+        let live = liveDictation.flatMap { NSMaxRange($0.range) <= storage.length ? $0 : nil }
+        liveDictation = nil
+        let range = live?.range ?? textView.selectedRange
         // The line so far, up to the cursor: a space before the words, and mid-sentence a
         // lowercase first word.
-        let before = (storage.string as NSString).substring(to: range.location)
-        let lineSoFar = before.split(separator: "\n", omittingEmptySubsequences: false).last.map(String.init) ?? ""
-        let words = Dictation.insertion(of: heard, before: lineSoFar)
-        guard !words.isEmpty else { return }
+        let words = Dictation.insertion(of: heard, before: lineSoFar(upTo: range.location, in: storage))
+        guard !words.isEmpty else {
+            if live != nil { removeLiveDictation(range) }
+            return
+        }
+        nonisolated(unsafe) let finished = NSAttributedString(string: words, attributes: live?.attributes ?? dictationAttributes(textView))
+        // Words the cleanup changed fade into their final form, rather than jump; the same
+        // words just settle into the text's own color.
+        if live != nil, storage.attributedSubstring(from: range).string != words {
+            UIView.transition(with: textView, duration: 0.2, options: [.transitionCrossDissolve, .allowUserInteraction]) { [weak self] in
+                self?.place(finished, in: range)
+            }
+        } else {
+            place(finished, in: range)
+        }
+        textDidChange()
+    }
+
+    /// `words` in place of `range`, with the cursor after them, in view.
+    private func place(_ words: NSAttributedString, in range: NSRange) {
+        guard let textView, NSMaxRange(range) <= textView.textStorage.length else { return }
+        textView.textStorage.replaceCharacters(in: range, with: words)
+        textView.selectedRange = NSRange(location: range.location + words.length, length: 0)
+        textView.scrollRangeToVisible(textView.selectedRange)
+    }
+
+    /// What dictation is showing while it's said (Type as I Speak): where in the text, and the
+    /// look it takes (the typing attributes at the start).
+    private struct LiveDictation {
+        var range: NSRange
+        let attributes: [NSAttributedString.Key: Any]
+    }
+    @ObservationIgnored private var liveDictation: LiveDictation?
+    /// Words being said are in the text: typing waits until they're done (`insertDictated`).
+    var isShowingDictation: Bool { liveDictation != nil }
+
+    /// The words said so far, in place of those shown before (at the cursor, the first time):
+    /// those the transcriber has settled on as typed, the rest lighter, since they can change.
+    /// nil takes them out (dropped, or nothing heard).
+    func showDictating(_ heard: Dictation.LiveWords?) {
+        guard let textView else { return }
+        let storage = textView.textStorage
+        let live = liveDictation.flatMap { NSMaxRange($0.range) <= storage.length ? $0 : nil }
+        guard let heard else {
+            liveDictation = nil
+            if let live { removeLiveDictation(live.range) }
+            return
+        }
+        let range = live?.range ?? textView.selectedRange
+        let attributes = live?.attributes ?? dictationAttributes(textView)
+        let (words, pendingLength) = Dictation.livePreview(of: heard, before: lineSoFar(upTo: range.location, in: storage))
+        let length = (words as NSString).length
+        let shown = NSMutableAttributedString(string: words, attributes: attributes)
+        if pendingLength > 0 {
+            let color = (attributes[.foregroundColor] as? UIColor) ?? .label
+            shown.addAttribute(.foregroundColor, value: color.withAlphaComponent(0.45),
+                               range: NSRange(location: length - pendingLength, length: pendingLength))
+        }
+        storage.replaceCharacters(in: range, with: shown)
+        liveDictation = LiveDictation(range: NSRange(location: range.location, length: length), attributes: attributes)
+        textView.selectedRange = NSRange(location: range.location + length, length: 0)
+        textView.scrollRangeToVisible(textView.selectedRange)
+        textDidChange()
+    }
+
+    private func removeLiveDictation(_ range: NSRange) {
+        guard let textView, NSMaxRange(range) <= textView.textStorage.length else { return }
+        textView.textStorage.replaceCharacters(in: range, with: "")
+        textView.selectedRange = NSRange(location: range.location, length: 0)
+        textDidChange()
+    }
+
+    /// The line up to `location`, for `Dictation.insertion`.
+    private func lineSoFar(upTo location: Int, in storage: NSTextStorage) -> String {
+        let before = (storage.string as NSString).substring(to: location)
+        return before.split(separator: "\n", omittingEmptySubsequences: false).last.map(String.init) ?? ""
+    }
+
+    /// Dictated words look like typed ones, but never extend a link or a highlight.
+    private func dictationAttributes(_ textView: UITextView) -> [NSAttributedString.Key: Any] {
         var attributes = textView.typingAttributes
         attributes[.link] = nil
         attributes[.backgroundColor] = nil
-        storage.replaceCharacters(in: range, with: NSAttributedString(string: words, attributes: attributes))
-        textView.selectedRange = NSRange(location: range.location + (words as NSString).length, length: 0)
-        textView.scrollRangeToVisible(textView.selectedRange)
-        textDidChange()
+        return attributes
     }
 
     /// `replace(with:)`, with text as typed (a template to start over from).
@@ -856,6 +932,8 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+            // Typing waits while dictation's words are going in.
+            guard !model.isShowingDictation else { return false }
             guard range.length == 0 else { return true }
             stopLinkAtItsEnd(in: textView, at: range.location)
             if text == "\n" { return model.handleReturn(in: textView, at: range) }
