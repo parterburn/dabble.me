@@ -1170,6 +1170,7 @@ struct WhatToTestNotesTests {
 
 /// The Journal list's paragraph gap matches the entry page's: a blank line set in this size,
 /// plus the line spacing, is 0.6 of the text size.
+@MainActor
 struct ParagraphGapTests {
     @Test func gapLineAndSpacingMakeTheEntryPagesParagraphSpacing() {
         for (size, spacing) in [(CGFloat(17), CGFloat(5)), (16.83, 4.95), (18.7, 5.5)] {
@@ -1222,6 +1223,29 @@ struct DictationTests {
         #expect(Dictation.insertion(of: " It was quiet. ", before: "A long day.") == " It was quiet.")
         #expect(Dictation.insertion(of: " It was quiet.", before: "A long day. ") == "It was quiet.")
         #expect(Dictation.insertion(of: "  \n", before: "A long day.") == "")
+    }
+
+    /// Type as I Speak: the words so far go in like dictated ones, the guess at their end marked.
+    @Test func liveWordsMarkTheGuessAtTheirEnd() {
+        let first = Dictation.livePreview(of: .init(confirmed: "", pending: " We walked "), before: "")
+        #expect(first.text == "We walked")
+        #expect(first.pendingLength == 9)
+        let next = Dictation.livePreview(of: .init(confirmed: " We walked", pending: " along the"), before: "A long day.")
+        #expect(next.text == " We walked along the")
+        #expect(next.pendingLength == 10)
+        let settled = Dictation.livePreview(of: .init(confirmed: " We walked along.", pending: ""), before: "")
+        #expect(settled.text == "We walked along.")
+        #expect(settled.pendingLength == 0)
+    }
+
+    /// On unless turned off.
+    @Test func typeAsISpeakIsOnByDefault() {
+        let stored = UserDefaults.standard.object(forKey: DictationSettings.liveKey)
+        defer { UserDefaults.standard.set(stored, forKey: DictationSettings.liveKey) }
+        UserDefaults.standard.removeObject(forKey: DictationSettings.liveKey)
+        #expect(DictationSettings.isLive)
+        UserDefaults.standard.set(false, forKey: DictationSettings.liveKey)
+        #expect(!DictationSettings.isLive)
     }
 
     /// Mid-sentence, a dictionary word starts in lowercase; "I", names and acronyms don't.
