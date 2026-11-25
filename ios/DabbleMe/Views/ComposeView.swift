@@ -832,14 +832,9 @@ struct ComposeView: View {
         if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
         if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
         // Settings → Dictation's own words first, then the hashtags.
-        // Type as I Speak (on unless turned off): the words go in as they're said.
-        // (Not a ternary: that one crashes the type checker.)
-        var preview: (@MainActor (Dictation.LiveWords?) -> Void)?
-        if DictationSettings.isLive { preview = { editor.showDictating($0) } }
         dictation.start(style: DictationSettings.style,
                         hints: { Dictation.expected(words: DictationSettings.words, recentTags: recentTags, allTags: allTags) },
-                        canListen: { editor.isFocused },
-                        preview: preview) { editor.insertDictated($0) }
+                        canListen: { editor.isFocused }) { editor.insertDictated($0) }
     }
 
     /// The attached photos as a little stack; tap to show or hide the photo row. Held, it goes
@@ -2070,9 +2065,8 @@ private struct DictationRow: View {
     let dictation: Dictation
 
     /// While speaking: while recording, an X on the left (drops it), the waveform
-    /// with the time so far, and Done on the right (writes it in). With Type as I Speak off,
-    /// nothing's written until Done: it's heard in one go, then tidied. With it on, the words
-    /// are in the entry already, and Done settles them.
+    /// with the time so far, and Done on the right (writes it in). Nothing's written until Done:
+    /// it's heard in one go, then tidied.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 12) {

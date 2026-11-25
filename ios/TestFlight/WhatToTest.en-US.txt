@@ -1,17 +1,10 @@
-Type as I Speak: dictation now writes your words into the entry while you talk.
+Dictation is back to how it was: Type as I Speak is gone.
 
-Type as I Speak (on by default)
-- Open the composer, tap the microphone and talk. Words appear at the cursor as you say them. The last few show lighter: that's the transcriber's guess, and it can change as you keep talking.
-- Tap Done. The dots show for a moment, then the words settle into normal text. With Polished on, ums, repeats and spoken corrections drop out here, "comma" and "hashtag leo" turn into marks and tags, and the text fades into its final form instead of jumping.
-- Hold the microphone to talk, let go to finish: same thing.
-- Tap the X while talking: the words that appeared are taken back out.
-- Stay quiet for 10 seconds after tapping: it stops, says it didn't hear anything, and leaves no text behind.
-- Typing is paused while words are going in. Tap Done first, then type.
-- Close the keyboard, open another row, or save mid-sentence: what you said so far is kept and tidied.
-
-Turning it off
-- Settings, Dictation, Type as I Speak. Off, it works as before: nothing shows until Done, then the words go in at once.
-- Compare the two on the same paragraph. If the final words are worse with it on, tell me.
+Dictation
+- Open the composer, tap the microphone and talk. Nothing appears while you speak.
+- Tap Done. The dots show briefly, then all your words go in at once, already tidied (with Polished on).
+- Hold the microphone to talk and let go to finish: same thing.
+- Settings, Dictation no longer has a Type as I Speak switch.
 
 Logs
-- Every dictation logs its timings under the "Dictation" category in the Console app. With it on, look for "Dictation started (type as I speak)" and "last words" (Done until the final words).
+- Every dictation logs its timings under the "Dictation" category in the Console app.
