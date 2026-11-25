@@ -548,6 +548,15 @@ final class Dictation {
         let stopped = AsyncStream<Ending>.makeStream()
         endInput = { stopped.continuation.yield(.keep); stopped.continuation.finish() }
         abandon = { stopped.continuation.yield(.drop); stopped.continuation.finish() }
+        // The transcriber stopping by itself (it failed) ends the recording too, as Done does:
+        // what it heard is kept, rather than recording on into nothing.
+        let watching = Task { [weak self] in
+            do { _ = try await hearing.value } catch is CancellationError { return } catch {}
+            guard let self, self.state == .listening else { return }
+            Self.log.error("Dictation's transcriber stopped while recording")
+            self.stop()
+        }
+        defer { watching.cancel() }
         let interruptions = Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: AVAudioSession.interruptionNotification).map({ _ in () }) {
                 self?.stop()
