@@ -75,3 +75,25 @@ end
 require "capybara/selenium/node"
 require "capybara/selenium/nodes/chrome_node"
 Capybara::Selenium::ChromeNode.prepend(DetachedNodeIsStale)
+
+# Chrome 158 refuses "*" as an origin in Storage.clearDataForOrigin ("invalid
+# argument: * is not a valid URL"), which Capybara 3.40 sends after every
+# test (ChromeDriver#reset!), so every JS spec after the first one failed.
+# Fall back to what that call meant here: every cookie, plus the storage of
+# the one origin the specs use (Capybara.app_host).
+module ClearStorageWithoutWildcard
+  private
+
+  def execute_cdp(cmd, params = {})
+    super
+  rescue Selenium::WebDriver::Error::InvalidArgumentError => e
+    raise unless cmd == "Storage.clearDataForOrigin" && params[:origin] == "*" && e.message.include?("not a valid URL")
+
+    super("Network.clearBrowserCookies")
+    super(cmd, params.merge(origin: Capybara.app_host)) if Capybara.app_host
+  end
+end
+
+require "capybara/selenium/driver"
+require "capybara/selenium/driver_specializations/chrome_driver"
+Capybara::Selenium::Driver::ChromeDriver.prepend(ClearStorageWithoutWildcard)
