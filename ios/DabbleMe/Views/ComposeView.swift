@@ -833,10 +833,13 @@ struct ComposeView: View {
         if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
         // Settings → Dictation's own words first, then the hashtags.
         // Type as I Speak (on unless turned off): the words go in as they're said.
+        // (Not a ternary: that one crashes the type checker.)
+        var preview: (@MainActor (Dictation.LiveWords?) -> Void)?
+        if DictationSettings.isLive { preview = { editor.showDictating($0) } }
         dictation.start(style: DictationSettings.style,
                         hints: { Dictation.expected(words: DictationSettings.words, recentTags: recentTags, allTags: allTags) },
                         canListen: { editor.isFocused },
-                        preview: DictationSettings.isLive ? { editor.showDictating($0) } : nil) { editor.insertDictated($0) }
+                        preview: preview) { editor.insertDictated($0) }
     }
 
     /// The attached photos as a little stack; tap to show or hide the photo row. Held, it goes

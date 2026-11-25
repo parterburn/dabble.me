@@ -910,6 +910,7 @@ private final class Recorder {
 /// Type as I Speak's microphone: `AVAudioEngine`'s input, converted to the transcriber's format
 /// and handed over as it comes (`buffers`), nothing written to disk. Not on the main actor: the
 /// audio arrives on the engine's own thread.
+@available(iOS 26.0, *)
 private final class LiveMicrophone: @unchecked Sendable {
     let buffers: AsyncStream<AnalyzerInput>
     private let continuation: AsyncStream<AnalyzerInput>.Continuation
