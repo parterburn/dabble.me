@@ -59,6 +59,17 @@ struct EntryPhoto: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Photos processing")
     }
+
+    /// The room between an entry's last line of writing and its photo: the gap between two of
+    /// its paragraphs, to the eye. Paragraphs are a paragraph spacing (0.6 of the text size, see
+    /// `RichText.applyListIndents`) and a line spacing apart, and the next line's letters start a
+    /// little below the top of its line (its ascender over its capitals); a photo starts at its
+    /// top edge, so it gets that little more.
+    static func gapBelowWriting(fontSize: CGFloat, lineSpacing: CGFloat, design: UIFontDescriptor.SystemDesign) -> CGFloat {
+        let base = UIFont.systemFont(ofSize: fontSize)
+        let font = base.fontDescriptor.withDesign(design).map { UIFont(descriptor: $0, size: fontSize) } ?? base
+        return ((fontSize * 0.6).rounded() + lineSpacing + max(font.ascender - font.capHeight, 0)).rounded()
+    }
 }
 
 /// An entry's photo as a small square beside a few lines of it (On This Day under an entry, the

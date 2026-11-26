@@ -1184,6 +1184,20 @@ struct ParagraphGapTests {
     @Test func neverBelowOnePoint() {
         #expect(TimelineEntryRow.paragraphGapFontSize(fontSize: 10, lineSpacing: 20) == 1)
     }
+
+    /// A photo under the writing sits as far below it as the next paragraph's capitals would.
+    @Test func photoSitsAParagraphBelowTheWriting() {
+        for design in [UIFontDescriptor.SystemDesign.serif, .default] {
+            for (size, spacing) in [(CGFloat(17), CGFloat(5)), (16.83, 4.95), (18.7, 5.5), (23.8, 7)] {
+                let base = UIFont.systemFont(ofSize: size)
+                let font = base.fontDescriptor.withDesign(design).map { UIFont(descriptor: $0, size: size) } ?? base
+                let paragraphs = (size * 0.6).rounded() + spacing + (font.ascender - font.capHeight)
+                let gap = EntryPhoto.gapBelowWriting(fontSize: size, lineSpacing: spacing, design: design)
+                #expect(abs(gap - paragraphs) <= 0.5)
+                #expect(gap > 10) // more than the 10 points it was
+            }
+        }
+    }
 }
 
 /// A draft keeps its photos: written once each, read back in order, pruned and cleared with it.
