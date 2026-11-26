@@ -94,6 +94,12 @@ struct TimelineEntryRow: View {
         return result
     }
 
+    private var showsSongs: Bool { entry.songs?.isEmpty == false && (isExpanded || !isTruncated) }
+    private var hasDatedTags: Bool { entry.datedHashtags?.isEmpty == false }
+    private var gapBelowWriting: CGFloat {
+        EntryPhoto.gapBelowWriting(fontSize: bodySize * textSize.scale, lineSpacing: lineSpacing, design: fontStyle.uiDesign)
+    }
+
     /// The server's preview stops at about 1,500 characters; past that, expanding loads the rest.
     private var previewIsCut: Bool {
         // The server says; an older one didn't, but its cut previews end in "...".
@@ -115,11 +121,11 @@ struct TimelineEntryRow: View {
             }
             entryText
             // Songs once the whole entry shows (expanded, or short enough not to need it).
-            if let songs = entry.songs, !songs.isEmpty, isExpanded || !isTruncated {
+            if showsSongs, let songs = entry.songs {
                 SongList(songs: songs)
             }
             // Only dated #tags get a line of their own (their age), just above the photo.
-            if let dated = entry.datedHashtags, !dated.isEmpty {
+            if hasDatedTags, let dated = entry.datedHashtags {
                 DatedHashtagRow(hashtags: dated)
             }
             if entry.imageProcessing || entry.imageURL != nil {
@@ -128,6 +134,9 @@ struct TimelineEntryRow: View {
                     // As tall as the photo is at this width (up to that limit), and no taller.
                     .fixedSize(horizontal: false, vertical: true)
                     .clipShape(.rect(cornerRadius: 12))
+                    // Right under the writing, as far below it as its paragraphs are apart
+                    // (the stack's own gap is already there).
+                    .padding(.top, showsSongs || hasDatedTags ? 0 : max(gapBelowWriting - 10, 0))
             }
         }
         // At least as tall as the date beside it, so a one-line entry doesn't crowd the divider.

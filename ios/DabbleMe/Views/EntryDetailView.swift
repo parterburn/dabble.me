@@ -579,16 +579,22 @@ private struct EntryBody: View {
     /// The entry's last line is its writing: no dated tags or songs under it.
     private var endsInWriting: Bool { entry.datedHashtags?.isEmpty != false && entry.songs.isEmpty }
 
+    private var bottomPadding: CGFloat {
+        guard hasPhoto else { return endsInWriting ? 28 : 32 }
+        guard endsInWriting else { return 10 }
+        return EntryPhoto.gapBelowWriting(fontSize: bodySize * textSize.scale, lineSpacing: 5 * textSize.scale, design: fontStyle.uiDesign)
+    }
+
     // The writing is padded; the photo, after it, runs edge to edge and ends the entry.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if hasWriting {
                 // (A little less above: the first line's own height adds to it. And under it,
-                // before a photo, the gap Today's card has between an entry's words and its photo.
-                // With no photo, as much room as On This Day's heading has above it, to the eye:
-                // a last line of writing has its own height under the letters, which tags and
-                // songs don't, so those get it added.)
-                writing.padding(.horizontal).padding(.top, 12).padding(.bottom, hasPhoto ? 10 : (endsInWriting ? 28 : 32))
+                // before a photo, the gap between its paragraphs when writing is last (tags or
+                // songs keep the gap they have between each other). With no photo, as much room
+                // as On This Day's heading has above it, to the eye: a last line of writing has
+                // its own height under the letters, which tags and songs don't, so those get it added.)
+                writing.padding(.horizontal).padding(.top, 12).padding(.bottom, bottomPadding)
             }
             // Text first: Dabble Me is about the writing; photos follow it.
             if hasPhoto {
