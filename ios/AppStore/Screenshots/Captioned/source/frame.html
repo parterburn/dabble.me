@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=Instrument+Serif:ital@0;1&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../Header and Search Results/source/common.css">
+<style>
+/* One captioned App Store frame. Sized by render.mjs: --w/--h are the screenshot's pixels. */
+body { width: var(--w); height: var(--h); position: relative;
+  background: linear-gradient(180deg, #f7f5f0 0%, #f2f0e9 55%, #e9e6dc 100%); }
+.copy { position: absolute; left: 0; right: 0; top: calc(var(--h) * .052); text-align: center; padding: 0 6%; }
+h1 { font-size: calc(var(--w) * var(--fs)); line-height: 1.02; color: var(--ink); letter-spacing: -.005em; }
+h1 em { color: var(--olive); font-style: italic; }
+.phone { left: 50%; transform: translateX(-50%); top: calc(var(--h) * var(--top)); width: calc(var(--w) * var(--pw));
+  padding: calc(var(--w) * var(--pw) * .024); }
+body.ipad .phone { border-radius: 4.2% / 3.2%; }
+body.ipad .phone img { border-radius: 2.6% / 2%; }
+</style></head><body>
+<div class="copy"><h1 class="serif" id="t"></h1></div>
+<div class="phone"><img id="s"></div>
+<script>
+const q = new URLSearchParams(location.search);
+document.getElementById('t').innerHTML = q.get('t');
+document.getElementById('s').src = q.get('s');
+const ipad = q.get('ipad') === '1';
+if (ipad) document.body.classList.add('ipad');
+const r = document.documentElement.style;
+r.setProperty('--w', q.get('w') + 'px'); r.setProperty('--h', q.get('h') + 'px');
+r.setProperty('--fs', ipad ? '.062' : '.1');
+r.setProperty('--pw', ipad ? '.80' : '.84');
+r.setProperty('--top', ipad ? '.205' : '.215');
+</script>
+</body></html>

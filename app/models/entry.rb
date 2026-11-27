@@ -196,6 +196,8 @@ class Entry < ActiveRecord::Base
   end
 
   def image_url_cdn(cloudflare: true)
+    # Cloudflare only resizes images from the production bucket (error 9401 for the dev one).
+    cloudflare &&= !Rails.env.development?
     if image_stored?
       "#{'https://dabble.me/cdn-cgi/image/quality=100/' if cloudflare }#{image.url.gsub('dabble-me.s3.amazonaws.com/uploads', 'd10r8m94hrfowu.cloudfront.net')}"
     elsif uploading_image?
