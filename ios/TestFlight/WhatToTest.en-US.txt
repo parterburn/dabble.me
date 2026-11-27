@@ -1,4 +1,4 @@
-Free accounts now get an Actions button on an open entry, in the top-right spot where PRO accounts have the pencil.
+Free accounts now get an Actions button on an open entry, in the top-right spot where PRO accounts have the pencil, and On This Day shows under every entry with a tap through to upgrade.
 
 Entry Actions on Free
 - Sign in with a Free account and open any entry from Today or the Journal.
@@ -8,5 +8,10 @@ Entry Actions on Free
 - Tap a tag in the sheet: it searches for that tag. Cancel a Delete without finishing the hold.
 - With VoiceOver on, the button reads "Entry Actions".
 
+On This Day on Free
+- On a Free account, open an entry and scroll to its end. On This Day follows it on every entry: "N entries from other years would show here with Dabble Me PRO", or, with none, "See what you wrote on this date in past years with Dabble Me PRO".
+- "Dabble Me PRO" is olive. Tap the line: your Plan opens in a sheet with the Monthly and Yearly options. Done closes it.
+- Today's On This Day line on a Free account is olive and opens the Plan the same way.
+
 PRO unchanged
-- On a PRO account, the top right of an open entry is still the pencil. Tap edits; touch and hold opens Actions.
+- On a PRO account, the top right of an open entry is still the pencil. Tap edits; touch and hold opens Actions. On This Day under an entry shows only when there are entries from other years.

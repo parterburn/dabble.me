@@ -175,3 +175,42 @@ struct PlanView: View {
         return (willRenew == false ? "Ends" : "Renews", formatted)
     }
 }
+
+/// A Free account's line about a PRO feature ("… with Dabble Me PRO."), "Dabble Me PRO" in olive:
+/// a tap opens Settings → Plan in a sheet, to upgrade. Plain words where the server can't take an
+/// in-app purchase (Settings has no Plan page then either).
+struct ProUpsellLine: View {
+    /// The words before "Dabble Me PRO", and after it (usually a full stop).
+    let before: String
+    var after = "."
+    @Environment(AppModel.self) private var model
+    @State private var showingPlan = false
+
+    private var opensPlan: Bool { model.me?.appleAccountToken != nil }
+
+    private var text: Text {
+        Text(before) + Text("Dabble Me PRO").foregroundStyle(opensPlan ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary)) + Text(after)
+    }
+
+    var body: some View {
+        if opensPlan {
+            Button { showingPlan = true } label: {
+                text.multilineTextAlignment(.leading).contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens your plan, to upgrade.")
+            .sheet(isPresented: $showingPlan) {
+                NavigationStack {
+                    PlanView()
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { showingPlan = false }
+                            }
+                        }
+                }
+            }
+        } else {
+            text
+        }
+    }
+}
