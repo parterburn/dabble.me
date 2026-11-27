@@ -62,7 +62,7 @@ struct JournalView: View {
     private var showsPane: Bool { sizeClass == .regular && mode != .stats }
 
     var body: some View {
-        EntryPaneLayout(showsPane: showsPane, entry: $routing.paneEntry) { stack }
+        EntryPaneLayout(showsPane: showsPane, routing: $routing) { stack }
             .animation(.snappy(duration: 0.25), value: showsPane)
             .onChange(of: path.count) { _, count in routing.pathChanged(count: count) }
             .onChange(of: model.deletedEntryID) { _, id in routing.entryDeleted(id) }
@@ -454,7 +454,7 @@ struct JournalView: View {
 
     /// The row of the entry open in the pane, tinted so it's clear which one that is.
     private func openRowBackground(_ id: Int) -> Color? {
-        showsPane && routing.paneEntry?.id == id ? Color.accentColor.opacity(0.1) : nil
+        showsPane && routing.openID == id ? Color.accentColor.opacity(0.1) : nil
     }
 
     private func expand(_ entry: EntrySummary) {

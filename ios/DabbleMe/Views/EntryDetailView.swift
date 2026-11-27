@@ -256,6 +256,7 @@ struct EntryDetailView: View {
         .sensoryFeedback(.selection, trigger: textSize)
         .disabled(isDeleting)
         .task { await load() }
+        .modifier(FollowsSavesAndPane(entry: $entry, isPaneRoot: isPaneRoot))
         // An edit that takes the playing song away takes the player with it.
         .onChange(of: entry?.songs) { _, songs in
             guard let song, songs?.contains(song) != true else { return }
@@ -1467,5 +1468,28 @@ private struct PullToReflect: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+/// Keeps an open entry current with the rest of the app (its own modifier, to keep
+/// `EntryDetailView.body`'s chain short for the type checker).
+private struct FollowsSavesAndPane: ViewModifier {
+    @Binding var entry: EntryDetail?
+    let isPaneRoot: Bool
+    @Environment(AppModel.self) private var model
+    @Environment(\.entryPane) private var entryPane
+
+    func body(content: Content) -> some View {
+        content
+            // Saved somewhere else (edited from its row's menu beside the entry pane): show the
+            // saved text, so an edit from here doesn't start from the old one.
+            .onChange(of: model.entrySaves) {
+                if let saved = model.savedEntry, saved.id == entry?.id { entry = saved }
+            }
+            // At the root of the entry pane: tell it which entry this is after a swipe to another
+            // day, so folding carries that one over and its row is the tinted one.
+            .onChange(of: entry?.id) { _, id in
+                if isPaneRoot, let id { entryPane?.showing(id) }
+            }
     }
 }

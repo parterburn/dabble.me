@@ -77,6 +77,30 @@ struct EntryPaneRoutingTests {
         #expect(routing.paneEntry == nil)
     }
 
+    @Test func foldingCarriesTheEntrySwipedTo() {
+        var routing = EntryPaneRouting()
+        var path = NavigationPath()
+        routing.open(EntryRoute(id: 1), wide: true, path: &path)
+        routing.showing(2) // the title swiped to the next day
+        #expect(routing.openID == 2)
+        routing.widthChanged(wide: false, path: &path)
+        #expect(routing.openID == nil)
+        #expect(routing.pushed == EntryRoute(id: 2))
+        routing.entryDeleted(2)
+        #expect(routing.pushed == nil)
+    }
+
+    @Test func pickingTheSameRowAgainOpensItFresh() {
+        var routing = EntryPaneRouting()
+        var path = NavigationPath()
+        routing.open(EntryRoute(id: 1), wide: true, path: &path)
+        let first = routing.opening
+        routing.showing(2)
+        routing.open(EntryRoute(id: 1), wide: true, path: &path)
+        #expect(routing.opening != first)
+        #expect(routing.openID == 1)
+    }
+
     @Test func foldingWithNothingOpenChangesNothing() {
         var routing = EntryPaneRouting()
         var path = NavigationPath()
