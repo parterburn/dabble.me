@@ -16,6 +16,7 @@ final class ScreenshotTests: XCTestCase {
         app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer,
                                "-DabbleDebugComposePhotoURLs", photos, "-entryTextSize", "2",
                                "-DabbleDebugCalendar", "YES", // a made-up day's events, for the lightbulb row
+                               "-DabbleDebugDictation", "YES", // the simulator has no SpeechTranscriber, so the bar's mic would hide
                                "-stats.heatmapCell", "13"] // Stats' grid at its own size, whatever a test pinched it to
         app.launch()
 
