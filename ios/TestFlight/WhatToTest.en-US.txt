@@ -1,8 +1,10 @@
-An entry's photo now sits as far below its writing as its paragraphs are apart.
+Each link on the Plan page now opens what it says.
 
-Photo spacing
-- Open an entry with a few paragraphs and a photo. The gap between the last line and the photo should look like the gap between two paragraphs, not tighter.
-- Check the same entry on Today and in the Journal list: the photo under the text gets the same paragraph-sized gap.
-- In Settings, Theme, under Entry Text, move the text size slider both ways and switch the font. The gap grows and shrinks with the text, still matching the paragraphs.
-- An entry with dated #tags or songs above its photo keeps the smaller gap it had there.
-- An entry with no photo looks the same as before.
+Plan page links
+- Sign in with a Free account and open Settings, then Plan.
+- Tap Restore Purchases. It should restore (or say there's nothing to restore), not open the Terms or Privacy page.
+- Tap Terms of Use: the Terms open. Tap Privacy Policy: the Privacy Policy opens.
+- On a US App Store account, tap "Or subscribe on dabble.me": the subscribe page opens.
+- Tap the empty space around the text in that box. Nothing should open.
+- Tap Monthly and Yearly: each starts its own App Store purchase sheet.
+- The same buttons on a PRO feature's page (Search or Stats on a Free account) still work as before.

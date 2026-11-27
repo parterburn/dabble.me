@@ -59,6 +59,10 @@ struct SubscribeOptions: View {
                 }
                 .font(.caption)
             }
+            // Inside a List row (Settings → Plan) every default-style button and link in the row
+            // would answer a tap anywhere in it, so a tap on Restore Purchases opened the Privacy
+            // Policy. Borderless buttons take only their own taps; the plan buttons keep their style.
+            .buttonStyle(.borderless)
             .disabled(store.isWorking)
             .overlay {
                 if store.isWorking { ProgressView() }
@@ -155,6 +159,7 @@ struct PlanView: View {
                                     }
                                 }
                                 .font(.subheadline)
+                                .buttonStyle(.borderless)
                             }
                         }
                         .padding(.vertical, 8)
