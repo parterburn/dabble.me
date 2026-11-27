@@ -85,6 +85,13 @@ struct EntryPaneRouting {
         }
     }
 
+    /// An entry was deleted (from its row's menu, say): it's no longer the one to show.
+    mutating func entryDeleted(_ id: Int?) {
+        guard let id else { return }
+        if paneEntry?.id == id { paneEntry = nil }
+        if pushed?.id == id { pushed = nil }
+    }
+
     /// The stack's depth changed (Back, or a page pushed by a link this didn't open).
     mutating func pathChanged(count: Int) {
         if count != 1 { pushed = nil }

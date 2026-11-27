@@ -67,6 +67,16 @@ struct EntryPaneRoutingTests {
         #expect(path.count == 1)
     }
 
+    @Test func deletingTheOpenEntryClosesThePane() {
+        var routing = EntryPaneRouting()
+        var path = NavigationPath()
+        routing.open(EntryRoute(id: 5), wide: true, path: &path)
+        routing.entryDeleted(6)
+        #expect(routing.paneEntry == EntryRoute(id: 5))
+        routing.entryDeleted(5)
+        #expect(routing.paneEntry == nil)
+    }
+
     @Test func foldingWithNothingOpenChangesNothing() {
         var routing = EntryPaneRouting()
         var path = NavigationPath()

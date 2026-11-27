@@ -5,7 +5,7 @@ Journal side by side (iPad, or iPhone Duo open)
 - Tap an entry. It opens on the right (a long one opens there rather than expanding in the list), and its row on the left is tinted olive. Tap another: it replaces the first.
 - The entry on the right has no Back arrow. Swipe left on it for Actions, edit it, and scroll to On This Day as usual.
 - Open an entry from its On This Day: it pushes inside the right half, with a Back arrow. Back returns to the first entry.
-- Delete the entry on the right: the pane goes back to "No entry open".
+- Delete the entry on the right, or delete it from its row's menu on the left: the pane goes back to "No entry open".
 - Write a new entry with +: once saved, it opens on the right.
 - Photos and Songs open their entries on the right too. Stats uses the whole width.
 - The timeline scrubber floats a little in from the middle line (rounded on both sides), not flush against it. Drag it and tap it as usual.
@@ -13,7 +13,7 @@ Journal side by side (iPad, or iPhone Duo open)
 Search side by side
 - Before searching, Search uses the whole width (tips and hashtags).
 - Search for something. Results fill the left half; tap one to read it on the right.
-- Tap a #hashtag in the open entry: the results change, the entry stays open.
+- Tap a #hashtag in an entry opened from Search: the results change, the entry stays open.
 
 Folding and unfolding (iPhone Duo, or iPad Split View to make the app narrow)
 - With an entry open on the right, fold the phone (or narrow the window). The entry is now open full screen, with Back to the list.

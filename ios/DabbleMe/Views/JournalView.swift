@@ -65,12 +65,11 @@ struct JournalView: View {
         EntryPaneLayout(showsPane: showsPane, entry: $routing.paneEntry) { stack }
             .animation(.snappy(duration: 0.25), value: showsPane)
             .onChange(of: path.count) { _, count in routing.pathChanged(count: count) }
+            .onChange(of: model.deletedEntryID) { _, id in routing.entryDeleted(id) }
             // Opened or closed (iPhone Duo), or an iPad's window resized: the open entry moves
-            // between the pane and the stack. Not while on Stats, whose pane is just hidden.
-            .onChange(of: sizeClass) {
-                guard mode != .stats else { return }
-                routing.widthChanged(wide: showsPane, path: &path)
-            }
+            // between the pane and the stack (by width alone, so one left in the pane while
+            // on Stats isn't stranded there).
+            .onChange(of: sizeClass) { routing.widthChanged(wide: sizeClass == .regular, path: &path) }
     }
 
     /// Opens an entry: beside the list on a wide screen, over it otherwise.

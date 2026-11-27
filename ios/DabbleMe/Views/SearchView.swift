@@ -34,9 +34,10 @@ struct SearchView: View {
         EntryPaneLayout(showsPane: showsPane, entry: $routing.paneEntry) { stack }
             .animation(.snappy(duration: 0.25), value: showsPane)
             .onChange(of: path.count) { _, count in routing.pathChanged(count: count) }
+            .onChange(of: model.deletedEntryID) { _, id in routing.entryDeleted(id) }
             // Opened or closed (iPhone Duo), or an iPad's window resized: the open result moves
             // between the pane and the stack.
-            .onChange(of: sizeClass) { routing.widthChanged(wide: showsPane, path: &path) }
+            .onChange(of: sizeClass) { routing.widthChanged(wide: sizeClass == .regular, path: &path) }
     }
 
     /// Opens a result: beside the list on a wide screen, over it otherwise.
