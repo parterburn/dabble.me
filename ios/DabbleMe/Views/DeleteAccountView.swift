@@ -62,9 +62,7 @@ struct DeleteAccountView: View {
                                 if !password.isEmpty { confirming = true }
                             }
                         } else {
-                            SecureField("Password", text: $password)
-                                .textContentType(.password)
-                                .focused($passwordFocused)
+                            PasswordField(title: "Password", text: $password, focus: $passwordFocused, equals: true)
                                 .submitLabel(.done)
                                 .onSubmit { if !password.isEmpty { confirming = true } }
                         }

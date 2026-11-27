@@ -529,7 +529,8 @@ struct TodayView: View {
             .id(TodayFocus.lookBack.anchor)
             .sectionTitleRow(bottom: 10)
         if !today.onThisDayAvailable {
-            Text("See what you wrote on this date in past years with Dabble Me PRO.")
+            // "Dabble Me PRO" in olive: a tap opens Settings → Plan.
+            ProUpsellLine(before: "See what you wrote on this date in past years with ")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .plainRow()

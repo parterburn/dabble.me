@@ -47,10 +47,8 @@ struct PasskeyPromptSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
                 } else {
-                    SecureField("Your Dabble Me password", text: $password)
-                        .textContentType(.password)
+                    PasswordField(title: "Your Dabble Me password", text: $password, focus: $passwordFocused, equals: true)
                         .submitLabel(.go)
-                        .focused($passwordFocused)
                         .onSubmit(add)
                         .padding(12)
                         .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))

@@ -82,7 +82,9 @@ final class FlowTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["ON DABBLE.ME"].exists)
         XCTAssertFalse(app.links["Email Preferences"].exists, "Email settings are in the app now")
         snap("settings-ai")
-        // Settings → Account: name, email, Account Security and Export Entries.
+        // Settings → Account: name, email, Account Security, Export Entries, Sign Out and Delete Account.
+        XCTAssertFalse(app.buttons["Sign Out"].exists, "Sign Out is on the Account page")
+        XCTAssertFalse(app.buttons["Delete Account…"].exists, "Delete Account is on the Account page")
         for _ in 0..<4 where !account.isHittable {
             app.collectionViews.firstMatch.swipeDown(velocity: .slow)
         }
@@ -91,6 +93,8 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Email"].exists)
         XCTAssertTrue(app.links["Account Security"].exists)
         XCTAssertTrue(app.links["Export Entries"].exists || app.buttons["Export Entries"].exists)
+        XCTAssertTrue(app.buttons["Sign Out"].exists)
+        XCTAssertTrue(app.buttons["Delete Account…"].exists)
         snap("settings-account")
     }
 

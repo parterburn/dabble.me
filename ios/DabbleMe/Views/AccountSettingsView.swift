@@ -2,10 +2,12 @@ import SwiftUI
 
 /// Settings → Account: who you are and how you sign in. Your name (changed here), your email,
 /// Add a Passkey while the account has none, Account Security on dabble.me (password, passkeys,
-/// two-factor), and Export Entries.
+/// two-factor), Export Entries, Sign Out (this device, or every device) and Delete Account.
 struct AccountSettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var addingPasskey = false
+    @State private var confirmingSignOut = false
+    @State private var deletingAccount = false
 
     var body: some View {
         List {
@@ -54,6 +56,25 @@ struct AccountSettingsView: View {
                         }
                     }
                 }
+            }
+
+            Section {
+                // Each dialog is attached to its button so it appears next to it, not at the top.
+                Button("Sign Out", role: .destructive) { confirmingSignOut = true }
+                    .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
+                        Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
+                        // Every browser and app on the account, this one included.
+                        Button("Sign Out of All Devices", role: .destructive) { Task { await model.signOutEverywhere() } }
+                    } message: {
+                        Text("Sign Out signs out this device only. Sign Out of All Devices signs out every browser and app signed in to your account, and disconnects connected apps like Claude.")
+                    }
+                // Deleting happens here (App Review guideline 5.1.1(v)): what goes, an export,
+                // the password, then one last confirmation, in a sheet.
+                Button("Delete Account…", role: .destructive) { deletingAccount = true }
+                    .sheet(isPresented: $deletingAccount) {
+                        DeleteAccountView()
+                            .opensDabbleLinksInApp()
+                    }
             }
         }
         .slabBackButton()
