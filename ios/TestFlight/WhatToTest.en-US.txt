@@ -1,4 +1,4 @@
-No app changes since the build with the Free-account Actions button: this one only updates the App Store screenshots. If you skipped that build, here's what it brought.
+No app changes since the build with the Free-account Actions button: this one only updates the App Store screenshots (now showing the composer's mic). If you skipped that build, here's what it brought.
 
 Free accounts now get an Actions button on an open entry, in the top-right spot where PRO accounts have the pencil, and On This Day shows under every entry with a tap through to upgrade.
 
