@@ -264,7 +264,8 @@ struct EntryDetailView: View {
         playerHidden = false
     }
 
-    /// Edit goes straight into editing; Delete and Reflect are in the swipe-left Actions.
+    /// Edit goes straight into editing; Delete and Reflect are in the swipe-left Actions. Without
+    /// editing (Free), the bars in its place open those Actions.
     @ViewBuilder
     private func editButton(for entry: EntryDetail) -> some View {
         if model.me?.canEdit == true {
@@ -287,6 +288,11 @@ struct EntryDetailView: View {
                 .accessibilityAddTraits(.isButton)
                 .accessibilityAction { if entry.document != nil { editing = true } else { openURL(entry.webEditURL) } }
                 .accessibilityAction(named: "More Actions") { showingActions = true }
+        } else {
+            // Free accounts can't edit, so the bars stand in for the pencil: a tap opens the same
+            // Actions as the swipe left (Share, Delete, tags; PRO ones stay out of the sheet).
+            Button { showingActions = true } label: { appIcon("slab-bars") }
+                .accessibilityLabel("Entry Actions")
         }
     }
 
