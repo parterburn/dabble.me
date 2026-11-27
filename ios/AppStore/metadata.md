@@ -135,45 +135,47 @@ Subscription group **Dabble Me PRO**. Display names and descriptions are what th
 
 ## App Review information
 
-- **Sign-in required:** yes. Create a production demo account (for example `appreview@dabble.me`) on **PRO**, with a few entries that include photos and hashtags, and with password sign-in (no 2FA) so the reviewer can get in.
-- **Notes for the reviewer** (the six answers App Review asked for under guideline 2.1; fill in the bracketed lines):
+- **Sign-in required:** yes. Create a production demo account (for example `appreview@dabble.me`) on **PRO**, with a few entries that include photos and hashtags, and a password (no 2FA) so the reviewer can sign in with "Use Password Instead". It must have no real journal content, since it appears in the demo video. Put the demo email and password in App Review Information's username and password fields too; reviewers read those first.
+- **Demo video:** record it on a physical iPhone with the TestFlight build (TestFlight purchases are sandbox). A simulator recording buys against the local `.storekit` file, so the server never verifies the purchase. Show, in one take: password sign-in, adding a passkey, passkey sign-in, email-code sign-in, writing an entry, then a new account (sign-up by code), Restore Purchases (before buying: the button goes once the account is PRO), buying PRO Monthly, PRO unlocking, and Settings → Delete Account. One clean take only: afterwards that Apple Account's subscription belongs to the deleted account.
+- **Notes for the reviewer** (the six answers App Review asked for under guideline 2.1, led by what changed for a resubmission; fill in the bracketed lines):
 
+> RESUBMISSION: WHAT CHANGED
+> - Sign-in (2.1): build [N] fixes password sign-in, which failed in the build you reviewed. The demo account below signs in with its password.
+> - In-app purchase (2.1 / 3.1): the build you reviewed did not include the subscriptions. Build [N] adds PRO Monthly and PRO Yearly, submitted with this version, and the purchase works in the sandbox. See Paid Features.
+>
 > 1. SCREEN RECORDING
-> [link to the recording, or "attached below"]. Recorded on an iPhone running iOS [version]. It shows launch, creating an account, signing in, writing an entry, buying PRO in Settings → Plan (sandbox), the PRO features, Restore Purchases, and account deletion.
+> [link or "attached"]. Recorded on an iPhone [model], iOS [version], build 1.2 ([N]). It shows: password sign-in, adding a passkey, passkey sign-in, email-code sign-in, writing an entry, creating a new account, Restore Purchases, buying PRO in the sandbox, PRO features unlocking, and deleting the account in the app.
 >
 > 2. PURPOSE AND AUDIENCE
-> Dabble Me is a private journal for adults who want an easy daily writing habit. It asks "How was your day?" once a day, by notification or email, and shows past entries back to you (On This Day). There is no social feed and nothing is shared: each person sees only their own journal. The app is free to download. Dabble Me PRO is an auto-renewable subscription sold in the app with Apple's in-app purchase (see Paid Features below), and also on the dabble.me website.
+> Dabble Me is a private daily journal for adults. It asks "How was your day?" once a day, by notification or email, and shows past entries back (On This Day). There is no social feed; each person sees only their own journal. The app is free to download; Dabble Me PRO is an auto-renewable subscription sold in the app with Apple's in-app purchase.
 >
-> 3. ACCESS AND SETUP
+> 3. ACCESS
 > Demo account (PRO, no two-factor): [email] / [password]
-> - Tap "I Already Have an Account", then enter the email and password in the app's sign-in form.
-> - Today: today's prompt, and a past entry to look back on.
-> - Write (the pencil): text, formatting, photos, hashtags. The lightbulb shows a prompt and the day's calendar events (calendar access is optional, and the events are only read on the device).
-> - Journal: timeline, Photos, Songs, Stats. Search: text and hashtags.
-> - Settings: reminders, email schedule, entry template, calendars, Face ID lock, widget.
-> New accounts: "Start Your Journal" on the first screen opens the app's sign-up form (email and password).
-> Account deletion: Settings → Delete Account. The page in the app shows what will be deleted, asks for the account password (or a passkey), and confirms once more; the app then signs out. The account is deleted an hour later unless the person signs back in.
+> - Tap "I Already Have an Account", enter the email, tap Continue.
+> - On the next screen tap "Use Password Instead", enter the password, tap "Sign In with Password". (Continue also emails a 6-digit code to the demo inbox; you can ignore it.)
+> New accounts: "Start Your Journal" on the first screen. Enter any email you can read; we email a 6-digit code, and entering it creates the account. No password is needed.
+> Account deletion: Settings > Delete Account. It shows what will be deleted, asks for the password (or an emailed code for accounts with no password, or a passkey), and confirms once more. The app signs out; the account is deleted an hour later unless the person signs back in.
 >
 > PAID FEATURES
-> Dabble Me PRO is an auto-renewable subscription, sold in the app (Monthly and Yearly, one subscription group) and on the dabble.me website. Free accounts can read, write and delete entries and set a reminder. Photos, editing, search, stats and On This Day are PRO.
-> To buy: sign in with a Free account (or create one), then Settings → Plan, or tap any PRO feature (Search, Stats). Restore Purchases is on the same screen, with the Terms of Use and Privacy Policy. Purchases are verified on our server with the App Store Server API before PRO turns on. An account that already subscribes on the website sees no purchase buttons. On the US storefront only, Settings → Plan also links to dabble.me/subscribe.
-> Please use a Free account to test the purchase: the PRO demo account above already has PRO.
+> Dabble Me PRO: PRO Monthly (me.dabble.ios.pro.monthly) and PRO Yearly (me.dabble.ios.pro.yearly), one subscription group, each with a 2-week free trial for new subscribers.
+> The demo account already has PRO, so please test the purchase with a new account (see Access):
+> - Settings > Plan, or tap Search or Journal > Stats on a Free account. Both plans, Restore Purchases, and the Terms of Use and Privacy Policy are on that screen.
+> - Purchases are verified on our server with the App Store Server API before PRO turns on.
+> - On the US storefront only, Settings > Plan also links to dabble.me/subscribe.
 >
 > 4. EXTERNAL SERVICES
-> - dabble.me: our own server, for accounts, sign-in (email and password, or a passkey, over HTTPS) and journal storage.
-> - Amazon S3 and CloudFront: photo storage and delivery.
-> - Mailgun: the daily email and account emails.
-> - Stripe: subscriptions on the website only, never in the app. In the app, PRO is sold with Apple's in-app purchase.
-> - Spotify: songs saved on an entry play in Spotify's own embedded player.
-> - Apple Intelligence (Foundation Models): reflections, prompts and hashtag suggestions run on the device. The app sends journal text to no AI service.
-> - Optional: a PRO user can connect Claude or ChatGPT to their journal on the website. The app only links to the guide.
-> The app contains no analytics, advertising or tracking SDKs.
+> - dabble.me: our server, for accounts, sign-in (emailed code, password or passkey, over HTTPS) and journal storage.
+> - Amazon S3 and CloudFront: photo storage. Mailgun: sign-in codes and the daily email.
+> - Stripe: subscriptions on the website only, never in the app.
+> - Spotify: songs on an entry play in Spotify's embedded player.
+> - Apple Intelligence: reflections, prompts and hashtag suggestions run on the device. No journal text goes to any AI service.
+> No analytics, advertising or tracking SDKs.
 >
 > 5. REGIONAL DIFFERENCES
-> The app works the same in every region, with two exceptions: the subscribe link appears only on the US storefront, and Apple Intelligence features appear only on devices, languages and regions Apple supports (none of them appear where Apple Intelligence is unavailable, such as China mainland).
+> The same everywhere, except the dabble.me/subscribe link (US storefront only) and Apple Intelligence features (only where Apple supports them).
 >
 > 6. REGULATED CONTENT
-> Not applicable. The app is not in a regulated industry, and all content is written by the account holder for their own use. There is no user-to-user content, so there is nothing to report or block.
+> Not applicable. All content is the account holder's own, for their own use; there is no user-to-user content.
 
 - **Export compliance:** the app uses only standard HTTPS (`ITSAppUsesNonExemptEncryption = NO`).
 
@@ -205,6 +207,6 @@ The calendar events in 6 are made up (`-DabbleDebugCalendar YES`), like the rest
 
 - **In-app purchase (from build 116):** PRO Monthly (`me.dabble.ios.pro.monthly`) and PRO Yearly (`me.dabble.ios.pro.yearly`), one subscription group, StoreKit 2 (`SubscriptionStore`, `SubscribeOptions`, `PlanView`). Each purchase carries the account's `appAccountToken`; the server verifies it with Apple before PRO turns on (`AppStore` in `app/lib`). The free-companion-app route (guideline 3.1.3(f)) no longer applies once the app sells something. On the **US App Store only**, Settings → Plan also links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`. If App Review objects, drop the link. Family Sharing is off. A free trial is an introductory offer set in App Store Connect (2 weeks suggested); the app shows it only to Apple Accounts still eligible, and records no payment for it.
 - **Free vs PRO in the app:** (the editor's Photos button shows for free accounts and says photos come with PRO) free accounts read, write and delete text entries, use the on-device Apple Intelligence features (reflections, Today's prompt, hashtag suggestions), keep an entry template, see the day's calendar events while writing, share an entry, set the daily reminder (which can bring a past entry), and see the Photos view, Songs and the widget; photos, links, editing, search (and its hashtag cloud), Stats (and the year in review at the top of it), On This Day, choosing the email's days, and AI connections are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
-- **Account deletion:** in the app (guideline 5.1.1(v)): Settings → Delete Account shows the entry count, an export link and any billing to cancel elsewhere (Gumroad, PayPal, or an App Store subscription, which only the person can cancel, in iOS Settings), asks for the password and confirms once more (`DeleteAccountView`, `/api/v1/account_deletion`). The app signs out; the account goes an hour later, as on the web, unless the person signs back in. A Stripe subscription is cancelled with it. No email step.
-- **Sign-in and sign-up:** the app's own forms (`AuthFormView`; `/api/v1/session`, `/api/v1/registration`), email and password plus the 2FA code when it's on, or a passkey (the site's own, via `webcredentials:dabble.me`). Sign in with Apple, if a third-party login is ever added, goes above the fields (guideline 4.8).
+- **Account deletion:** in the app (guideline 5.1.1(v)): Settings → Delete Account shows the entry count, an export link and any billing to cancel elsewhere (Gumroad, PayPal, or an App Store subscription, which only the person can cancel, in iOS Settings), asks for the password (an emailed code for an account with no password, or a passkey) and confirms once more (`DeleteAccountView`, `/api/v1/account_deletion`). The app signs out; the account goes an hour later, as on the web, unless the person signs back in. A Stripe subscription is cancelled with it. No email step for password accounts.
+- **Sign-in and sign-up:** the app's own form (`AuthFormView`; `/api/v1/session/code`, `/api/v1/session/code/verify`, `/api/v1/session`, `/api/v1/session/passkey`): an email, then a 6-digit emailed code (which creates the account when there isn't one; sign-up needs no password), or "Use Password Instead" on the code screen, plus the 2FA code when it's on, or a passkey (the site's own, via `webcredentials:dabble.me`). Sign in with Apple, if a third-party login is ever added, goes above the fields (guideline 4.8).
 - **iPad:** supported from the first version, so the submission needs the 13" iPad screenshot set too.
