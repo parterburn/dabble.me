@@ -79,7 +79,12 @@ struct EntryDetailView: View {
                             // the entry too, under the bar and when the page is pulled down.
                             .background(Color(.systemBackground))
                             .background(alignment: .top) {
-                                Color(.systemBackground).frame(height: 1200).offset(y: -1200)
+                                // Out to the screen's sides too: on iPhone Duo open, the status
+                                // rail at the right is a side inset, which showed Paper there.
+                                Color(.systemBackground)
+                                    .ignoresSafeArea(.container, edges: .horizontal)
+                                    .frame(height: 1200)
+                                    .offset(y: -1200)
                             }
                             // A soft line where the entry ends and On This Day begins.
                             .overlay(alignment: .bottom) {
