@@ -2,7 +2,6 @@ No app changes since the build with the Free-account Actions button: this one on
 
 Free accounts now get an Actions button on an open entry, in the top-right spot where PRO accounts have the pencil, and On This Day shows under every entry with a tap through to upgrade.
 
-
 Entry Actions on Free
 - Sign in with a Free account and open any entry from Today or the Journal.
 - Top right shows a bars icon (three stacked bars).
