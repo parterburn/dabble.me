@@ -17,10 +17,6 @@ struct SettingsView: View {
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
     @AppStorage(DictationSettings.enabledKey) private var dictationEnabled = true
     @AppStorage(DictationSettings.styleKey) private var dictationStyle = DictationStyle.polished
-    /// With an older server (no in-app purchase), the plan links to dabble.me/subscribe only on
-    /// the US App Store, where Apple allows links to buy outside the app (guideline 3.1.1(a), US
-    /// storefront). Otherwise the Plan row opens PlanView, which sells PRO in the app.
-    @State private var canLinkToSubscribe = false
 
     var body: some View {
         NavigationStack {
@@ -47,18 +43,9 @@ struct SettingsView: View {
                             } label: {
                                 LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
                             }
-                        } else if canLinkToSubscribe {
-                            // An older server, which can't take an in-app purchase.
-                            Link(destination: AppConfig.webURL("subscribe")) {
-                                LabeledContent("Plan") {
-                                    HStack(spacing: 8) {
-                                        Text(me.isPro ? "PRO" : "Free")
-                                        ExternalLinkIcon()
-                                    }
-                                }
-                            }
-                            .foregroundStyle(.primary)
                         } else {
+                            // An older server, which can't take an in-app purchase. Nothing here
+                            // points to buying PRO outside the app.
                             LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
                         }
                         // Dates for #tags (PRO, like the web settings); greyed out for free accounts.
@@ -154,7 +141,6 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title) // the heading in the list is the title
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
-            .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
         }
         // A name save that failed, from the Name page (on Done or on going Back). On the stack,
         // so it shows over the Name page too.
