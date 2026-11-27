@@ -1,26 +1,20 @@
-On a wide screen (iPhone Duo open, or an iPad), the Journal and Search now open entries beside the list instead of over it: the list on the left, the entry on the right. On any other iPhone, nothing changes.
+Beside an open entry, the list is now compact: on a wide screen (iPad, or iPhone Duo open), Journal and Search rows show a shorter preview with the photo as a small square at the side, since the open entry on the right already shows it full size. Regular iPhones are unchanged.
 
-Journal side by side (iPad, or iPhone Duo open)
-- Open the Journal. The timeline fills the left half; the right half says "No entry open".
-- Tap an entry. It opens on the right (a long one opens there rather than expanding in the list), and its row on the left is tinted olive. Tap another: it replaces the first.
-- The entry on the right has no Back arrow. Swipe left on it for Actions, edit it, and scroll to On This Day as usual.
-- Open an entry from its On This Day: it pushes inside the right half, with a Back arrow. Back returns to the first entry.
-- Delete the entry on the right, or delete it from its row's menu on the left: the pane goes back to "No entry open".
-- Write a new entry with +: once saved, it opens on the right.
-- Photos and Songs open their entries on the right too. Stats uses the whole width.
-- The timeline scrubber floats a little in from the middle line (rounded on both sides), not flush against it. Drag it and tap it as usual.
+Journal on a wide screen
+- Open the Journal on an iPad (or an open iPhone Duo). The timeline is on the left, an entry on the right.
+- A row with a photo shows the photo as a small rounded square to the right of its text, not full width under it.
+- Previews stop after about four lines with "Show more". Tapping a row opens it on the right, as before.
+- A photo still processing shows a small placeholder in that square.
+- Songs and dated #tags still show under the text.
 
-Search side by side
-- Before searching, Search uses the whole width (tips and hashtags).
-- Search for something. Results fill the left half; tap one to read it on the right.
-- Tap a #hashtag in an entry opened from Search: the results change, the entry stays open.
+Search on a wide screen
+- Search for something with photo entries. Results use the same compact rows, and tapping one opens it on the right.
+- On an iPad, the entry's date at the top of the right side sits below the Today/Journal/Search/Settings tabs, as it does beside the Journal (it used to slide under them).
 
-Folding and unfolding (iPhone Duo, or iPad Split View to make the app narrow)
-- With an entry open on the right, fold the phone (or narrow the window). The entry is now open full screen, with Back to the list.
-- Unfold (or widen) again: the entry moves back to the right half.
-- Open an entry while narrow, then go wide: it moves into the right half.
-- The timeline keeps its scroll position through each change.
+Narrow screens
+- Make the app narrow (iPad Split View, or fold the Duo). The rows go back to the full preview with the photo large under it.
+- On a regular iPhone, the Journal and Search look exactly as before.
 
 Unchanged
-- On a regular iPhone, the Journal and Search work exactly as before.
-- Today still opens entries full screen on every device.
+- Today, On This Day and the Photos grid look the same.
+- Everything from the last build (entries opening beside the list, folding and unfolding) works as before.

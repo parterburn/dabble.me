@@ -17,6 +17,9 @@ struct TimelineEntryRow: View {
 
     @Environment(AppModel.self) private var model
     @Environment(\.timelinePinTop) private var pinTop
+    /// Beside the entry pane (a wide screen): a shorter preview and a small photo at its side, as
+    /// the entry itself is open on the right at full size.
+    @Environment(\.compactTimelineRows) private var compact
     @State private var full: EntryDetail?
     @State private var previewHeight: CGFloat = 0
     @State private var fullPreviewHeight: CGFloat = 0
@@ -24,8 +27,11 @@ struct TimelineEntryRow: View {
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
-    /// Lines of preview before "Show more".
+    /// Lines of preview before "Show more" (fewer beside the entry pane).
     private static let previewLines = 7
+    private static let compactPreviewLines = 4
+    private var previewLineLimit: Int { compact ? Self.compactPreviewLines : Self.previewLines }
+    private var hasPhoto: Bool { entry.imageProcessing || entry.imageURL != nil }
     private static let avatarColumn: CGFloat = 42
     private static let gutter: CGFloat = 14
 
@@ -119,7 +125,15 @@ struct TimelineEntryRow: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tint)
             }
-            entryText
+            if compact, hasPhoto {
+                // The photo small, beside the writing (the open entry shows it large).
+                HStack(alignment: .top, spacing: 12) {
+                    entryText
+                    smallPhoto
+                }
+            } else {
+                entryText
+            }
             // Songs once the whole entry shows (expanded, or short enough not to need it).
             if showsSongs, let songs = entry.songs {
                 SongList(songs: songs)
@@ -128,7 +142,7 @@ struct TimelineEntryRow: View {
             if hasDatedTags, let dated = entry.datedHashtags {
                 DatedHashtagRow(hashtags: dated)
             }
-            if entry.imageProcessing || entry.imageURL != nil {
+            if hasPhoto, !compact {
                 EntryPhoto(url: entry.thumbnailURL(width: 1000), isProcessing: entry.imageProcessing, day: entry.day)
                     .frame(maxWidth: .infinity, maxHeight: 320, alignment: .leading)
                     // As tall as the photo is at this width (up to that limit), and no taller.
@@ -177,7 +191,7 @@ struct TimelineEntryRow: View {
             Text(styledText)
                 .font(bodyFont)
                 .lineSpacing(lineSpacing)
-                .lineLimit(isExpanded ? nil : Self.previewLines)
+                .lineLimit(isExpanded ? nil : previewLineLimit)
                 // Its own height, whole or cut to the preview's lines, whatever the row offers: left
                 // to give way, a collapsed preview lost lines to the photo under it (which took the
                 // room and sat in the middle of it), and an expanded one kept the collapsed height.
@@ -200,6 +214,16 @@ struct TimelineEntryRow: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.tint)
             }
+        }
+    }
+
+    /// The photo as a small square, for a row beside the entry pane.
+    @ViewBuilder
+    private var smallPhoto: some View {
+        if let url = entry.thumbnailURL(width: 200), !entry.imageProcessing {
+            EntryThumbnail(url: url)
+        } else {
+            EntryPhoto(url: nil, isProcessing: true, size: .thumbnail)
         }
     }
 
@@ -240,6 +264,8 @@ extension View {
 }
 
 extension EnvironmentValues {
+    /// Timeline rows beside the entry pane: shorter, with the photo small at the side.
+    @Entry var compactTimelineRows = false
     /// Where a long expanded row's date stops as it scrolls up: the bottom of the list's sticky
     /// header, in the scroll view's coordinates.
     @Entry var timelinePinTop: CGFloat = 0
