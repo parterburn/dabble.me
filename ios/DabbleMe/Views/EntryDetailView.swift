@@ -88,7 +88,12 @@ struct EntryDetailView: View {
                             }
                             // A soft line where the entry ends and On This Day begins.
                             .overlay(alignment: .bottom) {
-                                if hasOnThisDay { Rectangle().fill(.quaternary).frame(height: 1) }
+                                // Edge to edge, as the white and Paper either side of it are
+                                // (through iPhone Duo's side rail too).
+                                if hasOnThisDay {
+                                    Rectangle().fill(.quaternary).frame(height: 1)
+                                        .ignoresSafeArea(.container, edges: .horizontal)
+                                }
                             }
                             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
                             // The bolt the swipe brings in, beside the card: level with its
