@@ -1,22 +1,18 @@
-Password fields now have an eye button to show what you're typing, Sign Out and Delete Account have moved into Settings, Account, and each link on the Plan page opens what it says, with no link to buy on the web.
+Free accounts now get an Actions button on an open entry, in the top-right spot where PRO accounts have the pencil, and On This Day shows under every entry with a tap through to upgrade.
 
-Show password
-- Sign out, tap Sign In, then Use Password Instead. The password field has an eye on the right, and the password is hidden (dots) to start.
-- Type a few characters and tap the eye. The password shows as plain text, the keyboard stays up, and you can keep typing. Tap again (eye with a slash) to hide it.
-- Tap in the password field: Passwords autofill should still offer your saved Dabble Me password, shown or hidden.
-- Show the password, then swipe up to the app switcher. The snapshot shows dots, and back in the app the password is hidden again.
-- With VoiceOver on, the button reads "Show Password", then "Hide Password" after you tap it.
-- The same eye is on the password field in Settings, Account, Delete Account and in the Add a Passkey sheet (accounts with a password).
-- Tapping the row around the field, not the eye, only puts the cursor in the field.
+Entry Actions on Free
+- Sign in with a Free account and open any entry from Today or the Journal.
+- Top right shows a bars icon (three stacked bars).
+- Tap it. The entry's Actions sheet opens: Share, Delete (hold to confirm) and the entry's tags. There is no Edit and no Reflection row.
+- Swipe left on the entry: the same sheet still opens, as before.
+- Tap a tag in the sheet: it searches for that tag. Cancel a Delete without finishing the hold.
+- With VoiceOver on, the button reads "Entry Actions".
 
-Account page
-- Open Settings. Sign Out and Delete Account are no longer at the bottom; the list ends with Help, Privacy and Terms, and the app version below them.
-- Tap Account (your email). Below Export Entries are Sign Out and Delete Account.
-- Tap Sign Out. The dialog still offers Sign Out (this device only) and Sign Out of All Devices. Sign Out takes you back to the welcome screen.
-- Sign back in, open Settings, Account, Delete Account. The page still shows your entry count, offers an export first, and asks for your password (or a code or passkey) before one last confirmation. Cancel it without deleting.
+On This Day on Free
+- On a Free account, open an entry and scroll to its end. On This Day follows it on every entry: "N entries from other years would show here with Dabble Me PRO", or, with none, "See what you wrote on this date in past years with Dabble Me PRO".
+- "Dabble Me PRO" is olive. Tap the line: your Plan opens in a sheet with the Monthly and Yearly options. Done closes it.
+- Buy PRO from that sheet (sandbox) and tap Done: the entry's On This Day now lists the other years' entries, with no need to reopen it.
+- Today's On This Day line on a Free account is olive and opens the Plan the same way.
 
-Plan page links
-- On a Free account, open Settings, then Plan. Tap Restore Purchases: it restores (or says there's nothing to restore), and doesn't open Terms or Privacy.
-- Tap Terms of Use, then Privacy Policy: each opens its own page.
-- The "Or subscribe on dabble.me" link is gone from the Plan page: PRO is only sold through the App Store in the app. An account with PRO from the website still shows PRO.
-- Tap the empty space around the plan buttons: nothing opens. Monthly and Yearly each start their own purchase sheet.
+PRO unchanged
+- On a PRO account, the top right of an open entry is still the pencil. Tap edits; touch and hold opens Actions. On This Day under an entry shows only when there are entries from other years.

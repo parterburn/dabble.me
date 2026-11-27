@@ -45,8 +45,12 @@ struct EntryDetailView: View {
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
-    /// Other years' entries follow the one that's open.
-    private var hasOnThisDay: Bool { (sameDay?.count ?? 0) > 0 }
+    /// Other years' entries follow the one that's open; on a Free account, always On This Day's
+    /// heading and a line saying it comes with PRO (as on Today), even with none to show.
+    private var hasOnThisDay: Bool {
+        guard let sameDay else { return false }
+        return sameDay.count > 0 || !sameDay.available
+    }
 
     /// The entry shown: the one opened, or the one it was merged into when its date was changed
     /// to a day that had one.
@@ -92,7 +96,7 @@ struct EntryDetailView: View {
                                     return content.offset(y: bottom > top ? (top + bottom) / 2 - middle : 0)
                                 }
                             }
-                        if let sameDay, sameDay.count > 0 {
+                        if let sameDay, hasOnThisDay {
                             SameDaySection(entry: entry, sameDay: sameDay, reading: reading,
                                            today: model.today?.day ?? JournalDay(localDate: .now)) { opened = EntryRoute(id: $0) }
                                 // (Each of its rows: from the leading edge of the column, as
@@ -140,8 +144,9 @@ struct EntryDetailView: View {
                     EntryDetailView(entryID: $0.id)
                         .environment(\.backTrail, trail + [BackStep(title: entry.day?.formatted(.dateTime.month(.abbreviated).day().year()) ?? entry.date) { opened = nil }])
                 }
-                // Again when the entry moves to another day.
-                .task(id: "\(entry.id)|\(entry.date)") {
+                // Again when the entry moves to another day, or the account turns PRO (bought from
+                // On This Day's upsell line) so the teaser gives way to the entries.
+                .task(id: "\(entry.id)|\(entry.date)|\(model.me?.isPro == true)") {
                     let loaded = await model.sameDay(as: entry.id)
                     // Still this entry's (it can change while the answer's on its way).
                     if !Task.isCancelled, self.entry?.id == entry.id {
@@ -197,7 +202,7 @@ struct EntryDetailView: View {
             if let entry {
                 // Down in On This Day, the bar says so in place of the entry's date.
                 ToolbarItem(placement: .principal) {
-                    EntryTitle(reading: reading, hasOnThisDay: sameDay?.count ?? 0 > 0) {
+                    EntryTitle(reading: reading, hasOnThisDay: hasOnThisDay) {
                         onThisDayTitle
                     } date: {
                         dateTitle(for: entry)
@@ -264,7 +269,8 @@ struct EntryDetailView: View {
         playerHidden = false
     }
 
-    /// Edit goes straight into editing; Delete and Reflect are in the swipe-left Actions.
+    /// Edit goes straight into editing; Delete and Reflect are in the swipe-left Actions. Without
+    /// editing (Free), the bars in its place open those Actions.
     @ViewBuilder
     private func editButton(for entry: EntryDetail) -> some View {
         if model.me?.canEdit == true {
@@ -287,6 +293,11 @@ struct EntryDetailView: View {
                 .accessibilityAddTraits(.isButton)
                 .accessibilityAction { if entry.document != nil { editing = true } else { openURL(entry.webEditURL) } }
                 .accessibilityAction(named: "More Actions") { showingActions = true }
+        } else {
+            // Free accounts can't edit, so the bars stand in for the pencil: a tap opens the same
+            // Actions as the swipe left (Share, Delete, tags; PRO ones stay out of the sheet).
+            Button { showingActions = true } label: { appIcon("slab-bars") }
+                .accessibilityLabel("Entry Actions")
         }
     }
 
@@ -656,6 +667,15 @@ private struct SameDaySection: View {
     }
     let onOpen: (Int) -> Void
 
+    /// A Free account's line, up to "Dabble Me PRO": how many entries it would show, when there are any.
+    private var upsellLead: String {
+        switch sameDay.count {
+        case 0: "See what you wrote on this date in past years with "
+        case 1: "1 entry from another year would show here with "
+        default: "\(sameDay.count) entries from other years would show here with "
+        }
+    }
+
     /// A month heading's height, in the page and in the bar.
     nonisolated static let headerHeight: CGFloat = 36
 
@@ -679,9 +699,8 @@ private struct SameDaySection: View {
                 withAnimation(.easeOut(duration: 0.15)) { reading.headingPassed = passed }
             }
             if !sameDay.available {
-                Text(sameDay.count == 1
-                     ? "1 entry from another year would show here with Dabble Me PRO."
-                     : "\(sameDay.count) entries from other years would show here with Dabble Me PRO.")
+                // "Dabble Me PRO" in olive: a tap opens Settings → Plan.
+                ProUpsellLine(before: upsellLead)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .padding(.top, 10)
