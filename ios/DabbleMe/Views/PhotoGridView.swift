@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Journal > Photos: every entry with a photo, newest first. Tap one to open that day.
 struct PhotoGridView: View {
-    /// Opens an entry (long-press → Open).
+    /// Opens an entry (a tap, or long-press → Open).
     var open: (EntryRoute) -> Void = { _ in }
     @Environment(AppModel.self) private var model
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -35,7 +35,8 @@ struct PhotoGridView: View {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: sizeClass == .regular ? 220 : 110), spacing: 2)], spacing: 2) {
                         ForEach(entries) { entry in
-                            NavigationLink(value: EntryRoute(id: entry.id)) {
+                            // Through `open`, so on a wide screen the day opens beside the grid.
+                            Button { open(EntryRoute(id: entry.id)) } label: {
                                 PhotoCell(entry: entry)
                             }
                             .buttonStyle(.plain)

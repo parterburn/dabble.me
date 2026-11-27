@@ -121,7 +121,8 @@ extension View {
     /// The Slab left arrow for a pushed page's Back, in place of the system chevron.
     /// `trail`: the pages behind this one, the nearest first. Touching and holding the arrow
     /// lists them, as the system's Back does, to go back more than one at once.
-    func slabBackButton(trail: [BackStep] = []) -> some View { modifier(SlabBackButton(trail: trail)) }
+    /// `shown` false: no Back at all (the first page of the entry pane, which has nowhere to go).
+    func slabBackButton(trail: [BackStep] = [], shown: Bool = true) -> some View { modifier(SlabBackButton(trail: trail, shown: shown)) }
 }
 
 /// A page to go back to: its name, and what takes you there.
@@ -139,30 +140,33 @@ extension EnvironmentValues {
 
 private struct SlabBackButton: ViewModifier {
     var trail: [BackStep] = []
+    var shown = true
     @Environment(\.dismiss) private var dismiss
 
     func body(content: Content) -> some View {
         content
             .navigationBarBackButtonHidden(true)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    if trail.count > 1 {
-                        // A tap goes back one; held, it's a menu of everywhere to go back to.
-                        Menu {
-                            ForEach(trail) { step in
-                                Button(step.title) { step.go() }
+                if shown {
+                    ToolbarItem(placement: .topBarLeading) {
+                        if trail.count > 1 {
+                            // A tap goes back one; held, it's a menu of everywhere to go back to.
+                            Menu {
+                                ForEach(trail) { step in
+                                    Button(step.title) { step.go() }
+                                }
+                            } label: {
+                                arrow
+                            } primaryAction: {
+                                dismiss()
                             }
-                        } label: {
-                            arrow
-                        } primaryAction: {
-                            dismiss()
-                        }
-                        .tint(.primary)
-                        .accessibilityLabel("Back")
-                    } else {
-                        Button { dismiss() } label: { arrow }
                             .tint(.primary)
                             .accessibilityLabel("Back")
+                        } else {
+                            Button { dismiss() } label: { arrow }
+                                .tint(.primary)
+                                .accessibilityLabel("Back")
+                        }
                     }
                 }
             }

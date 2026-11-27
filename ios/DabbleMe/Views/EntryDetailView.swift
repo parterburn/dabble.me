@@ -8,6 +8,7 @@ struct EntryDetailView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.backTrail) private var backTrail
+    @Environment(\.entryPane) private var entryPane
     @Environment(\.openURL) private var openURL
     @State private var entry: EntryDetail?
     @State private var loadError: String?
@@ -197,7 +198,7 @@ struct EntryDetailView: View {
         .navigationTitle(entry?.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? "")
         .navigationBarTitleDisplayMode(.inline)
         // The arrow held: everywhere there is to go back to, once that's more than one place.
-        .slabBackButton(trail: trail.reversed())
+        .slabBackButton(trail: trail.reversed(), shown: !isPaneRoot)
         .toolbar {
             if let entry {
                 // Down in On This Day, the bar says so in place of the entry's date.
@@ -301,6 +302,10 @@ struct EntryDetailView: View {
         }
     }
 
+    /// The first page of the entry pane beside a list (a wide screen): nothing to go back to.
+    /// (An entry opened over it, from its On This Day, is handed a trail.)
+    private var isPaneRoot: Bool { entryPane != nil && backTrail.isEmpty }
+
     /// Swipe left anywhere on the entry for its actions (a right swipe is iOS's "go back"). The
     /// text follows your finger and the Actions bolt comes in from the right; let go past the
     /// threshold to open them.
@@ -315,6 +320,8 @@ struct EntryDetailView: View {
         }
         // From further up: the entries opened over this one go first, then this one.
         return [BackStep(title: title) {
+            // Beside the list (a wide screen), "back to the list" closes the pane.
+            if let entryPane { opened = nil; entryPane.close(); return }
             guard opened != nil else { dismiss(); return }
             opened = nil
             Task {
@@ -563,7 +570,7 @@ struct EntryDetailView: View {
         defer { isDeleting = false }
         do {
             try await model.deleteEntry(id: id)
-            dismiss()
+            if isPaneRoot { entryPane?.close() } else { dismiss() }
         } catch {
             actionError = error.localizedDescription
         }

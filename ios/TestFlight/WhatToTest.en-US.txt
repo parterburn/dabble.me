@@ -1,20 +1,26 @@
-No app changes since the build with the Free-account Actions button: this one only updates the App Store screenshots. If you skipped that build, here's what it brought.
+On a wide screen (iPhone Duo open, or an iPad), the Journal and Search now open entries beside the list instead of over it: the list on the left, the entry on the right. On any other iPhone, nothing changes.
 
-Free accounts now get an Actions button on an open entry, in the top-right spot where PRO accounts have the pencil, and On This Day shows under every entry with a tap through to upgrade.
+Journal side by side (iPad, or iPhone Duo open)
+- Open the Journal. The timeline fills the left half; the right half says "No entry open".
+- Tap an entry. It opens on the right (a long one opens there rather than expanding in the list), and its row on the left is tinted olive. Tap another: it replaces the first.
+- The entry on the right has no Back arrow. Swipe left on it for Actions, edit it, and scroll to On This Day as usual.
+- Open an entry from its On This Day: it pushes inside the right half, with a Back arrow. Back returns to the first entry.
+- Delete the entry on the right: the pane goes back to "No entry open".
+- Write a new entry with +: once saved, it opens on the right.
+- Photos and Songs open their entries on the right too. Stats uses the whole width.
+- The timeline scrubber floats a little in from the middle line (rounded on both sides), not flush against it. Drag it and tap it as usual.
 
-Entry Actions on Free
-- Sign in with a Free account and open any entry from Today or the Journal.
-- Top right shows a bars icon (three stacked bars).
-- Tap it. The entry's Actions sheet opens: Share, Delete (hold to confirm) and the entry's tags. There is no Edit and no Reflection row.
-- Swipe left on the entry: the same sheet still opens, as before.
-- Tap a tag in the sheet: it searches for that tag. Cancel a Delete without finishing the hold.
-- With VoiceOver on, the button reads "Entry Actions".
+Search side by side
+- Before searching, Search uses the whole width (tips and hashtags).
+- Search for something. Results fill the left half; tap one to read it on the right.
+- Tap a #hashtag in the open entry: the results change, the entry stays open.
 
-On This Day on Free
-- On a Free account, open an entry and scroll to its end. On This Day follows it on every entry: "N entries from other years would show here with Dabble Me PRO", or, with none, "See what you wrote on this date in past years with Dabble Me PRO".
-- "Dabble Me PRO" is olive. Tap the line: your Plan opens in a sheet with the Monthly and Yearly options. Done closes it.
-- Buy PRO from that sheet (sandbox) and tap Done: the entry's On This Day now lists the other years' entries, with no need to reopen it.
-- Today's On This Day line on a Free account is olive and opens the Plan the same way.
+Folding and unfolding (iPhone Duo, or iPad Split View to make the app narrow)
+- With an entry open on the right, fold the phone (or narrow the window). The entry is now open full screen, with Back to the list.
+- Unfold (or widen) again: the entry moves back to the right half.
+- Open an entry while narrow, then go wide: it moves into the right half.
+- The timeline keeps its scroll position through each change.
 
-PRO unchanged
-- On a PRO account, the top right of an open entry is still the pencil. Tap edits; touch and hold opens Actions. On This Day under an entry shows only when there are entries from other years.
+Unchanged
+- On a regular iPhone, the Journal and Search work exactly as before.
+- Today still opens entries full screen on every device.

@@ -9,6 +9,9 @@ struct TimelineScrubber: View {
     let months: [MonthCount]
     let progress: CGFloat
     let isScrolling: Bool
+    /// Held this far in from the edge, rounded on both sides (beside the entry pane, where the
+    /// edge is iPhone Duo's fold). Zero: flush with the screen's edge.
+    var inset: CGFloat = 0
     let onSelect: (MonthCount) -> Void
     /// The month the scrubber was released on, so its entries can load right away.
     var onRelease: (MonthCount) -> Void = { _ in }
@@ -23,6 +26,9 @@ struct TimelineScrubber: View {
     private static let space = "TimelineScrubber"
     private let thumbHeight: CGFloat = 56
     private let stripWidth: CGFloat = 46
+    /// Clear of iPhone Duo's fold (a band about 40pt wide down the middle of the open screen) from
+    /// a pane edge at its center line.
+    static let foldInset: CGFloat = 28
 
     var body: some View {
         GeometryReader { geometry in
@@ -53,7 +59,9 @@ struct TimelineScrubber: View {
 
                 // Only the thumb takes touches, so scrolling near the edge still scrolls the list.
                 // It stays grabbable after fading out, like Google Photos.
-                UnevenRoundedRectangle(topLeadingRadius: thumbHeight / 2, bottomLeadingRadius: thumbHeight / 2)
+                UnevenRoundedRectangle(topLeadingRadius: thumbHeight / 2, bottomLeadingRadius: thumbHeight / 2,
+                                       bottomTrailingRadius: inset > 0 ? thumbHeight / 2 : 0,
+                                       topTrailingRadius: inset > 0 ? thumbHeight / 2 : 0)
                     .fill(Color(uiColor: .tertiarySystemBackground))
                     .overlay {
                         // Slab's up and down angles, stacked (slab-scrub), drawn a little larger
@@ -84,6 +92,7 @@ struct TimelineScrubber: View {
         }
         .coordinateSpace(.named(Self.space))
         .frame(width: 260)
+        .padding(.trailing, inset)
         .padding(.vertical, 8)
         .animation(.easeOut(duration: 0.2), value: dragFraction == nil)
         .animation(.easeOut(duration: 0.25), value: visible)
