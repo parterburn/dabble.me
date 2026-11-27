@@ -94,7 +94,9 @@ struct SearchView: View {
             }
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(removing: .title) // the tab says where you are
+            // The tab says where you are. On a wide screen the title stays: an empty bar shares
+            // the iPad's floating tab bar's row, and the entry pane's date would sit under the tabs.
+            .toolbar(removing: sizeClass == .regular ? nil : .title)
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
             .entryActionSheets(actions) { open(EntryRoute(id: $0)) }
         }

@@ -9,6 +9,7 @@ Journal on a wide screen
 
 Search on a wide screen
 - Search for something with photo entries. Results use the same compact rows, and tapping one opens it on the right.
+- On an iPad, the entry's date at the top of the right side sits clear of the Today/Journal/Search/Settings tabs (it used to slide under them). Search now shows its title there.
 
 Narrow screens
 - Make the app narrow (iPad Split View, or fold the Duo). The rows go back to the full preview with the photo large under it.
