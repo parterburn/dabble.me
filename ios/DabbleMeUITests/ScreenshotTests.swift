@@ -28,7 +28,48 @@ final class ScreenshotTests: XCTestCase {
 
         func shot(_ name: String) {
             sleep(2) // let images finish loading
+            // iPhone Duo: XCUIScreen gives the outer screen, dark while it's open, and the inner one
+            // comes back black. With TEST_RUNNER_DABBLE_SCREENSHOT_DISPLAY set, a script on the Mac
+            // takes the shot instead (`simctl io <device> screenshot --display=<n>`): this leaves a
+            // `<name>.request` file in the folder and waits for the script to remove it.
+            if env["DABBLE_SCREENSHOT_DISPLAY"] != nil {
+                let request = URL(fileURLWithPath: "\(dir)/\(name).request")
+                try? Data().write(to: request)
+                for _ in 0..<60 where FileManager.default.fileExists(atPath: request.path) { usleep(500_000) }
+                XCTAssertFalse(FileManager.default.fileExists(atPath: request.path), "No one took \(name)")
+                return
+            }
             try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
+        }
+
+        // Opens a timeline entry. On a short screen (iPhone Duo, either way up) the phone's way
+        // scrolls a tall row's text off the top and taps its photo: move the list by a set amount
+        // instead, then tap the text.
+        func openEntry(_ row: XCUIElement, text: String) {
+            guard app.windows.firstMatch.frame.height < 700 else { return app.openTimelineEntry(row) }
+            _ = row.waitForExistence(timeout: 5)
+            let label = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+            for _ in 0..<12 where !(label.exists && label.isHittable && label.frame.minY > 90 && label.frame.minY < 300) {
+                // Not loaded yet: further down, a swipe away (the list's lazy).
+                if !label.exists { app.collectionViews.firstMatch.swipeUp(velocity: .slow); continue }
+                let up = label.frame.minY > 300
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: up ? 0.75 : 0.35))
+                start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: up ? -200 : 120)),
+                            withVelocity: .slow, thenHoldForDuration: 0.3)
+            }
+            // A long entry unfolds on the first tap and opens on the next. (Beside the pane, the
+            // first opens it, in place of the one there.)
+            label.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.2)).tap()
+            for _ in 0..<2 where !app.buttons["Edit Entry"].waitForExistence(timeout: 3) {
+                label.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.2)).tap()
+            }
+        }
+
+        // Back from an entry. (By its label: on iPhone Duo closed it sits in the side rail, and
+        // the bar's first button is Edit.)
+        func back() {
+            let button = app.buttons["Back"].firstMatch
+            (button.exists ? button : app.navigationBars.buttons.element(boundBy: 0)).tap()
         }
 
         // 1. Today: prompt, write button, On This Day, and the last five days as dots.
@@ -39,28 +80,67 @@ final class ScreenshotTests: XCTestCase {
         // 4. (Taken here, from Today.) A past entry with the same day in other years under it.
         let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges! Wandered")).firstMatch
         XCTAssertTrue(memory.waitForExistence(timeout: 10))
-        app.openTimelineEntry(memory)
+        openEntry(memory, text: "Bruges! Wandered")
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 10))
         // Up a little, so the last of the other years sits clear of the floating buttons.
         let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
-        middle.press(forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: -110)), withVelocity: .slow, thenHoldForDuration: 0.2)
+        if app.windows.firstMatch.frame.height < 700 {
+            // A short screen (iPhone Duo's): the other years start below the photo, a swipe up.
+            // (Not swipeUp(): from that low, it brings up the home indicator, which then stays.)
+            let low = app.coordinate(withNormalizedOffset: CGVector(dx: 0.87, dy: 0.7))
+            low.press(forDuration: 0.01, thenDragTo: low.withOffset(CGVector(dx: 0, dy: -360)))
+        } else {
+            middle.press(forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: -110)), withVelocity: .slow, thenHoldForDuration: 0.2)
+        }
         shot("04-on-this-day")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        // (Scrolled that far, the bar's hidden: back up to it.)
+        for _ in 0..<3 where !app.buttons["Back"].exists { app.scrollViews.firstMatch.swipeDown() }
+        back()
 
+        // Journal's Photos and Stats views, from the title menu.
+        func journalView(_ current: String, _ mode: String) {
+            let title = app.navigationBars.buttons[current].exists ? app.navigationBars.buttons[current] : app.navigationBars.staticTexts[current]
+            XCTAssertTrue(title.waitForExistence(timeout: 10))
+            title.tap()
+            // The menu's items, not the tab bar's buttons of the same name.
+        let item = app.buttons["JournalMode-\(mode)"]
+            XCTAssertTrue(item.waitForExistence(timeout: 5))
+            item.tap()
+        }
         // 2. Journal timeline.
         tab("Journal").tap()
+        // In the timeline, whichever view the app was left in (the Journal keeps it).
+        for mode in ["Photos", "Songs", "Stats"] where app.navigationBars[mode].waitForExistence(timeout: 1) {
+            journalView(mode, "Journal")
+        }
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10))
-        shot("02-journal")
+        // A wide screen (iPhone Duo open, iPad) opens entries in a pane beside the list, not over it.
+        // (The pane may come back with the entry it last showed.)
+        let wide = app.staticTexts["No entry open"].waitForExistence(timeout: 3) || app.buttons["Edit Entry"].exists
+        func openTimelineEntry(_ text: String) {
+            openEntry(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch, text: text)
+            XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+        }
 
-        // 3. An entry with formatting and a photo.
-        let entry = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
-        XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        app.openTimelineEntry(entry)
-        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
-        shot("03-entry")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        // 3. An entry with formatting and a photo. On a wide screen the Journal shot has it open
+        // beside the timeline, and the entry shot is another one.
+        if wide {
+            openTimelineEntry("Finally made it to Yosemite")
+            shot("02-journal")
+            openTimelineEntry("Day trip to the falls")
+            shot("03-entry")
+        } else {
+            shot("02-journal")
+            openTimelineEntry("Finally made it to Yosemite")
+            shot("03-entry")
+            back()
+        }
+        // Back to the top, where the title bar (and its New Entry) shows again.
+        let first = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        for _ in 0..<8 where !(first.exists && first.isHittable) || !app.buttons["New Entry"].isHittable {
+            app.collectionViews.firstMatch.swipeDown()
+        }
 
         // 4. Writing, with the formatting bar, photos and on-device hashtag suggestions.
         app.buttons["New Entry"].tap()
@@ -101,15 +181,6 @@ final class ScreenshotTests: XCTestCase {
         sleep(1)
 
         // 7–8. Journal's Photos and Stats views, from the title menu.
-        func journalView(_ current: String, _ mode: String) {
-            let title = app.navigationBars.buttons[current].exists ? app.navigationBars.buttons[current] : app.navigationBars.staticTexts[current]
-            XCTAssertTrue(title.waitForExistence(timeout: 10))
-            title.tap()
-            // The menu's items, not the tab bar's buttons of the same name.
-        let item = app.buttons["JournalMode-\(mode)"]
-            XCTAssertTrue(item.waitForExistence(timeout: 5))
-            item.tap()
-        }
         journalView("Journal", "Photos")
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10))
         sleep(6) // the cells load full-size photos; on a cold cache two seconds showed one of eight
@@ -127,6 +198,10 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Yosemite")).firstMatch
             .waitForExistence(timeout: 10))
         if app.keyboards.count > 0 { app.swipeDown() }
+        if wide {
+            // A result open in the pane beside the list.
+            openTimelineEntry("Finally made it to Yosemite")
+        }
         shot("10-search")
     }
 }
