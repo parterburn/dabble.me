@@ -1,8 +1,10 @@
-An entry's photo now sits as far below its writing as its paragraphs are apart.
+Password fields now have an eye button to show what you're typing.
 
-Photo spacing
-- Open an entry with a few paragraphs and a photo. The gap between the last line and the photo should look like the gap between two paragraphs, not tighter.
-- Check the same entry on Today and in the Journal list: the photo under the text gets the same paragraph-sized gap.
-- In Settings, Theme, under Entry Text, move the text size slider both ways and switch the font. The gap grows and shrinks with the text, still matching the paragraphs.
-- An entry with dated #tags or songs above its photo keeps the smaller gap it had there.
-- An entry with no photo looks the same as before.
+Show password
+- Sign out, tap Sign In, then Use Password Instead. The password field has an eye on the right, and the password is hidden (dots) to start.
+- Type a few characters and tap the eye. The password shows as plain text, the keyboard stays up, and you can keep typing. Tap again (eye with a slash) to hide it.
+- Tap in the password field: Passwords autofill should still offer your saved Dabble Me password, shown or hidden.
+- Show the password, then swipe up to the app switcher. The snapshot shows dots, and back in the app the password is hidden again.
+- With VoiceOver on, the button reads "Show Password", then "Hide Password" after you tap it.
+- The same eye is on the password field in Settings, Delete Account and in the Add a Passkey sheet (accounts with a password).
+- Tapping the row around the field, not the eye, only puts the cursor in the field.
