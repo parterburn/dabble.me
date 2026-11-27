@@ -31,7 +31,10 @@ struct SearchView: View {
     }
 
     var body: some View {
-        EntryPaneLayout(showsPane: showsPane, routing: $routing) { stack }
+        EntryPaneLayout(showsPane: showsPane, routing: $routing) {
+            // Beside the pane, rows are shorter with a small photo: the entry is open on the right.
+            stack.environment(\.compactTimelineRows, showsPane)
+        }
             .animation(.snappy(duration: 0.25), value: showsPane)
             .onChange(of: path.count) { _, count in routing.pathChanged(count: count) }
             .onChange(of: model.deletedEntryID) { _, id in routing.entryDeleted(id) }
