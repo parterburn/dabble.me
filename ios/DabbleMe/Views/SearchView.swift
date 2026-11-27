@@ -14,14 +14,38 @@ struct SearchView: View {
     @State private var hashtags: [HashtagCount] = []
     @State private var isSearchActive = false
     @FocusState private var isSearchFocused: Bool
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var path = NavigationPath()
+    /// On a wide screen, the result open beside the list (see `EntryPaneLayout`).
+    @State private var routing = EntryPaneRouting()
     @State private var expanded: Set<Int> = []
     @State private var actions = EntryActions()
     /// For the timeline scrubber over the results (as on the Journal).
     @State private var scrollProgress: CGFloat = 0
     @State private var isScrolling = false
 
+    /// Results open beside the list: a wide screen, once there's something to open (not over
+    /// the hashtags and tips before a search).
+    private var showsPane: Bool {
+        sizeClass == .regular && model.me?.canSearch != false && (!submitted.isEmpty || routing.paneEntry != nil)
+    }
+
     var body: some View {
+        EntryPaneLayout(showsPane: showsPane, routing: $routing) { stack }
+            .animation(.snappy(duration: 0.25), value: showsPane)
+            .onChange(of: path.count) { _, count in routing.pathChanged(count: count) }
+            .onChange(of: model.deletedEntryID) { _, id in routing.entryDeleted(id) }
+            // Opened or closed (iPhone Duo), or an iPad's window resized: the open result moves
+            // between the pane and the stack.
+            .onChange(of: sizeClass) { routing.widthChanged(wide: sizeClass == .regular, path: &path) }
+    }
+
+    /// Opens a result: beside the list on a wide screen, over it otherwise.
+    private func open(_ route: EntryRoute) {
+        routing.open(route, wide: showsPane, path: &path)
+    }
+
+    private var stack: some View {
         NavigationStack(path: $path) {
             Group {
                 if model.me?.canSearch == false {
@@ -69,7 +93,7 @@ struct SearchView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title) // the tab says where you are
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
-            .entryActionSheets(actions) { path.append(EntryRoute(id: $0)) }
+            .entryActionSheets(actions) { open(EntryRoute(id: $0)) }
         }
     }
 
@@ -139,10 +163,14 @@ struct SearchView: View {
                     Section {
                         ForEach(month.entries) { entry in
                             TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions,
-                                             onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) } },
-                                             onOpen: { path.append(EntryRoute(id: entry.id)) })
-                            .entryRowMenu(entry, actions: actions) { path.append(EntryRoute(id: entry.id)) }
+                                             onExpand: {
+                                                 // Beside the pane, a tap reads the whole entry there rather than unfolding it here.
+                                                 if showsPane { open(EntryRoute(id: entry.id)) } else { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) } }
+                                             },
+                                             onOpen: { open(EntryRoute(id: entry.id)) })
+                            .entryRowMenu(entry, actions: actions) { open(EntryRoute(id: entry.id)) }
                             .timelineRowLayout()
+                            .listRowBackground(openRowBackground(entry.id))
                             .task {
                                 if entry.id == results.last?.id { await search(reset: false) }
                             }
@@ -177,7 +205,9 @@ struct SearchView: View {
             .onScrollPhaseChange { _, phase in isScrolling = phase.isScrolling }
             .overlay(alignment: .trailing) {
                 if scrubberMonths.count >= 3 {
-                    TimelineScrubber(months: scrubberMonths, progress: scrollProgress, isScrolling: isScrolling, onSelect: { month in
+                    // Held in from the list's edge beside the pane: on iPhone Duo that's the fold.
+                    TimelineScrubber(months: scrubberMonths, progress: scrollProgress, isScrolling: isScrolling,
+                                     inset: showsPane ? TimelineScrubber.foldInset : 0, onSelect: { month in
                         if let first = resultMonths.first(where: { $0.key == month.key })?.entries.first {
                             proxy.scrollTo(first.id, anchor: .top)
                         }
@@ -188,6 +218,11 @@ struct SearchView: View {
             }
             }
         }
+    }
+
+    /// The result open in the pane, tinted so it's clear which one that is.
+    private func openRowBackground(_ id: Int) -> Color? {
+        showsPane && routing.openID == id ? Color.accentColor.opacity(0.1) : nil
     }
 
     /// Results in their order (newest first), grouped by month for the sticky headers.

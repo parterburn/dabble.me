@@ -719,6 +719,12 @@ final class AppModel {
     /// Counts the entries written, changed and deleted from the app: views that hold numbers
     /// counted from the journal (Stats) count again when it moves.
     private(set) var entriesChanged = 0
+    /// The entry deleted last (from anywhere), so a page showing it beside a list can close.
+    private(set) var deletedEntryID: Int?
+    /// The entry saved last (from anywhere), and a count of saves, so a page already showing it
+    /// (the entry pane beside the list, edited from its row's menu) shows the new text.
+    private(set) var savedEntry: EntryDetail?
+    private(set) var entrySaves = 0
 
     /// Counts the photos that have finished processing while the app watched: views with their
     /// own lists (Photos) load again when it moves.
@@ -760,6 +766,8 @@ final class AppModel {
         // Merged into that day's entry: this one is gone from the timeline.
         if envelope.entry.id != id { for key in monthEntries.keys { monthEntries[key]?.removeAll { $0.id == id } } }
         upsert(envelope.entry.summary)
+        savedEntry = envelope.entry
+        entrySaves += 1
         entriesChanged += 1
         if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
         if day != nil {
@@ -772,6 +780,7 @@ final class AppModel {
 
     func deleteEntry(id: Int) async throws {
         try await api.delete("api/v1/entries/\(id)")
+        deletedEntryID = id
         entriesChanged += 1
         for (key, entries) in monthEntries where entries.contains(where: { $0.id == id }) {
             monthEntries[key] = entries.filter { $0.id != id }

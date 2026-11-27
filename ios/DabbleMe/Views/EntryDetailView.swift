@@ -8,6 +8,7 @@ struct EntryDetailView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.backTrail) private var backTrail
+    @Environment(\.entryPane) private var entryPane
     @Environment(\.openURL) private var openURL
     @State private var entry: EntryDetail?
     @State private var loadError: String?
@@ -78,11 +79,21 @@ struct EntryDetailView: View {
                             // the entry too, under the bar and when the page is pulled down.
                             .background(Color(.systemBackground))
                             .background(alignment: .top) {
-                                Color(.systemBackground).frame(height: 1200).offset(y: -1200)
+                                // Out to the screen's sides too: on iPhone Duo open, the status
+                                // rail at the right is a side inset, which showed Paper there.
+                                Color(.systemBackground)
+                                    .ignoresSafeArea(.container, edges: .horizontal)
+                                    .frame(height: 1200)
+                                    .offset(y: -1200)
                             }
                             // A soft line where the entry ends and On This Day begins.
                             .overlay(alignment: .bottom) {
-                                if hasOnThisDay { Rectangle().fill(.quaternary).frame(height: 1) }
+                                // Edge to edge, as the white and Paper either side of it are
+                                // (through iPhone Duo's side rail too).
+                                if hasOnThisDay {
+                                    Rectangle().fill(.quaternary).frame(height: 1)
+                                        .ignoresSafeArea(.container, edges: .horizontal)
+                                }
                             }
                             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
                             // The bolt the swipe brings in, beside the card: level with its
@@ -197,7 +208,7 @@ struct EntryDetailView: View {
         .navigationTitle(entry?.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? "")
         .navigationBarTitleDisplayMode(.inline)
         // The arrow held: everywhere there is to go back to, once that's more than one place.
-        .slabBackButton(trail: trail.reversed())
+        .slabBackButton(trail: trail.reversed(), shown: !isPaneRoot)
         .toolbar {
             if let entry {
                 // Down in On This Day, the bar says so in place of the entry's date.
@@ -245,6 +256,7 @@ struct EntryDetailView: View {
         .sensoryFeedback(.selection, trigger: textSize)
         .disabled(isDeleting)
         .task { await load() }
+        .modifier(FollowsSavesAndPane(entry: $entry, isPaneRoot: isPaneRoot))
         // An edit that takes the playing song away takes the player with it.
         .onChange(of: entry?.songs) { _, songs in
             guard let song, songs?.contains(song) != true else { return }
@@ -301,6 +313,10 @@ struct EntryDetailView: View {
         }
     }
 
+    /// The first page of the entry pane beside a list (a wide screen): nothing to go back to.
+    /// (An entry opened over it, from its On This Day, is handed a trail.)
+    private var isPaneRoot: Bool { entryPane != nil && backTrail.isEmpty }
+
     /// Swipe left anywhere on the entry for its actions (a right swipe is iOS's "go back"). The
     /// text follows your finger and the Actions bolt comes in from the right; let go past the
     /// threshold to open them.
@@ -315,6 +331,8 @@ struct EntryDetailView: View {
         }
         // From further up: the entries opened over this one go first, then this one.
         return [BackStep(title: title) {
+            // Beside the list (a wide screen), "back to the list" closes the pane.
+            if let entryPane { opened = nil; entryPane.close(); return }
             guard opened != nil else { dismiss(); return }
             opened = nil
             Task {
@@ -563,7 +581,7 @@ struct EntryDetailView: View {
         defer { isDeleting = false }
         do {
             try await model.deleteEntry(id: id)
-            dismiss()
+            if isPaneRoot { entryPane?.close() } else { dismiss() }
         } catch {
             actionError = error.localizedDescription
         }
@@ -1450,5 +1468,28 @@ private struct PullToReflect: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+/// Keeps an open entry current with the rest of the app (its own modifier, to keep
+/// `EntryDetailView.body`'s chain short for the type checker).
+private struct FollowsSavesAndPane: ViewModifier {
+    @Binding var entry: EntryDetail?
+    let isPaneRoot: Bool
+    @Environment(AppModel.self) private var model
+    @Environment(\.entryPane) private var entryPane
+
+    func body(content: Content) -> some View {
+        content
+            // Saved somewhere else (edited from its row's menu beside the entry pane): show the
+            // saved text, so an edit from here doesn't start from the old one.
+            .onChange(of: model.entrySaves) {
+                if let saved = model.savedEntry, saved.id == entry?.id { entry = saved }
+            }
+            // At the root of the entry pane: tell it which entry this is after a swipe to another
+            // day, so folding carries that one over and its row is the tinted one.
+            .onChange(of: entry?.id) { _, id in
+                if isPaneRoot, let id { entryPane?.showing(id) }
+            }
     }
 }

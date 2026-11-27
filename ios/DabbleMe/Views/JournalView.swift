@@ -27,7 +27,10 @@ enum JournalMode: String, CaseIterable, Identifiable {
 struct JournalView: View {
     @Environment(AppModel.self) private var model
     @SceneStorage("journal.mode") private var mode = JournalMode.list
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var path = NavigationPath()
+    /// On a wide screen, the entry open beside the timeline (see `EntryPaneLayout`).
+    @State private var routing = EntryPaneRouting()
     @State private var expanded: Set<Int> = []
     /// The title bar hides while scrolling down; `barAnchor` is where the current direction began.
     @State private var barHidden = false
@@ -55,7 +58,26 @@ struct JournalView: View {
     @State private var scrollProgress: CGFloat = 0
     @State private var isScrolling = false
 
+    /// Entries open beside the list: a wide screen, and a view that opens entries (Stats doesn't).
+    private var showsPane: Bool { sizeClass == .regular && mode != .stats }
+
     var body: some View {
+        EntryPaneLayout(showsPane: showsPane, routing: $routing) { stack }
+            .animation(.snappy(duration: 0.25), value: showsPane)
+            .onChange(of: path.count) { _, count in routing.pathChanged(count: count) }
+            .onChange(of: model.deletedEntryID) { _, id in routing.entryDeleted(id) }
+            // Opened or closed (iPhone Duo), or an iPad's window resized: the open entry moves
+            // between the pane and the stack (by width alone, so one left in the pane while
+            // on Stats isn't stranded there).
+            .onChange(of: sizeClass) { routing.widthChanged(wide: sizeClass == .regular, path: &path) }
+    }
+
+    /// Opens an entry: beside the list on a wide screen, over it otherwise.
+    private func open(_ route: EntryRoute) {
+        routing.open(route, wide: showsPane, path: &path)
+    }
+
+    private var stack: some View {
         NavigationStack(path: $path) {
             modeContent
                 .navigationTitle(mode.rawValue)
@@ -122,8 +144,8 @@ struct JournalView: View {
                     }
                 }
                 // Once written, the new entry opens in full under the closing composer.
-                .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
-                .entryActionSheets(actions) { path.append(EntryRoute(id: $0)) }
+                .sheet(isPresented: $composing) { ComposeView(mode: .new) { open(EntryRoute(id: $0.id)) } }
+                .entryActionSheets(actions) { open(EntryRoute(id: $0)) }
                 // "Open" from the shake-for-a-memory sheet, or the widget's entry. Also on first
                 // appearing: the Journal tab may not exist yet when the request comes.
                 .onChange(of: model.openEntryRequest, initial: true) { _, id in
@@ -131,7 +153,7 @@ struct JournalView: View {
                     model.openEntryRequest = nil
                     mode = model.openEntryOver ?? .list
                     model.openEntryOver = nil
-                    path.append(EntryRoute(id: id))
+                    open(EntryRoute(id: id))
                 }
                 // Also on first appearing: the Journal tab may not exist yet when Today asks.
                 .onChange(of: model.statsRequest, initial: true) { _, request in
@@ -208,8 +230,8 @@ struct JournalView: View {
                 // Its Entries and Photos tiles go to those views.
                 StatsView { mode = $0 }
             }
-        case .photos: PhotoGridView { path.append($0) }
-        case .playlist: PlaylistView { path.append($0) }
+        case .photos: PhotoGridView { open($0) }
+        case .playlist: PlaylistView { open($0) }
         }
     }
 
@@ -296,7 +318,9 @@ struct JournalView: View {
             }
             .overlay(alignment: .trailing) {
                 if model.months.count >= 3 {
-                    TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling, onSelect: { month in
+                    // Beside the entry pane, held in from the list's edge: on iPhone Duo that
+                    // edge is the fold, where a thumb is hard to grab.
+                    TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling, inset: showsPane ? TimelineScrubber.foldInset : 0, onSelect: { month in
                         jump?.cancel()
                         // Jump to the month's first row: its first entry if loaded, else its first placeholder.
                         if let first = model.monthEntries[month.key]?.first {
@@ -364,9 +388,10 @@ struct JournalView: View {
             Section {
                 ForEach(entries) { entry in
                     TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions,
-                                     onExpand: { expand(entry) }, onOpen: { path.append(EntryRoute(id: entry.id)) })
-                        .entryRowMenu(entry, actions: actions) { path.append(EntryRoute(id: entry.id)) }
+                                     onExpand: { if showsPane { open(EntryRoute(id: entry.id)) } else { expand(entry) } }, onOpen: { open(EntryRoute(id: entry.id)) })
+                        .entryRowMenu(entry, actions: actions) { open(EntryRoute(id: entry.id)) }
                         .timelineRowLayout()
+                        .listRowBackground(openRowBackground(entry.id))
                 }
             } header: {
                 MonthHeader(title: month.title)
@@ -425,6 +450,11 @@ struct JournalView: View {
         } else {
             if offset < barAnchor { barAnchor = offset } else if offset - barAnchor > 40 { barHidden = true; barAnchor = offset }
         }
+    }
+
+    /// The row of the entry open in the pane, tinted so it's clear which one that is.
+    private func openRowBackground(_ id: Int) -> Color? {
+        showsPane && routing.openID == id ? Color.accentColor.opacity(0.1) : nil
     }
 
     private func expand(_ entry: EntrySummary) {
