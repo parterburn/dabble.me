@@ -112,6 +112,7 @@ final class ScreenshotTests: XCTestCase {
         }
         journalView("Journal", "Photos")
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10))
+        sleep(6) // the cells load full-size photos; on a cold cache two seconds showed one of eight
         shot("07-photos")
         journalView("Photos", "Stats")
         XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
