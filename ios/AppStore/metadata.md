@@ -196,7 +196,7 @@ In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and 
 
 The calendar events in 6 are made up (`-DabbleDebugCalendar YES`), like the rest of the demo account.
 
-`bundle exec rails ios:demo_account` seeds that account locally, with its photos straight from Unsplash. It needs valid AWS credentials in `.env` to store them. A different `AWS_ACCESS_KEY_ID` set in the shell wins over `.env`, so run it as `env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY bundle exec rails ios:demo_account`; the last line it prints should say how many entries have photos.
+`bundle exec rails ios:demo_account` seeds that account locally, downloading its photos from Unsplash and storing them in the dev bucket (development serves them straight from S3: Cloudflare's resizing only takes the production bucket). It needs valid AWS credentials in `.env` to store them. It also replaces db:seed's Faker writing prompts with real ones, so Today's prompt reads like one. A different `AWS_ACCESS_KEY_ID` set in the shell wins over `.env`, so run it as `env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY bundle exec rails ios:demo_account`; the last line it prints should say how many entries have photos.
 
 **Header and search-results images** (`Header and Search Results/`, rendered by `source/render.sh` from the iPhone screenshots):
 
