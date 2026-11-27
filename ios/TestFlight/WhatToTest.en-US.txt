@@ -1,4 +1,4 @@
-Password fields now have an eye button to show what you're typing, and Sign Out and Delete Account have moved into Settings, Account.
+Password fields now have an eye button to show what you're typing, Sign Out and Delete Account have moved into Settings, Account, and each link on the Plan page opens what it says.
 
 Show password
 - Sign out, tap Sign In, then Use Password Instead. The password field has an eye on the right, and the password is hidden (dots) to start.
@@ -14,3 +14,9 @@ Account page
 - Tap Account (your email). Below Export Entries are Sign Out and Delete Account.
 - Tap Sign Out. The dialog still offers Sign Out (this device only) and Sign Out of All Devices. Sign Out takes you back to the welcome screen.
 - Sign back in, open Settings, Account, Delete Account. The page still shows your entry count, offers an export first, and asks for your password (or a code or passkey) before one last confirmation. Cancel it without deleting.
+
+Plan page links
+- On a Free account, open Settings, then Plan. Tap Restore Purchases: it restores (or says there's nothing to restore), and doesn't open Terms or Privacy.
+- Tap Terms of Use, then Privacy Policy: each opens its own page.
+- On a US App Store account, tap "Or subscribe on dabble.me": the subscribe page opens.
+- Tap the empty space in that box: nothing opens. Monthly and Yearly each start their own purchase sheet.
