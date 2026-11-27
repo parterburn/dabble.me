@@ -1,4 +1,4 @@
-Password fields now have an eye button to show what you're typing.
+Password fields now have an eye button to show what you're typing, and Sign Out and Delete Account have moved into Settings, Account.
 
 Show password
 - Sign out, tap Sign In, then Use Password Instead. The password field has an eye on the right, and the password is hidden (dots) to start.
@@ -6,5 +6,11 @@ Show password
 - Tap in the password field: Passwords autofill should still offer your saved Dabble Me password, shown or hidden.
 - Show the password, then swipe up to the app switcher. The snapshot shows dots, and back in the app the password is hidden again.
 - With VoiceOver on, the button reads "Show Password", then "Hide Password" after you tap it.
-- The same eye is on the password field in Settings, Delete Account and in the Add a Passkey sheet (accounts with a password).
+- The same eye is on the password field in Settings, Account, Delete Account and in the Add a Passkey sheet (accounts with a password).
 - Tapping the row around the field, not the eye, only puts the cursor in the field.
+
+Account page
+- Open Settings. Sign Out and Delete Account are no longer at the bottom; the list ends with Help, Privacy and Terms, and the app version below them.
+- Tap Account (your email). Below Export Entries are Sign Out and Delete Account.
+- Tap Sign Out. The dialog still offers Sign Out (this device only) and Sign Out of All Devices. Sign Out takes you back to the welcome screen.
+- Sign back in, open Settings, Account, Delete Account. The page still shows your entry count, offers an export first, and asks for your password (or a code or passkey) before one last confirmation. Cancel it without deleting.

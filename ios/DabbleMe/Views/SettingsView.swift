@@ -6,8 +6,6 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
     @Environment(\.openURL) private var openURL
-    @State private var confirmingSignOut = false
-    @State private var deletingAccount = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
     /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
@@ -35,7 +33,8 @@ struct SettingsView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 0))
                 if let me = model.me {
                     Section {
-                        // Name, email, passkey, Account Security and Export Entries, on a page of their own.
+                        // Name, email, passkey, Account Security, Export Entries, Sign Out and Delete Account,
+                        // on a page of their own.
                         PaneLink {
                             AccountSettingsView()
                         } label: {
@@ -133,24 +132,6 @@ struct SettingsView: View {
                     Link(destination: AppConfig.webURL("terms")) {
                         ExternalLinkLabel("Terms", icon: "slab-anchor")
                     }
-                }
-
-                Section {
-                    // Each dialog is attached to its button so it appears next to it, not at the top.
-                    Button("Sign Out", role: .destructive) { confirmingSignOut = true }
-                        .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
-                            Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
-                            // Every browser and app on the account, this one included.
-                            Button("Sign Out of All Devices", role: .destructive) { Task { await model.signOutEverywhere() } }
-                        } message: {
-                            Text("Sign Out signs out this device only. Sign Out of All Devices signs out every browser and app signed in to your account, and disconnects connected apps like Claude.")
-                        }
-                    // Deleting happens here: the password, then one last confirmation, in a sheet.
-                    Button("Delete Account…", role: .destructive) { deletingAccount = true }
-                        .sheet(isPresented: $deletingAccount) {
-                            DeleteAccountView()
-                                .opensDabbleLinksInApp()
-                        }
                 } footer: {
                     // The app's name and version, centered at the foot: a tap goes to its page.
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,

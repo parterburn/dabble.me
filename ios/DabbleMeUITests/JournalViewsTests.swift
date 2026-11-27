@@ -2654,7 +2654,7 @@ final class JournalViewsTests: XCTestCase {
         previews.switches.firstMatch.tap() // back to the default: no previews
     }
 
-    /// Settings → Delete Account: an in-app page with the entry count, an export, and the
+    /// Settings → Account → Delete Account: an in-app page with the entry count, an export, and the
     /// password; a wrong password is refused, and nothing is deleted (the test stops before the
     /// right one). TEST_RUNNER_DABBLE_DELETION_TOKEN: the free demo account's token will do.
     func testDeletingTheAccountAsksForThePasswordInTheApp() throws {
@@ -2664,6 +2664,10 @@ final class JournalViewsTests: XCTestCase {
         app.launch()
         XCTAssertTrue(tab(app, "Settings").waitForExistence(timeout: 15))
         tab(app, "Settings").tap()
+        let account = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Account'")).firstMatch
+        XCTAssertTrue(account.waitForExistence(timeout: 10))
+        account.tap()
+        XCTAssertTrue(app.navigationBars["Account"].waitForExistence(timeout: 5))
         let delete = app.buttons["Delete Account…"]
         for _ in 0..<6 where !(delete.exists && delete.isHittable) { app.swipeUp() }
         snap("delete-account-row")
