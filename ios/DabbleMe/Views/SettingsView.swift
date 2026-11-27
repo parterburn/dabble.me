@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
     @Environment(\.openURL) private var openURL
+    @State private var confirmingSignOut = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
     /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
@@ -55,6 +56,17 @@ struct SettingsView: View {
                             Label("Manage Hashtags", icon: "slab-tag")
                         }
                         .disabled(!me.isPro)
+                    }
+                } else {
+                    // The account hasn't loaded (offline, or a request failed), so there's no
+                    // Account page to open: keep Sign Out here, so a stuck session can still end.
+                    Section {
+                        Button("Sign Out", role: .destructive) { confirmingSignOut = true }
+                            .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
+                                Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
+                            } message: {
+                                Text("Your account couldn't load. Signing out here signs out this device only.")
+                            }
                     }
                 }
 
