@@ -8,6 +8,19 @@
 # entries, a few photos (Unsplash-licensed, from images.unsplash.com), and "On This Day" entries
 # for today's date. Prints an access token for the iOS app's -DabbleDebugAccessToken
 # launch argument so screenshot automation can skip the web sign-in sheet.
+require "open-uri"
+
+# A token for -DabbleDebugAccessToken. One that starts with "-" would be read as another launch
+# argument (and the app would start signed out), so such a token is revoked and another made.
+def ios_debug_token(app, user)
+  loop do
+    token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: user.id, scopes: MobileApp::SCOPE, expires_in: 1.day)
+    return token unless token.plaintext_token.start_with?("-")
+
+    token.revoke
+  end
+end
+
 namespace :ios do
   desc "Create a demo PRO account with sample entries for iOS screenshots (development only)"
   task demo_account: :environment do
@@ -104,8 +117,13 @@ namespace :ios do
       next unless photo_id
 
       begin
-        entry.remote_image_url = photo.call(photo_id)
-        entry.save!
+        # ImageUploader only fetches its own uploads by URL, so download the photo here and attach the file.
+        Tempfile.create(["demo", ".jpg"], binmode: true) do |file|
+          URI.parse(photo.call(photo_id)).open { |io| IO.copy_stream(io, file) }
+          file.rewind
+          entry.image = file
+          entry.save!
+        end
       rescue StandardError => e
         # Usually missing/expired AWS credentials in .env; the entry is still useful without its photo.
         warn "Skipped photo for #{date}: #{e.class}: #{e.message.lines.first&.strip}"
@@ -128,9 +146,21 @@ namespace :ios do
     user.original_hashtags.destroy_all
     user.original_hashtags.create!(tag: "Biscuit", date: today - 3.years - 5.months)
 
+    # Today's prompt comes from the writing-prompt Inspirations, which db:seed fills with Faker text.
+    # Short enough for one line in the composer's Writing ideas, so the day's events fit under it.
+    prompts = ["Who did you feel grateful for today?", "What made you smile today?",
+               "What do you want to remember?", "What surprised you today?",
+               "What are you looking forward to?", "What did you learn today?",
+               "Where did you find calm today?", "What would make tomorrow good?"]
+    existing = Inspiration.writing_prompts.order(:id).to_a
+    prompts.each_with_index do |body, i|
+      existing[i] ? existing[i].update!(body: body) : Inspiration.create!(category: "Question", body: body)
+    end
+    existing.drop(prompts.size).each_with_index { |row, i| row.update!(body: prompts[i % prompts.size]) }
+
     app = MobileApp.ensure_application!
     Doorkeeper::AccessToken.where(resource_owner_id: user.id, application_id: app.id).update_all(revoked_at: Time.current)
-    token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: user.id, scopes: MobileApp::SCOPE, expires_in: 1.day)
+    token = ios_debug_token(app, user)
 
     puts "Demo account: demo@dabble.ex / dabble-demo (#{user.entries.count} entries, #{user.entries.only_images.count} with photos)"
     puts "Access token (1 day): #{token.plaintext_token}"
@@ -148,7 +178,7 @@ namespace :ios do
     user.original_hashtags.destroy_all
 
     app = MobileApp.ensure_application!
-    token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: user.id, scopes: MobileApp::SCOPE, expires_in: 1.day)
+    token = ios_debug_token(app, user)
     puts "Empty account: empty-demo@dabble.ex"
     puts "Access token (1 day): #{token.plaintext_token}"
   end
@@ -167,7 +197,7 @@ namespace :ios do
                          body: "<p>A quiet walk after dinner. #evening</p>")
 
     app = MobileApp.ensure_application!
-    token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: user.id, scopes: MobileApp::SCOPE, expires_in: 1.day)
+    token = ios_debug_token(app, user)
     puts "Free account: free-demo@dabble.ex"
     puts "Access token (1 day): #{token.plaintext_token}"
   end
