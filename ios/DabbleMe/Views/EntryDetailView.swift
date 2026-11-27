@@ -144,8 +144,9 @@ struct EntryDetailView: View {
                     EntryDetailView(entryID: $0.id)
                         .environment(\.backTrail, trail + [BackStep(title: entry.day?.formatted(.dateTime.month(.abbreviated).day().year()) ?? entry.date) { opened = nil }])
                 }
-                // Again when the entry moves to another day.
-                .task(id: "\(entry.id)|\(entry.date)") {
+                // Again when the entry moves to another day, or the account turns PRO (bought from
+                // On This Day's upsell line) so the teaser gives way to the entries.
+                .task(id: "\(entry.id)|\(entry.date)|\(model.me?.isPro == true)") {
                     let loaded = await model.sameDay(as: entry.id)
                     // Still this entry's (it can change while the answer's on its way).
                     if !Task.isCancelled, self.entry?.id == entry.id {

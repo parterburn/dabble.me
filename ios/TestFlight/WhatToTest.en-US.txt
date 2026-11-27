@@ -11,6 +11,7 @@ Entry Actions on Free
 On This Day on Free
 - On a Free account, open an entry and scroll to its end. On This Day follows it on every entry: "N entries from other years would show here with Dabble Me PRO", or, with none, "See what you wrote on this date in past years with Dabble Me PRO".
 - "Dabble Me PRO" is olive. Tap the line: your Plan opens in a sheet with the Monthly and Yearly options. Done closes it.
+- Buy PRO from that sheet (sandbox) and tap Done: the entry's On This Day now lists the other years' entries, with no need to reopen it.
 - Today's On This Day line on a Free account is olive and opens the Plan the same way.
 
 PRO unchanged
