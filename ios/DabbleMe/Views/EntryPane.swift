@@ -38,7 +38,8 @@ private struct EntryPane: View {
                 if let entry = routing.paneEntry {
                     // A fresh page each time a row is picked (the same row again too, after
                     // swiping to a neighbouring day), so one's state isn't carried into the next.
-                    EntryDetailView(entryID: entry.id)
+                    // Rebuilt (back from Stats), it opens on the entry it last showed.
+                    EntryDetailView(entryID: routing.openID ?? entry.id)
                         .id(routing.opening)
                 } else {
                     ContentUnavailableView {
