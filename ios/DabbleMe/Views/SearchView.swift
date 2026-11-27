@@ -31,7 +31,7 @@ struct SearchView: View {
     }
 
     var body: some View {
-        EntryPaneLayout(showsPane: showsPane, routing: $routing) {
+        EntryPaneLayout(showsPane: showsPane, routing: $routing, listBarSharesTabRow: true) {
             // Beside the pane, rows are shorter with a small photo: the entry is open on the right.
             stack.environment(\.compactTimelineRows, showsPane)
         }

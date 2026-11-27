@@ -11,16 +11,34 @@ struct EntryPaneLayout<Content: View>: View {
     /// The entry pane is showing (wide, and a view of the list that opens entries).
     let showsPane: Bool
     @Binding var routing: EntryPaneRouting
+    /// The list's bar shares the iPad's floating tab bar's row (Search's, whose search field is
+    /// always out): the pane's bar is moved down out of that row, as it is beside the Journal.
+    var listBarSharesTabRow = false
     @ViewBuilder var list: Content
+    @State private var topInset: CGFloat = 0
+
+    /// The height of the iPad's floating tab bar's row, under the status bar: what the Journal's
+    /// bar (and its pane's) is moved down by.
+    private var tabRowHeight: CGFloat { 64 }
+
+    /// How far to move the pane's bar down: out of the tab bar's row, on an iPad whose tab bar
+    /// hasn't already moved everything down (on iPhone Duo the tabs are a side rail).
+    private var paneTopPadding: CGFloat {
+        guard listBarSharesTabRow, UIDevice.current.userInterfaceIdiom == .pad,
+              topInset < tabRowHeight else { return 0 }
+        return tabRowHeight
+    }
 
     var body: some View {
         HStack(spacing: 0) {
             list
                 .frame(maxWidth: .infinity)
+                .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
             if showsPane {
                 Divider()
                     .ignoresSafeArea()
                 EntryPane(routing: $routing)
+                    .padding(.top, paneTopPadding)
                     .frame(maxWidth: .infinity)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
