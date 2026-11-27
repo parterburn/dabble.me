@@ -244,10 +244,8 @@ struct AuthFormView: View {
             }
         } else {
             Section {
-                SecureField("Password", text: $password)
-                    .textContentType(.password)
+                PasswordField(title: "Password", text: $password, focus: $focus, equals: .password)
                     .submitLabel(needsOTP ? .next : .go)
-                    .focused($focus, equals: .password)
                     .onSubmit { if needsOTP { focus = .otp } else { submitCode() } }
                     .onChange(of: password) { hint = nil }
                     .disabled(needsOTP)

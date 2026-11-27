@@ -59,6 +59,10 @@ struct SubscribeOptions: View {
                 }
                 .font(.caption)
             }
+            // Inside a List row (Settings → Plan) every default-style button and link in the row
+            // would answer a tap anywhere in it, so a tap on Restore Purchases opened the Privacy
+            // Policy. Borderless buttons take only their own taps; the plan buttons keep their style.
+            .buttonStyle(.borderless)
             .disabled(store.isWorking)
             .overlay {
                 if store.isWorking { ProgressView() }
@@ -97,8 +101,6 @@ struct SubscribeOptions: View {
 struct PlanView: View {
     @Environment(AppModel.self) private var model
     @State private var managing = false
-    /// The US storefront may also link to dabble.me's own checkout (guideline 3.1.1(a)).
-    @State private var canLinkToWeb = false
     /// When a plan bought on dabble.me renews (GET /api/v1/plan); nil until it's loaded.
     @State private var webSubscription: PlanDetails.WebSubscriptionInfo?
 
@@ -147,15 +149,6 @@ struct PlanView: View {
                             Text("Dabble Me PRO adds search, Stats and Rewind, photos, editing, and email on the days you choose.")
                                 .multilineTextAlignment(.center)
                             SubscribeOptions()
-                            if canLinkToWeb {
-                                Link(destination: AppConfig.webURL("subscribe")) {
-                                    HStack(spacing: 8) {
-                                        Text("Or subscribe on dabble.me")
-                                        ExternalLinkIcon()
-                                    }
-                                }
-                                .font(.subheadline)
-                            }
                         }
                         .padding(.vertical, 8)
                     }
@@ -168,7 +161,6 @@ struct PlanView: View {
             // A change made in Apple's sheet reaches the server by notification; reload after.
             if !isShowing { Task { await model.refresh() } }
         }
-        .task { canLinkToWeb = await Storefront.current?.countryCode == "USA" }
     }
 
     private func loadWebSubscription() async {
