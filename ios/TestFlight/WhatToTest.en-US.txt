@@ -2,7 +2,7 @@ Free accounts now get an Actions button on an open entry, in the top-right spot 
 
 Entry Actions on Free
 - Sign in with a Free account and open any entry from Today or the Journal.
-- Top right shows a bars icon (three stacked bars) where the pencil used to be missing.
+- Top right shows a bars icon (three stacked bars).
 - Tap it. The entry's Actions sheet opens: Share, Delete (hold to confirm) and the entry's tags. There is no Edit and no Reflection row.
 - Swipe left on the entry: the same sheet still opens, as before.
 - Tap a tag in the sheet: it searches for that tag. Cancel a Delete without finishing the hold.
